@@ -1,42 +1,42 @@
 {
   "lane": "access",
   "status": "local_ready",
-  "codeRevision": "e3a0b55eeddc5525437235d242df7752b9db6051",
+  "codeRevision": "4e15d0c4abc501a3cdb235c787352bba7023ba01",
   "commands": [
     {
       "id": "access-check",
       "command": "npm --prefix packages/access run check",
       "exitCode": 0,
       "evidence": "docs/handoffs/access.md",
-      "localLog": "artifacts/access/addendum-final-check.log"
+      "localLog": "artifacts/access/late-final-check.log"
     },
     {
       "id": "access-smoke",
       "command": "npm --prefix packages/access run smoke",
       "exitCode": 0,
       "evidence": "docs/handoffs/access.md",
-      "localLog": "artifacts/access/addendum-final-smoke.log"
+      "localLog": "artifacts/access/late-final-smoke.log"
     },
     {
       "id": "history-example",
       "command": "cd packages/access && node examples/history-decision.mjs",
       "exitCode": 0,
       "evidence": "docs/handoffs/access.md",
-      "localLog": "artifacts/access/addendum-history-example.log"
+      "localLog": "artifacts/access/late-history.log"
     },
     {
       "id": "reviewed-handoff",
       "command": "npm --prefix packages/access run check:handoff",
       "exitCode": 0,
       "evidence": "docs/handoffs/access.md",
-      "localLog": "artifacts/access/reviewed-handoff-green.log"
+      "localLog": "artifacts/access/late-handoff.log"
     },
     {
       "id": "lane-gate",
       "command": "npm run check:lane -- access",
       "exitCode": 0,
       "evidence": "docs/handoffs/access.md",
-      "localLog": "artifacts/access/addendum-lane-gate.log"
+      "localLog": "artifacts/access/late-lane-gate.log"
     }
   ],
   "acceptance": [
@@ -119,8 +119,8 @@
     }
   ],
   "testResults": {
-    "tests": 24,
-    "passed": 24,
+    "tests": 27,
+    "passed": 27,
     "failed": 0,
     "skipped": 0
   },
@@ -170,7 +170,7 @@
   ],
   "contractRequests": [],
   "evidencePrivacy": "Only synthetic data in local ignored logs/screenshots/download; no bearer or payment proof in compact handoff. Export contains a synthetic private request; keep ignored.",
-  "documentationRevisionNote": "Handoff-only commit follows exact e3a0b55eeddc5525437235d242df7752b9db6051 checks; package/contracts bytes unchanged. Reviewed required acceptance and gate IDs covered with portable committed evidence.",
+  "documentationRevisionNote": "Handoff-only commit follows tested repair revision 4e15d0c4abc501a3cdb235c787352bba7023ba01; earlier readiness superseded by confirmed late security-review defects and repairs.",
   "reviewTag": {
     "name": "handoff-review-v1",
     "revision": "74ae66f6bd895b13a9ce9de083357c0fcb88e564",
@@ -237,5 +237,21 @@
       "evidence": "docs/handoffs/access.md",
       "details": "Permission-restricted CLI files; memory-only browser capability; no bearer in URL/authorizer; no private normal SDK logs; no wallet/Graph secrets; hash/association/signature-validated private export/import; corruption/pin mismatch rejection; evidence deletion yields unavailable assessment; integrity is not execution verification."
     }
-  ]
+  ],
+  "lateReview": {
+    "status": "repaired",
+    "priorCodeRevision": "e3a0b55eeddc5525437235d242df7752b9db6051",
+    "evidence": "docs/handoffs/access.md",
+    "redLog": "artifacts/access/late-review-red.log",
+    "defects": [
+      "Malformed potentially-spent callback output allowed second authorization",
+      "Evidence get implicitly trusted same-server key retrieval",
+      "Expired CLI session prevented explicit reconnect"
+    ],
+    "fixes": [
+      "Mark callback returned before header validation so errors become uncertain",
+      "Require publicKeyJwk/providerId/keyId pins; wire explicit pins through CLI/viewer",
+      "Explicit revoke discards local capability on401; revoked false, localForgotten true"
+    ]
+  }
 }

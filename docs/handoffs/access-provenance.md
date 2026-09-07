@@ -62,3 +62,14 @@ injection refusal, plus an owned wrapper executing the tagged handoff validator 
 No shared scripts were copied or edited; no dependency or live protocol implementation changed.
 Migrated all six required acceptance IDs and four required external gate IDs to portable committed
 safe evidence. Additional excluded runtime/replay gates remain explicitly inapplicable, not qualified.
+
+
+## Delayed review correction
+
+The bounded read-only review returned after the initial completion report with three concrete
+blocking defects. Parent independently reproduced all three before patching production code;
+retained RED/GREEN and reran exact-revision check/smoke/lane/reviewed-handoff validation.
+Corrections cover payment callback uncertainty, mandatory out-of-band export pins, and expired
+CLI credential cleanup. Parent authored implementation/test changes with AI assistance under the
+configured sole human git identity; no new agents, dependencies or shared contract edits.
+Previous completion judgment was premature and is explicitly superseded in access.md/access.json.

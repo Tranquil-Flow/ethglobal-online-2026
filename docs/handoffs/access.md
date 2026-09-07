@@ -1,3 +1,8 @@
+> **Superseding late-review verification:** tested repair revision `4e15d0c4abc501a3cdb235c787352bba7023ba01`.
+> The earlier 24-test local-ready judgment below was premature: a delayed review identified
+> three reproducible defects. All were repaired with behavioral RED/GREEN coverage. Current
+> results are 27 passing tests; the final section is authoritative for revision and outputs.
+
 # Access handoff — local-ready, not live-qualified
 
 ## Candidate and scope
@@ -5,7 +10,7 @@
 - Branch: `lane/access`; worktree `/Users/evinova-self/Projects/ethglobal-online-2026-access`.
 - Bootstrap anchor: `13f5e295bdeb833b9977a84edc97b2ee64147579` (`bootstrap-v1`), verified ancestor;
   initial HEAD equalled that anchor and working tree was clean.
-- Tested implementation: `e3a0b55eeddc5525437235d242df7752b9db6051` (original implementation `39b31fb`, additive review tests/wrapper `e3a0b55`).
+- Tested implementation: `4e15d0c4abc501a3cdb235c787352bba7023ba01` (original implementation `39b31fb`, additive review tests/wrapper `e3a0b55`).
 - Implementation commit contains only `packages/access/`. This handoff/provenance/JSON are a later
   documentation-only commit. No implementation or shared-contract delta is permitted from that revision.
 - Status: **local_ready**. No unresolved shared-contract request. No other lane/worktree/runtime
@@ -258,3 +263,111 @@ This gate reran all 24 access tests and bounded smokes against the recorded impl
 its full local output is `artifacts/access/addendum-lane-gate.log`. The original checkout gate
 is unchanged; the additional tagged validator was executed separately to enforce the review matrix.
 The later handoff-only commit changes no tested package or contracts bytes.
+
+
+## Late review — adjudication and corrected verification
+
+The delayed read-only review was checked against the current source, not accepted on authority.
+`late-review-red.log` records **three intended behavioral failures** before production edits:
+malformed callback retry returned INVALID_PAYMENT_HEADERS again, unpinned evidence unexpectedly
+succeeded, and explicit expired-session revoke returned CAPABILITY_EXPIRED. Other four focused
+cases passed. A temporary redacted-read reconstruction syntax error was corrected before this
+behavioral RED run; it is not counted as a behavioral failure.
+
+- Callback resolution now marks the payment attempt potentially spent before output validation;
+  malformed headers leave SUBMISSION_UNCERTAIN and callback invocation count stays one.
+- `getEvidence` no longer retrieves a signing key as a trust fallback. All three pins
+  (publicKeyJwk/providerId/keyId) are mandatory; absent and incomplete pins reject, incorrect
+  provider rejects. Positive SDK/CLI/browser paths inject the test fixture's public key directly
+  from trusted local setup, not from the provider endpoint. CLI `export --pins-file` uses a 0600
+  file; viewer trusted host/launcher `--pins-file` sends only whitelisted public key fields.
+- Explicit CLI revoke on authenticated 401 deletes the stale local capability and returns
+  revoked:false/localForgotten:true. It does not claim server revocation or reconnect automatically.
+  The real child-process regression proves a subsequent explicit connect succeeds.
+
+Implementation revision: `4e15d0c4abc501a3cdb235c787352bba7023ba01` (sole-human-author local commit).
+`late-review-green.log` retains focused success; final full commands below were executed after
+that implementation commit. Node20.19.5 / npm10.8.2. External gates and scope remain unchanged.
+
+### Current portable successful command evidence
+
+**access-check**, `npm --prefix packages/access run check`, exit 0:
+```text
+ok 1 - malformed JSON and schema input fail closed, public reads need no bearer
+ok 2 - no automatic double spend on replay, concurrent submission, expiry or ambiguous payment
+ok 3 - payment challenge price or destination tampering never invokes wallet callback
+ok 4 - expired quote, wrong currency, redirects and sensitive URLs are refused
+ok 5 - receipt corruption, bundle associations and pinned key/provider mismatch reject export/import
+ok 6 - Graph-derived freshness changes a budget/profile decision; absent quote or history samples never mean verified
+ok 7 - SSE expired cursor is explicit, breaking watch does not cancel, token bound one is respected
+ok 8 - cancelled paid job has no successful receipt, cross-session reads are private
+ok 9 - CLI exposes complete operations over real HTTP with private 0600 session storage
+ok 10 - CLI refuses payment without explicit bounded authorization
+ok 11 - explicit revoke forgets expired local capability and permits explicit reconnect
+ok 12 - review addendum: original session bearer and nonpayment response headers never reach paymentAuthorizer
+ok 13 - review addendum: authorizer cannot override session or add cookie headers on paid retry
+ok 14 - malformed potentially-spent authorizer output must never authorize twice
+ok 15 - evidence retrieval requires out-of-band complete provider and key pins
+ok 16 - MCP stdio tools use SDK; reads decide on compatibility, budget and fresh history
+ok 17 - connects explicitly and revokes the in-memory session
+ok 18 - validates request and response DTOs without exposing private values
+ok 19 - round trips a protocol-native 402 only through explicit bounded authorization
+ok 20 - rejects over-budget quotes before payment callback and never automatically replays after payment transport loss
+ok 21 - retries bounded safe reads on 429 but surfaces expired auth
+ok 22 - idempotency conflict, cancellation, evidence, assessment, history and receipt integrity
+ok 23 - SSE resumes after interruption with Last-Event-ID and does not duplicate deltas
+ok 24 - AbortSignal and deadline stop requests
+ok 25 - real browser cancellation preserves separate paid failure, expiry never repays
+ok 26 - viewer real browser covers keyboard, mobile, states, XSS, streaming and evidence download
+ok 27 - viewer shows empty, loading, unavailable, error and cancelled paths accessibly
+# tests 27
+# pass 27
+# fail 0
+# skipped 0
+```
+
+**access-smoke**, `npm --prefix packages/access run smoke`, exit 0:
+```text
+{"mode":"development","http":true,"events":5,"paymentAuthorizations":1,"integrityChecked":true,"executionVerified":false}
+ok 1 - CLI exposes complete operations over real HTTP with private 0600 session storage
+ok 2 - CLI refuses payment without explicit bounded authorization
+ok 3 - explicit revoke forgets expired local capability and permits explicit reconnect
+# tests 3
+# pass 3
+# fail 0
+# skipped 0
+ok 1 - MCP stdio tools use SDK; reads decide on compatibility, budget and fresh history
+# tests 1
+# pass 1
+# fail 0
+# skipped 0
+ok 1 - real browser cancellation preserves separate paid failure, expiry never repays
+ok 2 - viewer real browser covers keyboard, mobile, states, XSS, streaming and evidence download
+ok 3 - viewer shows empty, loading, unavailable, error and cancelled paths accessibly
+# tests 3
+# pass 3
+# fail 0
+# skipped 0
+SDK/CLI/MCP/Chromium loopback smoke passed; fixture only, no live qualification.
+```
+
+**history-example**, `cd packages/access && node examples/history-decision.mjs`, exit 0:
+```text
+{"mode":"development","source":"synthetic Graph-derived History DTO, not actual Graph","staleHistory":false,"selected":"safe.eth","decision":{"compatible":true,"historyFreshness":"fresh","sampleStatus":"unknown","historyPolicy":"fresh index required; missing samples unknown; no trust score","budgetChecked":true,"paidWriteAuthorized":false},"withoutQuote":null}
+{"mode":"development","source":"synthetic Graph-derived History DTO, not actual Graph","staleHistory":true,"selected":null,"decision":{"compatible":true,"historyFreshness":"stale","sampleStatus":"unknown","historyPolicy":"fresh index required; missing samples unknown; no trust score","budgetChecked":true,"paidWriteAuthorized":false},"withoutQuote":null}
+
+```
+
+
+**reviewed-handoff**, `npm --prefix packages/access run check:handoff`, exit 0:
+```text
+Reviewed handoff passed: 6 required acceptance IDs, 4 required external gates; shared files unchanged.
+```
+**lane-gate**, `npm run check:lane -- access`, exit 0:
+```text
+SDK/CLI/MCP/Chromium loopback smoke passed; fixture only, no live qualification.
+access: local gate passed. Live qualification and combined integration are separate.
+```
+Raw current logs: `artifacts/access/late-handoff.log`, `late-lane-gate.log`, `late-final-check.log`,
+`late-final-smoke.log`, `late-history.log`. All required acceptance IDs retain command coverage.
+Current local-ready replaces the premature earlier judgment; no external gate was promoted.
