@@ -9,6 +9,7 @@ import {localEvm} from '../test/local-evm.mjs';
 import {receipt,event,providerId} from '../test/fixtures.mjs';
 import {createEventSink,createPublicationStore,createGraphClient,queryProviderHistory} from '../src/index.mjs';
 import {validateManifest} from '../src/manifest.mjs';
+import {RECEIPT_QUERY} from '../src/history.mjs';
 
 // Opt-in bounded local ingestion, no public endpoint/deploy branch. Requires existing Docker daemon/images.
 const root=new URL('../',import.meta.url).pathname;
@@ -66,7 +67,9 @@ try{
  const readded=await sink.publish({event,idempotencyKey:'assessment'});assert.equal(readded.status,'confirmed');assert.equal(readded.transactionRef,a.transactionRef);
  report=await waitFor(async()=>{const h=await queryProviderHistory({config:historyConfig,client,providerId});return h.history.freshness==='fresh'&&h.history.observations.length===1&&h.provenance[0].blockNumber>replacement.number?h:null;},'Graph reorg reindex');
  assert.equal((await client.query({query:'{ providerCounts { assessmentCount } }'})).providerCounts[0].assessmentCount,'1');
- console.log(JSON.stringify({graphReorgRollback:true,graphReindexDuplicateSafe:true,mode:'development',graphNode:'v0.45.0 amd64 (local Docker emulation)',ipfs:'v0.17.0 offline',postgres:'16',graphNodeIngestion:true,liveQualified:false,deploymentId:meta.deployment,receiptTransaction:r.transactionRef,assessmentTransaction:a.transactionRef,...report},null,2));
+ const receiptView=await client.query({query:RECEIPT_QUERY,variables:{receipt:'0x'+receipt.receiptDigest.slice(7),block:report.history.indexedBlockHash}});
+ assert.equal(receiptView.receiptClaims.length,1);assert.equal(receiptView.assessmentClaims.length,1);assert.equal(receiptView.assessmentClaims[0].objectDigest,'0x'+event.objectDigest.slice(7));
+ console.log(JSON.stringify({receiptAssessmentQueryVerified:true,graphReorgRollback:true,graphReindexDuplicateSafe:true,mode:'development',graphNode:'v0.45.0 amd64 (local Docker emulation)',ipfs:'v0.17.0 offline',postgres:'16',graphNodeIngestion:true,liveQualified:false,deploymentId:meta.deployment,receiptTransaction:r.transactionRef,assessmentTransaction:a.transactionRef,...report},null,2));
 }catch(error){console.error(error.code||error.message);process.exitCode=1;}
 finally{
  await sink?.close();
