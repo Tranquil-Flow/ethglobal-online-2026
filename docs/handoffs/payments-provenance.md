@@ -10,6 +10,15 @@ these tests is claimed. Local Git commits use the repository's existing sole
 human identity, Tranquil-Flow; this metadata does not misrepresent AI assistance.
 No co-author or agent-author trailers. No recursive agents were used.
 
+## Review addendum
+
+The user supplied the immutable `handoff-review-v1` correction. Moonsong added
+readonly injected header-policy data and production-boundary tests, then updated
+the exact reviewed acceptance/external-gate matrix. No new dependencies or shared
+source changes. The tagged handoff validator was executed read-only in memory;
+no shared scripts were copied, merged or changed. Failed tests and a corrected
+raw-HTTP test false positive are retained and disclosed in the handoff.
+
 ## Reuse
 
 Imported npm libraries, not vendored implementation copies:

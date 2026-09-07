@@ -1,161 +1,275 @@
-# Payments lane handoff — local_ready
+# Payments handoff — reviewed local_ready
 
-Branch: `lane/payments`. Tested code revision: `a0ead5c969d19c42815429fe446ac416ef5e7e43`.
-Runtime implementation commit: `3ff27f3ac72dd3db528b501ed353727c838efff0`;
-`a0ead5c` corrects the optional HCS README invocation. Final tests/check/smoke
-were rerun at the full revision above. This handoff is committed separately;
-only the four owned handoff documents may differ afterward. No combined
-integration, live payment, deployment, sponsor eligibility or inference claim.
+Branch `lane/payments`; tested code revision **`26acc30a6c369c64edde809b751d320300b8b31c`**.
+Reviewed contract: `handoff-review-v1` (`74ae66f6bd895b13a9ce9de083357c0fcb88e564`).
+Existing implementation/history preserved; no pull, merge, reset or shared-file
+changes. Runtime correction committed first; final commands below ran on that
+exact revision. Later handoff-only commits do not alter package/contracts code.
 
-## Observed verification
+## Result and runtime
 
-- Payments: **35/35 passing**, 0 failures, 0 skipped.
-- Shared contracts: **22/22 passing**.
-- ESLint and syntax checks: passed. Plain ESM JS; no applicable TS/build output.
-- Actual bounded smoke: child-process HTTP, SQLite restart, two-process unique
-  reservation, SDK signing/v2 serialization, timeout reconciliation and worker failure.
-- Smoke recorded 4 **simulated** settlements across independent paid operations;
-  duplicate/restart cases add no second charge. 0 live payments,
-  0 inference runs; owned child processes stopped.
-- Locked dependency audit: **0 reported vulnerabilities**. Audit is not a security certification.
-- Live-payment preflight and optional HCS dry-run passed, both **broadcast:false**.
-  Native HCS serialization was exercised, not consensus submission.
+**40/40 payments tests passed**, no failures or skips.
+**22/22 contract tests passed**. Syntax and ESLint
+passed. Locked dependency audit reports **0 vulnerabilities**; this
+is not a security certification. Native SQLite, actual loopback HTTP and separate
+service processes were exercised. SDK transactions were serialized and payer
+signatures verified; ledger balances/consensus/mirror are explicitly synthetic.
+No live payment, inference, deployment or combined application claim.
 
-All commands below run from the payments worktree, with Node **20.19.5** and
-npm **10.8.2**. The existing Node binary directory was selected in the command's
-PATH (full path in JSON); no global runtime or another checkout was changed.
-Package `.nvmrc`/engine pin and README explain clean setup. Selecting a different
-Node ABI requires selecting the supported runtime and reinstalling this package,
-not weakening tests. `25-contracts-ci.log` and `26-payments-ci.log` retain actual
-clean installation. No shared source/manifests or sibling runtime were modified.
+Runtime: Node **20.19.5**, npm **10.8.2**, macOS arm64. Each command selected the
+existing Node binary directory in PATH:
+`/Users/evinova-self/Projects/cheapDisperse-evidence-20260907/node-v20.19.5-darwin-arm64/bin`.
+No other checkout/global runtime was modified. Package `.nvmrc`, README and lockfile
+document setup. Clean contracts/package `npm ci` receipts remain in logs 25/26.
+Native addon installation and execution must use the same supported Node ABI.
 
-| Command | Exit | Safe evidence |
-|---|---:|---|
-| `npm --prefix packages/payments test` | 0 | `packages/payments/test-results/41-final-test.log` |
-| `npm --prefix packages/payments run check` | 0 | `packages/payments/test-results/42-final-check.log` |
-| `npm --prefix packages/payments run smoke` | 0 | `packages/payments/test-results/43-final-smoke.log` |
-| `npm --prefix packages/payments audit --json` | 0 | `packages/payments/test-results/44-final-audit.json` |
-| `npm --prefix packages/payments run smoke:live -- --network hedera:testnet --budget 1000` | 0 | `packages/payments/test-results/45-final-live-dry-run.log` |
-| `npm --prefix packages/payments run audit:hcs -- --network hedera:testnet --mode development --consent --topic 0.0.1234 --digest sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` | 0 | `packages/payments/test-results/46-final-hcs-dry-run.log` |
-| `npm --prefix packages/contracts run check` | 0 | `packages/payments/test-results/47-final-contracts-check.log` |
+## Portable successful command evidence
 
-**Final root gate passed:** `npm run check:lane -- payments`, exit **0**.
-Receipt: `packages/payments/test-results/48-check-lane.log`. Observed final line:
-`payments: local gate passed. Live qualification and combined integration are separate.`
-JSON records its log hash and the exact code revision.
-Logs live under `packages/payments/test-results/` (ignored but retained locally);
-checked-in test sources and handoff metadata provide reproducible acceptance evidence.
+All commands ran from this payments worktree. The evidence file for machine
+records is **this committed document**, not an ignored-only artifact. Raw logs
+are retained locally with SHA-256 in JSON for deeper inspection. Summaries below
+are actual captured output; historical failures are explicitly separate.
 
-## Owned acceptance mapping
+| ID | Command | Exit | Retained raw output |
+|---|---|---:|---|
+| `payments-test` | `npm --prefix packages/payments test` | 0 | `packages/payments/test-results/59-reviewed-test.log` |
+| `payments-check` | `npm --prefix packages/payments run check` | 0 | `packages/payments/test-results/60-reviewed-check.log` |
+| `payments-smoke` | `npm --prefix packages/payments run smoke` | 0 | `packages/payments/test-results/61-reviewed-smoke.log` |
+| `payments-audit` | `npm --prefix packages/payments audit --json` | 0 | `packages/payments/test-results/62-reviewed-audit.json` |
+| `live-dry-run` | `npm --prefix packages/payments run smoke:live -- --network hedera:testnet --budget 1000` | 0 | `packages/payments/test-results/63-reviewed-live-dry-run.log` |
+| `hcs-dry-run` | `npm --prefix packages/payments run audit:hcs -- --network hedera:testnet --mode development --consent --topic 0.0.1234 --digest sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` | 0 | `packages/payments/test-results/64-reviewed-hcs-dry-run.log` |
+| `contracts-check` | `npm --prefix packages/contracts run check` | 0 | `packages/payments/test-results/65-reviewed-contracts.log` |
 
-Every entry means verified **locally** using the declared boundary, not live-chain
-qualification. File paths in a cell are relative to `packages/payments` after
-the first prefix; log names are under its `test-results/` directory.
+Captured test/check summary (both runs):
+```text
+# tests 40
+# pass 40
+# fail 0
+# skipped 0
+```
 
-| Case | Concrete outcome | Reproducible evidence |
-|---|---|---|
-| protocol | Actual x402 v2 exact Hedera serialization and SDK payer verification; documented native pins | `packages/payments/test/guards.test.mjs; test/payments.test.mjs; docs/PROTOCOL.md`; `42-final-check.log` |
-| quote | Server-derived BigInt bounded quote; retained authority; provider/profile/request/principal/mode and expiry binding | `packages/payments/test/payments.test.mjs`; `42-final-check.log` |
-| gated-service | Actual child-process gated synthetic service, not inference; SDK signatures and local HTTP | `packages/payments/scripts/smoke.mjs`; `43-final-smoke.log` |
-| replay | Duplicate/replayed proofs return same payment or conflict; cannot transfer to another principal or quote | `packages/payments/test/payments.test.mjs; test/guards.test.mjs`; `42-final-check.log` |
-| modified-forged | Changed receiver/asset/network/amount/request/transaction body; wrong signer; forged headers/challenge/settlement response rejected | `packages/payments/test/payments.test.mjs; test/client.test.mjs; test/guards.test.mjs`; `42-final-check.log` |
-| expired-outage | Expired quotes and stale signed transactions; real HTTP stale-quote and facilitator outage reject execution | `packages/payments/test/payments.test.mjs; test/client.test.mjs; test/guards.test.mjs`; `42-final-check.log` |
-| concurrency | Two actual service processes share unique SQLite reservation; simultaneous duplicate proofs settle once; late response cannot overwrite paid_but_failed | `packages/payments/scripts/smoke.mjs; test/payments.test.mjs`; `43-final-smoke.log` |
-| ambiguity-restart | Disconnect after simulated settlement; new process reconciles retained ID without resubmission; unknown/forged result stays pending | `packages/payments/scripts/smoke.mjs; test/payments.test.mjs`; `43-final-smoke.log` |
-| budget | Per-request and cumulative reservations; concurrent client spending cap; integer amounts beyond IEEE-754; quote storage bounds | `packages/payments/test/payments.test.mjs; test/client.test.mjs; test/audit.test.mjs`; `42-final-check.log` |
-| paid-but-failed-refund | Worker failure/cancellation after payment persists paid_but_failed; idempotent job mapping; operator approval and mirror-confirmed refund states; no sending | `packages/payments/test/payments.test.mjs; test/client.test.mjs; scripts/smoke.mjs`; `42-final-check.log` |
-| bounded-client | One native challenge, explicit wallet approval, one paid retry; wallet denial/deadline/budget guards; noncustodial SDK signing callback | `packages/payments/test/client.test.mjs; test/guards.test.mjs`; `42-final-check.log` |
-| privacy | No HTTP-selected principal, no durable raw prompt/nonce/proof, typed safe failures, explicit dev/live guards, bounded body/response/abort/redirect behavior | `packages/payments/test/client.test.mjs; test/payments.test.mjs; test/guards.test.mjs`; `42-final-check.log` |
-| operator-scripts | Live preflight does not import wallet; optional native HCS serialization with consent and distinct claims; external execution remains unverified | `packages/payments/scripts/live-smoke.mjs; scripts/hcs-audit.mjs; test/audit.test.mjs; test/guards.test.mjs`; `46-final-hcs-dry-run.log` |
+Captured process smoke output:
+```json
+{
+  "mode": "development",
+  "realBoundaries": [
+    "child-process HTTP service",
+    "SQLite restart",
+    "two-process unique reservation",
+    "SDK signing and v2 serialization"
+  ],
+  "scenarios": [
+    "gated synthetic compute",
+    "replay after process restart",
+    "simultaneous duplicate proof",
+    "ambiguous settlement restart reconciliation",
+    "worker failure after settlement"
+  ],
+  "simulatedFacilitatorVerifyCalls": 4,
+  "simulatedSettlementCalls": 4,
+  "mirrorHttpCalls": 5,
+  "livePayments": 0,
+  "inferenceRuns": 0,
+  "childrenStopped": true
+}
+```
 
-## Integration contract and configuration
+Captured dependency audit vulnerability summary:
+```json
+{
+  "info": 0,
+  "low": 0,
+  "moderate": 0,
+  "high": 0,
+  "critical": 0,
+  "total": 0
+}
+```
 
-Import `createPayments` from `packages/payments/src/index.mjs`. Constructor:
-`createPayments({config,clock,store})`; required port methods unchanged.
-Exports also include `createSqliteStore`, the two payment-header allowlists,
-`createBoundedConsumer`, `createHederaPaymentAuthorizer`, `createBoundHederaSigner`,
-`createSyntheticService` and operator-only `createPaymentAdministration`.
-See the package README for the complete config and injected store/wallet contracts.
-It requires explicit development/live mode, network/asset, receiver/fee payer,
-provider/profile catalog, durable DB, server-derived price/budget, bounded timeout
-and fixture/live endpoints. There is no implicit wallet or live adapter.
+Captured live preflight (no wallet import or broadcast):
+```json
+{
+  "mode": "live-preflight-only",
+  "network": "hedera:testnet",
+  "asset": "0.0.0",
+  "facilitator": "https://api.testnet.blocky402.com",
+  "maxAmountBaseUnits": "1000",
+  "broadcast": false,
+  "walletLoaded": false,
+  "liveQualified": false
+}
+```
 
-Pinned protocol: x402 **v2 exact**, `hedera:testnet`, native HBAR `0.0.0`,
-`https://api.testnet.blocky402.com`, x402 core/Hedera **2.25.0**, native SDK **2.85.0**.
-Read-only `/supported` and primary source hashes are retained in package docs.
-Native request header: `payment-signature`; native response headers:
-`payment-required`, `payment-response`. Core must relay these bytes and native
-402 JSON unchanged, derive principal from authentication, enforce its own durable
-job uniqueness, and never execute on pending/error. This local `/quote` and
-`/operation` demonstration does not replace the shared `/v1/*` API.
+Captured optional HCS native serialization (no broadcast):
+```json
+{
+  "mode": "development",
+  "network": "hedera:testnet",
+  "messageBytes": 153,
+  "nativeSerializedBytes": 183,
+  "broadcast": false,
+  "integrity": "not_verified",
+  "execution": "not_verified",
+  "payment": "not_verified",
+  "assessment": "not_performed"
+}
+```
 
-Price is server-derived BigInt. The quote is authenticated by retained authority
-and opaque ID, not a fabricated signature format. Every request field is hashed;
-quote/request/principal and native memo bind the paid attempt. Database uniqueness
-and durable pre-submission intent prevent payment resubmission after ambiguity.
-A matching independent mirror transfer is mandatory even after facilitator success.
-Mirror HTTPS authenticity is trusted; no cryptographic inclusion-proof claim.
+Captured contracts check: `22 passed; 0 failed;
+0 skipped`. Root and reviewed-matrix gate receipts are added
+after their successful execution below.
 
-## Payment/worker/refund and privacy policy
+## Required reviewed acceptance matrix
 
-Payment and execution are separate. A paid worker failure/cancellation is durable
-`paid_but_failed`, never inferred refund/success. Operator approval records
-`refund_pending`; independently confirmed matching reverse transfer records
-`refunded`. This package does **not** send a refund. Unknown settlement remains
-pending and budget-reserved across restart; retry the same attempt, do not clear
-its DB or create a replacement purchase. Client total reservations also remain
-conservative after wallet cancellation or ambiguity. Core owns application jobs,
-sessions/authorization, receipt signing, retention and cross-lane composition.
+These are exactly the payments acceptance IDs from the reviewed tag. Every
+`acceptanceCases.commandIds` references an actual successful command above.
 
-Storage contains scoped digests, terms and transaction/job references, not raw
-prompts, private nonces, replayable proof headers or wallet keys. On-chain metadata
-is a digest-only bound memo. Private entropy must remain private; do not publish
-raw nonce/request or interpret a digest as proof of output correctness. The demo
-returns deterministic byte count plus separate payment/execution/integrity/
-assessment fields; no inference receipt or verified assessment is manufactured.
+| ID | Detailed evidence and boundary |
+|---|---|
+| real-sdk-protocol | `payments-check`, `payments-smoke`: native x402 v2 schemas/headers, Hedera TransferTransaction construction/serialization and signature verification, real HTTP gated service. `live-dry-run`, `hcs-dry-run` are explicitly non-broadcast operator preflight/native construction, not live proof. Public-source/version evidence in package docs. |
+| header-policy | `test/header-policy.test.mjs`, `payments-check`: deeply frozen port property and arrays; startup rejects credential, cookie, host, hop-by-hop and malformed policies; positive raw-HTTP control reaches injected port; duplicate/oversized proofs fail before it; unknown/secret response headers fail before any fields are forwarded; native SDK challenge bytes unchanged; bearer/cookie never passed to payment port or wallet. `payments-smoke` also exercises the real policy-consuming local service. |
+| request-budget-binding | `payments-check`: server-retained authority; server-derived BigInt price; provider/profile/request/principal/nonce/mode/consent binding, expiry and stale signed transactions; wrong receiver/asset/network/amount, wrong signer, forged headers/challenge/response and cross-session/quote proof rejected. Single/cumulative/concurrent client reservations, huge integer amounts and quote storage caps; wallet denial/deadline, safe errors and privacy canaries. |
+| concurrent-replay | `payments-check`, `payments-smoke`: duplicate/replayed proof and changed idempotency conflict; actual two-process SQLite unique reservation; one settlement per attempt; durable job/payment mapping and idempotent callbacks; late settlement response cannot overwrite paid-but-failed. |
+| settlement-recovery | `payments-check`, `payments-smoke`: disconnect after simulated settlement, actual process restart and independent-mirror-shaped reconciliation of retained transaction ID with no resubmission. Unknown/forged settlement remains pending; facilitator outage/stale quote via actual HTTP does not execute/settle. Abort/timeout/budget safeguards remain fail-closed. |
+| paid-but-failed | `payments-check`, `payments-smoke`: worker failure/cancellation after settlement persists paid_but_failed, separately from execution. Operator approval records refund_pending; unique matching reverse-transfer mirror fixture records refunded; no automatic refund/payment sending. Conflicting job outcomes are rejected. |
 
-## Retained failures and adjudication
+Complete observed test case names (not merely one happy path per ID):
+```text
+mirror JSON preserves base units larger than IEEE-754 exact integer range
+optional HCS audit is consented digest-only native SDK construction; never broadcasts by default
+actual gated HTTP service: unauthorized cannot quote or execute; bounded consumer gets synthetic compute after payment
+HTTP boundary rejects forged headers, malformed bodies, private principal injection and excessive input
+forged native challenge and an unresponsive wallet cannot trigger payment
+consumer rejects a settlement response naming another transaction
+HTTP stale quote and facilitator outage refuse execution without settlement
+consumer refuses over-budget and mismatched quote without wallet callback
+consumer reserves total budget before awaiting wallet; no concurrent overspend
+wallet denial does not send payment or retry purchasing
+HTTP worker failure after settlement returns paid_but_failed without refund
+refund operator approval and independently confirmed reverse transfer only; no sending
+bound noncustodial SDK authorizer constructs and cryptographically signs real TransferTransaction bytes offline
+wallet authorizer refuses a different displayed quote before signing
+proof from another quote/session and transaction-body receiver tampering are rejected
+wrong signer is rejected by actual SDK facilitator verification; no settlement
+stale signed transaction is rejected even if its quote is fresh
+live/default mode, network and database relabeling guards
+bounded transport rejects redirects, oversized bodies, malformed JSON and stalled responses
+operator live smoke dry-run works without wallet import; execution needs explicit network/budget/approval
+HTTP rejects duplicate or oversized allowed proof bytes before calling the injected port
+PaymentsPort publishes deeply readonly native x402 header policy
+service rejects malicious injected policies at startup before any HTTP work
+real HTTP relay preserves SDK challenge bytes and never copies bearer/cookie to payments or wallet
+real HTTP relay refuses unknown or secret payment response fields before forwarding anything
+late settlement response never reauthorizes a payment whose worker already failed
+quote storage limits and retained server authority
+unexpected durable-store faults are safe typed errors
+cancelled paid worker has a durable paid_but_failed terminal result
+server-derived bounded Quote and authentic SDK v2 challenge
+settlement gate, idempotent replay, durable restart, payment/job mapping
+cross-principal, modified request, forged headers and changed payment terms rejected before settlement
+expired quote and unsupported profile fail before payment
+duplicate simultaneous proofs settle once; alternate idempotency key conflicts
+timeout after settlement: pending, restart reconciles without paying again
+forged facilitator success never authorizes; unknown remains pending after restart
+facilitator outage never executes/settles and error contains no private payload
+BigInt per-request and cumulative reserved budget enforcement
+failure or cancellation after settlement is paid_but_failed, never an automatic refund
+pre-aborted calls have no financial side effects; database contains no prompts, nonces or proofs
+```
 
-- Initial TDD reds: missing port/client/operator/HCS behavior; then regression
-  reds for late settlement terminal-state overwrite, display-quote mismatch,
-  quote storage bounds, typed storage faults and mismatched settlement response.
-- Early timeout and SQL column/bind mismatch: retained, corrected locally;
-  final complete suite and real persistence/restart smoke pass.
-- First two-process smoke exposed a non-atomic same-attempt reservation race;
-  repaired by reusing the matching reservation inside an immediate transaction.
-- Dependency advisories: patched with package-local version overrides and ESLint
-  update, then actual serialization/verification tests and full audit rerun.
-- Node 25 loading a Node-20-built SQLite addon: setup/ABI failure, not product RED.
-  Consistent Node 20.19.5 plus clean `npm ci` repaired it without global changes.
-- Expanded large-value settlement found **fixture** Number rounding; fixture now
-  preserves BigInt just as the actual mirror reader does. No oracle weakened.
-- HCS README command omitted required network/consent flags and described the
-  wrong submit flag/adapter. Corrected docs, retained the failed invocation and
-  reran the exact documented dry-run command successfully.
-- Blocky402 networks-page extraction/public repository lookup failed; native
-  scheme, installed SDK, quickstart and read-only `/supported` resolved pins.
+## Factory/header-policy integration
 
-Exact filenames, classifications and hashes are in `payments.json`. Failed and
-historical passing runs are not substituted for the final revision's receipts.
-No required test was removed/skipped to get green. AI/reuse/license disclosure is
-in `payments-provenance.md`; no independent human code review is asserted.
+Import `createPayments` from `packages/payments/src/index.mjs`.
+`createPayments({config,clock,store})` implements the unchanged async methods
+quote/authorize/recordExecutionOutcome/getPayment and synchronous close, plus:
 
-## Remaining external gates — not done
+```js
+port.headerPolicy // deeply readonly
+// {request:['payment-signature'],response:['payment-required','payment-response']}
+```
 
-1. **Live Blocky402 request:** user/operator must approve funded testnet wallet,
-   exact budget, receiver and wallet/service adapter; observe real consumed service
-   plus independently confirmed transaction. No credential search or broadcast occurred.
-2. **Live refund, if needed:** separately approved reverse transfer and mirror
-   evidence. Local synthetic refund-state tests are not a real refund.
-3. **Optional HCS:** provisioned topic, consent, wallet/funding/custom-fee budget and
-   actual consensus receipt. Native dry-run is not publication.
-4. **Combined application:** integration owner merges reviewed lane work and
-   exercises actual core/access/discovery/history composition; not claimed here.
-5. **Release/sponsor:** human license selection, eligibility, visibility/push,
-   public deployment/demo/submission approval remain outstanding.
-6. **Execution/assessment:** Mycelium, Gas Killer, physical inference and replay
-   qualification are separately authorized future scopes, never inferred here.
+Core obtains that property **through the injected port**, not a sibling runtime
+import. At startup validate names and reject authorization, cookie/set-cookie,
+host, proxy authorization and hop-by-hop fields. Copy only request-allowed bounded
+bytes, reject duplicates, and relay only response-allowed bytes. The lane-local
+service now enforces that same dependency-injection boundary and snapshots policy.
+Native 402 JSON/header bytes remain SDK-owned, not a custom Error DTO. Session
+bearers/cookies are not payment proof and must never reach facilitator/wallet.
 
-No unresolved shared-contract requests. No remaining independent payments-local
-implementation work is claimed blocked. The next external bottleneck is explicit
-wallet/funding/service authorization for the live paid-request qualification.
+Configuration, imports, store adapter, refund administration, bounded consumer and
+operator scripts are fully documented in `packages/payments/README.md`.
+Explicit mode, pinned provider/profile/accounts/network/endpoints, durable SQLite,
+server prices/budget/TTL and no implicit wallet/live adapter remain required.
+Protocol: x402 v2 exact; `hedera:testnet`; native HBAR asset `0.0.0`;
+Blocky402 `https://api.testnet.blocky402.com`; x402 SDKs 2.25.0; Hiero SDK 2.85.0.
+Read-only `/supported` and primary source hashes are recorded in package docs;
+capability discovery is not live qualification. No shared schema or route added.
+
+The standalone `/quote` and `/operation` service sells deterministic UTF-8 byte
+counting, **not inference**. It is not the shared application's `/v1/*` API.
+Core still owns session/auth/job idempotency, execution bounds and receipt signing.
+Only `authorized` with truthful settled state allows execution; pending/errors do
+not. The mirror is an independently configured HTTPS trust boundary, not a
+trustless inclusion proof. Retry the same durable attempt after ambiguity; never
+clear its database or repurchase automatically. Refund administration is explicitly
+operator-only and does not send funds. Budget reservations remain conservative.
+
+Storage retains scoped digests, exact terms and transaction/job references, not
+raw requests/nonces/bearers/replayable proof headers or wallet keys. Public bound
+memo is digest-only; private entropy stays private. Payment, integrity, execution,
+assessment and publication remain distinct claims. No inference/replay is inferred
+from payment status or a synthetic byte count.
+
+## Failure retention and review adjudication
+
+Original TDD/SQL-arity/late-response/concurrent-reservation/audit/ABI/fixture-precision
+and HCS documentation failures remain in JSON and retained logs. Final receipts
+supersede earlier code revisions without deleting failures or weakening guards.
+
+Addendum RED log `50-policy-red.log` showed missing port policy, startup rejection
+and safe response filtering; native challenge/bearer isolation initially passed as
+characterization. Log `54-header-bound-red.log` was a misleading passing HTTP test:
+missing Host let the parser reject before the intended seam. The corrected framed
+request and positive port-call control exposed oversized forwarding in log 55;
+then the request boundary guard was added. Final suite covers the actual seam.
+No required tests removed/skipped. A passing fixture is not live provider evidence.
+
+AI assistance, imported dependency/license metadata and human contribution limits
+remain disclosed in `payments-provenance.md`. No independent human review is claimed.
+No application license/publication authority was invented.
+
+## External gates — none qualified
+
+- **hedera-blocky402-live-payment: blocked** — No approval for funded testnet settlement or provisioned live wallet/service adapter. Local SDK/facilitator/mirror fixtures and read-only supported discovery are not live payment evidence.
+- **funded-wallet-approval: blocked** — Fresh user authorization, funded testnet wallet, receiver, explicit per-action cap and operator wallet callback are required. No credentials searched or funds spent.
+- **combined-app: blocked** — Integration owner must compose reviewed core/payments/access/discovery/indexing and exercise combined paths. This task owns only the payments package and handoffs.
+- **public-release: blocked** — Human license selection, sponsor/from-scratch eligibility, public visibility/push/deployment/demo/submission approval remain outstanding.
+- **live-refund: blocked** — A real refund requires a separately authorized reverse transfer and matching mirror evidence. Local refund state tests do not qualify it; package never sends refunds.
+- **optional-hcs: blocked** — Optional live HCS publication requires provisioned topic, consent, funded wallet, total/custom-fee budget approval and consensus receipt. Only native dry-run serialization was performed.
+- **mycelium-execution: inapplicable** — Explicitly excluded from this payments-local scope; no Mycelium changes, model runs or physical inference qualification.
+- **gaskiller-integration: inapplicable** — Explicitly excluded from this scope; no Gas Killer integration, changes or settlement performed.
+- **independent-replay: inapplicable** — Independent inference replay/assessment is a separately authorized future scope; payment idempotency/restart is not inference verification.
+
+No unresolved shared-contract requests. The reviewed port addition is authorized
+by the immutable addendum, implemented only within owned files. Combined owner
+must still compose and verify other lanes; this package does not claim that work.
+
+## Final root and reviewed-matrix receipts
+
+`lane-gate`: `npm run check:lane -- payments`, exit **0**, raw log 66:
+```text
+payments: local gate passed. Live qualification and combined integration are separate.
+```
+
+`reviewed-matrix`: exact invocation below, exit **0**, raw log 67. It loads the
+actual tagged validator and reviewed registry directly into memory; it does not
+copy scripts into or change this checkout. All required acceptance/gate IDs,
+command references and portable evidence paths passed the reviewed validator.
+
+```sh
+node --input-type=module -e 'import {execFileSync} from "node:child_process"; import {readFileSync} from "node:fs"; const show=p=>execFileSync("git",["show","handoff-review-v1:"+p],{encoding:"utf8"}); const {validateHandoff}=await import("data:text/javascript;base64,"+Buffer.from(show("scripts/validate-handoff.mjs")).toString("base64")); validateHandoff(JSON.parse(readFileSync("docs/handoffs/payments.json")),JSON.parse(show("docs/lanes.json")).payments); console.log("handoff-review-v1 payments matrix passed; validator loaded read-only in memory; shared checkout files unchanged.");'
+```
+
+```text
+handoff-review-v1 payments matrix passed; validator loaded read-only in memory; shared checkout files unchanged.
+```

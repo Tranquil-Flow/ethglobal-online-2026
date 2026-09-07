@@ -1,7 +1,9 @@
 # Payments shared-contract requests
 
-None. The frozen v1 PaymentsPort and shared DTOs cover this lane.
-Protocol-native 402 JSON/header bytes are returned through the existing port.
-Refund administration and the synthetic standalone service remain package-local;
-they do not add shared DTO fields or change the application HTTP API.
-Combined composition is integration-owner work, not a requested contract change.
+None unresolved. The user-approved `handoff-review-v1` addendum adds readonly
+`PaymentsPort.headerPolicy`; it is now implemented and locally exercised.
+The reviewed tag was read with git show, never merged/copied into shared files.
+Existing port methods, shared DTOs and application HTTP routes remain unchanged.
+Native 402 bytes use the existing challenge envelope. The synthetic local service
+and operator-only refund administration add no shared DTO or public route.
+Combined composition and shared root gate updates remain integration-owner work.
