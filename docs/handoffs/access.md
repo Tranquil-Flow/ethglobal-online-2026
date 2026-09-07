@@ -1,3 +1,5 @@
+> **Integration-owner update:** code revision `445f5714819fb7a78cff3fdb670e8c66acae7567` repairs exact quote-bound x402 resource compatibility. On Node20.19.5/npm10.8.2, access check passed 27/27 and smoke passed; the combined seven-scenario HTTP/SDK/CLI/MCP/browser suite passed on that committed code. Current logs are `artifacts/integration/access-candidate-check.log`, `access-candidate-smoke.log` and `committed-composition.log`. See `docs/handoffs/integration.md` for combined evidence and limitations. The original lane packet below remains a historical snapshot, including its then-blocked composition gate; no live gate is promoted.
+>
 > **Superseding late-review verification:** tested repair revision `4e15d0c4abc501a3cdb235c787352bba7023ba01`.
 > The earlier 24-test local-ready judgment below was premature: a delayed review identified
 > three reproducible defects. All were repaired with behavioral RED/GREEN coverage. Current

@@ -39,4 +39,3 @@ or claim organizer/sponsor acceptance. No Mycelium/Gas Killer artifacts or runti
 See docs/handoffs/integration.md for retained failed hypotheses, exact-candidate verification,
 known dependency/security limits and externally unqualified paths. The actual user-visible
 workflow and demo instructions are docs/LOCAL.md; this is a synthetic demo, not real inference.
-

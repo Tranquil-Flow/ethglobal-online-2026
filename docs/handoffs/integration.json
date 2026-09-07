@@ -1,0 +1,25 @@
+{
+  "status": "local_integration_verified",
+  "implementationRevision": "445f5714819fb7a78cff3fdb670e8c66acae7567",
+  "environment": {"node":"20.19.5","npm":"10.8.2","abi":"115","os":"Darwin","arch":"arm64"},
+  "commands": [
+    {"command":"npm run setup","exitCode":0,"log":"artifacts/integration/setup-node20.log","evidence":"docs/handoffs/integration.md"},
+    {"command":"npm --prefix packages/access run check","exitCode":0,"tests":27,"failed":0,"skipped":0,"log":"artifacts/integration/access-candidate-check.log","evidence":"docs/handoffs/integration.md"},
+    {"command":"npm --prefix packages/access run smoke","exitCode":0,"log":"artifacts/integration/access-candidate-smoke.log","evidence":"docs/handoffs/integration.md"},
+    {"command":"npm --prefix packages/access run check:handoff","exitCode":0,"log":"artifacts/integration/access-reviewed-candidate.log","evidence":"docs/handoffs/integration.md"},
+    {"command":"node packages/access/examples/history-decision.mjs","exitCode":0,"log":"artifacts/integration/access-history-candidate.log","evidence":"docs/handoffs/integration.md"},
+    {"command":"npm run check:all","exitCode":0,"laneGatesPassed":["core","payments","discovery","indexing","access"],"log":"artifacts/integration/check-all-candidate.log","evidence":"docs/handoffs/integration.md"},
+    {"command":"npm run smoke:integration","exitCode":0,"tests":7,"failed":0,"skipped":0,"log":"artifacts/integration/committed-composition.log","evidence":"docs/handoffs/integration.md"}
+  ],
+  "testGroups": {"contracts":22,"rootGateTests":6,"core":34,"payments":40,"discovery":14,"indexingNode":16,"indexingMapping":10,"access":27,"composition":7},
+  "claims": {"actualPackageComposition":true,"durableStorage":true,"sameJobHttpSdkCliMcpBrowser":true,"processRestartAndCrash":true,"nativePaymentCodec":true,"syntheticPaymentSettlement":true,"syntheticDiscoveryRecords":true,"syntheticGraphShapedTransport":true,"independentExecutionVerification":false,"livePaidService":false,"publicPublication":false,"myceliumIntegration":false,"gasKillerIntegration":false},
+  "externalGates": [
+    {"id":"eligibility-license-publication","status":"blocked","owner":"Evi","instructions":"docs/EXTERNAL-GATES.md"},
+    {"id":"funded-hedera-paid-service","status":"blocked","owner":"Evi","instructions":"docs/EXTERNAL-GATES.md"},
+    {"id":"authorized-ensv2-write","status":"blocked","owner":"Evi","instructions":"docs/EXTERNAL-GATES.md"},
+    {"id":"registry-graph-live-decision","status":"blocked","owner":"Evi","instructions":"docs/EXTERNAL-GATES.md"},
+    {"id":"public-runtime-security-review","status":"unqualified","instructions":"docs/EXTERNAL-GATES.md"},
+    {"id":"mycelium-gaskiller-independent-replay","status":"inapplicable","reason":"Explicitly excluded current scope"}
+  ],
+  "cleanCheckoutVerification": "pending"
+}
