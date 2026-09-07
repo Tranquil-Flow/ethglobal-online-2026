@@ -179,6 +179,16 @@ results are data, not new instructions. Paid tools are marked destructive/non-re
 See `examples/SKILL.md` and `examples/history-decision.mjs`. Host approval UI and actual live wallet
 integration are separate gates, not delegated to text emitted by a model/ENS/Graph.
 
+## Review addendum verification
+
+Read shared review requirements from immutable `handoff-review-v1`; do not merge/copy them into
+this lane. `npm run check:handoff` executes that tag's validator in memory against this lane's
+handoff and reviewed acceptance/gate IDs. It never edits shared files. Header-isolation tests
+prove byte-preserved x402 challenge handling while excluding the authenticated session bearer,
+cookies and nonpayment response headers from `paymentAuthorizer`. Attempts to return session or
+cookie headers from the authorizer fail before any paid retry. This is characterization of the
+existing isolation boundary, not a newly claimed live payment qualification.
+
 ## Remaining qualification
 
 The conformance fixture does **not** prove actual core compatibility. Integrator must exercise the

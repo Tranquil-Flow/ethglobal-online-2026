@@ -15,6 +15,7 @@
     "test": "npm run build:viewer && node --test --test-concurrency=1 test/*.test.mjs",
     "test:browser": "npm run build:viewer && node --test --test-concurrency=1 test/viewer.test.mjs test/viewer-cancel.test.mjs",
     "check": "node scripts/check-syntax.mjs && npm test",
+    "check:handoff": "node scripts/check-reviewed-handoff.mjs",
     "smoke": "node scripts/smoke.mjs",
     "client": "node scripts/client-smoke.mjs",
     "cli": "node src/cli.mjs",
