@@ -6,6 +6,11 @@ export { safeUrl, safeGet } from "./url-policy.mjs";
 export { createEnsV2Resolver } from "./ensv2.mjs";
 export { previewOperation } from "./operator.mjs";
 export { createProviderReader } from "./consumer.mjs";
+export {
+  collectEnsV2Config,
+  createEnsV2Discovery,
+  preflightEnsV2,
+} from "./sponsor.mjs";
 export const RECORD_KEYS = [
   "ethonline.endpoint",
   "ethonline.profiles",

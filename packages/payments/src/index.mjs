@@ -117,6 +117,12 @@ export {
   createHederaPaymentAuthorizer,
 } from "./client.mjs";
 export { createSyntheticService } from "./service.mjs";
+export {
+  collectBlocky402Config,
+  createBlocky402Payments,
+  createOperatorWalletCallback,
+  preflightBlocky402,
+} from "./sponsor.mjs";
 function safePort(port) {
   return Object.freeze(
     Object.fromEntries(
