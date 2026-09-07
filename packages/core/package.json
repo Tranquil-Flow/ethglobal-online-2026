@@ -1,0 +1,23 @@
+{
+  "name": "@ethonline/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.mjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "node scripts/syntax.mjs && prettier --check src test scripts package.json && npm test",
+    "smoke": "node scripts/smoke.mjs",
+    "start": "node src/cli.mjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "11.10.0"
+  },
+  "devDependencies": {
+    "@x402/core": "2.25.0",
+    "prettier": "3.6.2"
+  }
+}
