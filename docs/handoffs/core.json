@@ -1,1 +1,151 @@
-{"lane":"core","status":"in_progress","codeRevision":"13f5e295bdeb833b9977a84edc97b2ee64147579","commands":[],"externalGates":["Combined cross-lane composition","Live x402/Blocky402/Hedera payment qualification","Live ENSv2/Graph/publication qualification","Real execution and assessment adapters are outside this lane","Human release/license/sponsor/publication decisions"],"contractRequests":[]}
+{
+  "lane": "core",
+  "status": "local_ready",
+  "codeRevision": "94ed062623af37f2d1a7de27dbbc6a7bb489b62f",
+  "reviewContract": "handoff-review-v1",
+  "commands": [
+    {
+      "id": "contract-install",
+      "command": "npm --prefix packages/contracts ci --ignore-scripts",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "contracts",
+      "command": "npm --prefix packages/contracts run check",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "install",
+      "command": "npm --prefix packages/core ci",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "test",
+      "command": "npm --prefix packages/core test",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "check",
+      "command": "npm --prefix packages/core run check",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "smoke",
+      "command": "npm --prefix packages/core run smoke",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "audit",
+      "command": "npm --prefix packages/core audit --json",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "lane-gate",
+      "command": "cd /Users/evinova-self/Projects/ethglobal-online-2026-core && npm run check:lane -- core",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/core.md"
+    }
+  ],
+  "acceptanceCases": [
+    {
+      "id": "http-lifecycle",
+      "status": "passed",
+      "commandIds": [
+        "test",
+        "check",
+        "smoke"
+      ],
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "restart-idempotency",
+      "status": "passed",
+      "commandIds": [
+        "test",
+        "check",
+        "smoke"
+      ],
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "private-capabilities",
+      "status": "passed",
+      "commandIds": [
+        "test",
+        "check",
+        "smoke"
+      ],
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "receipt-integrity-export",
+      "status": "passed",
+      "commandIds": [
+        "test",
+        "check",
+        "smoke"
+      ],
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "payment-outbox-failures",
+      "status": "passed",
+      "commandIds": [
+        "test",
+        "check",
+        "smoke"
+      ],
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "assessment-unavailable",
+      "status": "passed",
+      "commandIds": [
+        "test",
+        "check",
+        "smoke"
+      ],
+      "evidence": "docs/handoffs/core.md"
+    }
+  ],
+  "externalGates": [
+    {
+      "id": "combined-app",
+      "status": "blocked",
+      "reason": "Integrating owner must compose actual lane factories and clients. Live payment, ENSv2 and Graph/publication need separate credentials/funding approval and real external evidence.",
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "mycelium-execution",
+      "status": "inapplicable",
+      "reason": "Explicitly excluded future scope. Only labelled synthetic development execution is implemented.",
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "gaskiller-integration",
+      "status": "inapplicable",
+      "reason": "Explicitly excluded future scope. No Gas Killer runtime/check/settlement was accessed or modified.",
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "independent-replay",
+      "status": "inapplicable",
+      "reason": "Not a retained current claim: integrity/export and unavailable assessments are not independent replay or physical inference proof.",
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "public-release",
+      "status": "blocked",
+      "reason": "Human license, visibility/push, eligibility, deployment/funding and final submission approvals are pending; no public actions or spending performed.",
+      "evidence": "docs/handoffs/core.md"
+    }
+  ],
+  "contractRequests": []
+}
