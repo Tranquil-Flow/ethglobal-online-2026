@@ -25,9 +25,9 @@
     "fs-ext": "2.1.1"
   },
   "devDependencies": {
+    "@foundry-rs/anvil": "1.7.1",
     "@graphprotocol/graph-cli": "0.98.1",
     "@graphprotocol/graph-ts": "0.38.2",
-    "ganache": "7.9.2",
     "matchstick-as": "0.6.0",
     "solc": "0.8.36",
     "yaml": "2.9.0"

@@ -35,7 +35,7 @@ test('local EVM reorg: previously confirmed publication becomes pending; no new 
  try{
   const snapshot=await e.provider.send('evm_snapshot',[]);const sink=e.newSink();
   const result=await sink.publish({event:receipt,idempotencyKey:'reorg'});assert.equal(result.status,'confirmed');
-  await e.provider.send('evm_revert',[snapshot]);await e.provider.send('miner_stop',[]);
+  await e.provider.send('evm_revert',[snapshot]);await e.provider.send('evm_setAutomine',[false]);
   const retried=await sink.publish({event:receipt,idempotencyKey:'reorg'});assert.equal(retried.status,'pending');assert.equal(retried.transactionRef,result.transactionRef);
   await e.provider.send('evm_mine',[]);
   assert.equal((await sink.publish({event:receipt,idempotencyKey:'reorg'})).status,'confirmed');await sink.close();
