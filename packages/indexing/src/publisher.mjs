@@ -69,7 +69,7 @@ export function createEventSink({config={},signer,store}={}){
     const result={status:'pending',transactionRef:entry.hash};
     if(receipt){
      if(receipt.status!==1)return {status:'unavailable',transactionRef:entry.hash};
-     if(receipt.blockNumber<deployment.startBlock||receipt.to?.toLowerCase()!==deployment.address.toLowerCase()||receipt.from.toLowerCase()!==sender.toLowerCase())throw failure('RECEIPT_MISMATCH');
+     if(receipt.hash!==entry.hash||receipt.blockNumber<deployment.startBlock||receipt.to?.toLowerCase()!==deployment.address.toLowerCase()||receipt.from.toLowerCase()!==sender.toLowerCase())throw failure('RECEIPT_MISMATCH');
      const block=await call(provider.getBlock(receipt.blockNumber));
      const tip=Number(BigInt(await call(provider.send('eth_blockNumber',[]))));
      if(block?.hash===receipt.blockHash&&tip-receipt.blockNumber+1>=deployment.confirmations)result.status='confirmed';

@@ -70,3 +70,19 @@ test('durable nonce reservation survives an unavailable broadcast',async()=>{
   e.provider.broadcastTransaction=broadcast;await sink.close();
  }finally{await e.close();}
 });
+
+test('chain, fee, signed-transaction and journal failure guards precede broadcast',async()=>{
+ const e=await publicationFixture();
+ try{
+  let broadcasts=0;const broadcast=e.provider.broadcastTransaction.bind(e.provider);
+  e.provider.broadcastTransaction=async(...args)=>{broadcasts++;return broadcast(...args);};
+  const send=e.provider.send.bind(e.provider);e.provider.send=(method,args)=>method==='eth_chainId'?Promise.resolve('0x1'):send(method,args);
+  await assert.rejects(e.newSink().publish({event:receipt,idempotencyKey:'wrong-chain'}),e=>e.code==='CHAIN_MISMATCH');e.provider.send=send;
+  await assert.rejects(e.newSink({config:{...e.config,maxGasPriceWei:'1'}}).publish({event:receipt,idempotencyKey:'fee'}),e=>e.code==='GAS_PRICE_LIMIT');
+  const sign=e.signer.signTransaction.bind(e.signer);e.signer.signTransaction=tx=>sign({...tx,to:e.stranger.address});
+  await assert.rejects(e.newSink().publish({event:receipt,idempotencyKey:'wrong-signed-to'}),e=>e.code==='INVALID_SIGNATURE');e.signer.signTransaction=sign;
+  const badStore={async transact(fn){return fn({entries:{}},async()=>{throw new Error('synthetic disk error with canary');});}};
+  await assert.rejects(e.newSink({store:badStore}).publish({event:receipt,idempotencyKey:'disk'}),e=>e.code==='PUBLICATION_UNAVAILABLE'&&!e.message.includes('canary'));
+  assert.equal(broadcasts,0);
+ }finally{await e.close();}
+});

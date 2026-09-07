@@ -65,12 +65,20 @@ export async function queryProviderHistory({config,client,providerId,signal}){
  if(client&&c.deployment){
   const sig=deadline(signal,c.timeoutMs);
   try{
-   const meta=(await bounded(client.query({query:META,signal:sig}),sig))._meta;
+   let meta=(await bounded(client.query({query:META,signal:sig}),sig))._meta;
    if(!meta||meta.hasIndexingErrors!==false||meta.deployment!==c.deploymentId||!Number.isSafeInteger(meta.block?.number)||meta.block.number<c.deployment.startBlock||!/^0x[0-9a-f]{64}$/i.test(meta.block.hash)||!Number.isSafeInteger(meta.block.timestamp)||meta.block.timestamp*1000>now+30000)throw failure('INVALID_INDEX');
+   if(c.deployment.confirmations>1){
+    const number=meta.block.number-c.deployment.confirmations+1;
+    if(number<c.deployment.startBlock)throw failure('INDEX_CONFIRMATIONS_PENDING');
+    const stable=(await bounded(client.query({query:'query StableHead($number: Int!) { _meta(block: {number: $number}) { deployment hasIndexingErrors block { number hash timestamp } } }',variables:{number},signal:sig}),sig))._meta;
+    if(stable?.deployment!==meta.deployment||stable.hasIndexingErrors!==false||stable.block?.number!==number||!/^0x[0-9a-f]{64}$/i.test(stable.block.hash)||!Number.isSafeInteger(stable.block.timestamp)||stable.block.timestamp>meta.block.timestamp)throw failure('INVALID_INDEX');
+    meta=stable;
+   }
    const data=await bounded(client.query({query:PROVIDER_QUERY,variables:{provider:'0x'+digestOf(providerId).slice(7),block:meta.block.hash,limit:c.limit},signal:sig}),sig);
-   if(data._meta?.deployment!==meta.deployment||data._meta.hasIndexingErrors!==false||data._meta.block.hash!==meta.block.hash||data._meta.block.number!==meta.block.number||!Array.isArray(data.assessmentClaims)||data.assessmentClaims.length>c.limit)throw failure('INVALID_INDEX');
+   if(data._meta?.deployment!==meta.deployment||data._meta.hasIndexingErrors!==false||data._meta.block.hash!==meta.block.hash||data._meta.block.number!==meta.block.number||data._meta.block.timestamp!==meta.block.timestamp||!Array.isArray(data.assessmentClaims)||data.assessmentClaims.length>c.limit)throw failure('INVALID_INDEX');
    const observations=[],provenance=[],counts={},seen=new Set();
    for(const row of data.assessmentClaims){
+    if(typeof row.blockNumber!=='string'||!/^\d{1,16}$/.test(row.blockNumber)||typeof row.logIndex!=='string'||!/^\d{1,16}$/.test(row.logIndex)||!Number.isInteger(row.mode)||!Number.isInteger(row.outcome))throw failure('INVALID_OBSERVATION');
     if(row.valid!==true||String(row.chainId)!==String(c.chainId)||row.contractAddress?.toLowerCase()!==c.deployment.address.toLowerCase()||row.publisher?.toLowerCase()!==c.deployment.publisher.toLowerCase()||row.providerKey?.toLowerCase()!==('0x'+digestOf(providerId).slice(7))||!/^0x[0-9a-f]{64}$/i.test(row.transactionHash)||!/^0x[0-9a-f]{64}$/i.test(row.blockHash)||!Number.isSafeInteger(Number(row.blockNumber))||Number(row.blockNumber)<c.deployment.startBlock||Number(row.blockNumber)>meta.block.number||!Number.isSafeInteger(Number(row.logIndex))||Number(row.logIndex)<0||typeof row.publicMetadata!=='string'||Buffer.byteLength(row.publicMetadata)>8192)throw failure('INVALID_OBSERVATION');
     const a=JSON.parse(row.publicMetadata);
     validateEvent({version:'1',kind:'assessment',objectDigest:digest(row.objectDigest),receiptDigest:digest(row.receiptDigest),providerKey:digest(row.providerKey),verifierKey:digest(row.verifierKey),methodKey:digest(row.methodKey),outcome:outcomes[row.outcome],mode:modes[row.mode],assessment:a});

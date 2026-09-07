@@ -22,11 +22,18 @@ function dateTime(s:string):bool{
  if(!digits(ys)||!digits(ms)||!digits(ds)||!digits(hs)||!digits(ns)||!digits(ss))return false;
  let y=I32.parseInt(ys),m=I32.parseInt(ms),d=I32.parseInt(ds),h=I32.parseInt(hs),n=I32.parseInt(ns),sec=I32.parseInt(ss);
  let days=[31,28,31,30,31,30,31,31,30,31,30,31];if(y%4==0&&(y%100!=0||y%400==0))days[1]=29;
- if(m<1||m>12||d<1||d>days[m-1]||h>23||n>59||sec>59)return false;
+ if(m<1||m>12||d<1||d>days[m-1]||sec>60)return false;
  let rest=s.slice(19);if(rest.startsWith('.')){let end=1;while(end<rest.length&&digits(rest.charAt(end)))end++;if(end==1)return false;rest=rest.slice(end);}
- if(rest=='Z'||rest=='z')return true;
- if(rest.length!=6||(rest.charAt(0)!='+'&&rest.charAt(0)!='-')||rest.charAt(3)!=':'||!digits(rest.slice(1,3))||!digits(rest.slice(4,6)))return false;
- return I32.parseInt(rest.slice(1,3))<=23&&I32.parseInt(rest.slice(4,6))<=59;
+ let tzH=0,tzM=0,sign=1;
+ if(rest!='Z'&&rest!='z'){
+  if((rest.length!=3&&rest.length!=5&&rest.length!=6)||(rest.charAt(0)!='+'&&rest.charAt(0)!='-')||!digits(rest.slice(1,3)))return false;
+  sign=rest.charAt(0)=='-'?-1:1;tzH=I32.parseInt(rest.slice(1,3));
+  if(rest.length>3){let mins=rest.slice(3);if(mins.startsWith(':'))mins=mins.slice(1);if(mins.length!=2||!digits(mins))return false;tzM=I32.parseInt(mins);}
+ }
+ if(tzH>23||tzM>59)return false;
+ if(h<=23&&n<=59&&sec<60)return true;
+ let utcMin=n-tzM*sign,utcHour=h-tzH*sign-(utcMin<0?1:0);
+ return (utcHour==23||utcHour==-1)&&(utcMin==59||utcMin==-1)&&sec==60;
 }
 export function validMetadata(raw:string,object:string,receipt:string,verifier:string,method:string,outcome:i32,mode:i32):bool{
  if(Bytes.fromUTF8(raw).length>8192)return false;
@@ -39,7 +46,9 @@ export function validMetadata(raw:string,object:string,receipt:string,verifier:s
  for(let i=0;i<keys.length;i++){
   let key=keys[i],v=map.get(key);if(allowed.indexOf(key)<0||v===null)return false;
   if(v.kind!=JSONValueKind.STRING)return false;let s=v.toString();
-  if(!s.length||s.length>256)return false;
+  let length=s.length;
+  for(let j=0;j<s.length-1;j++){let hi=s.charCodeAt(j),lo=s.charCodeAt(j+1);if(hi>=0xd800&&hi<=0xdbff&&lo>=0xdc00&&lo<=0xdfff){length--;j++;}}
+  if(!length||(key!='createdAt'&&length>256))return false;
   if((key=='profileId'||key=='receiptDigest'||key=='evidenceDigest')&&!isDigest(s))return false;
   parts.push(quoted(key)+':'+quoted(s));
  }

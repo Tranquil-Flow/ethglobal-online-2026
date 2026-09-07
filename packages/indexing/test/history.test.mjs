@@ -39,3 +39,23 @@ test('history fails closed on deadline, HTTP failure, oversized response and abo
  try{const client=createGraphClient({endpoint:s.endpoint,allowLocal:true,maxBytes:1024});assert.equal((await createHistory({config,client}).getHistory({providerId})).freshness,'unavailable');}finally{await s.close();}
  assert.throws(()=>createGraphClient({endpoint:'http://public.invalid'}));assert.throws(()=>createGraphClient({endpoint:'https://user:secret@public.invalid'}));
 });
+
+test('history applies confirmation depth before pinning the data query',async()=>{
+ const head=graphData(),stable=graphData();stable._meta.block.number=8;stable.assessmentClaims[0].blockNumber='8';stable._meta.block.hash='0x'+'b'.repeat(64);
+ let sawStable=false;
+ const client={async query({query,variables}){
+  if(variables?.number!==undefined){assert.equal(variables.number,8);sawStable=true;return {_meta:stable._meta};}
+  if(variables?.provider){assert.equal(variables.block,stable._meta.block.hash);return stable;}
+  return head;
+ }};
+ const report=await queryProviderHistory({config:{...config,deployment:{...config.deployment,confirmations:3}},client,providerId});
+ assert.equal(sawStable,true);assert.equal(report.history.freshness,'fresh');assert.equal(report.history.indexedBlock,8);
+});
+
+test('malformed numeric provenance is not coerced into real log coordinates',async()=>{
+ for(const [key,value] of [['logIndex',null],['logIndex',''],['blockNumber','9e0'],['outcome','1'],['mode','0']]){
+  const data=graphData();data.assessmentClaims[0][key]=value;
+  const h=await createHistory({config,client:{async query(){return data;}}}).getHistory({providerId});
+  assert.equal(h.freshness,'unavailable',key+':'+JSON.stringify(value));
+ }
+});

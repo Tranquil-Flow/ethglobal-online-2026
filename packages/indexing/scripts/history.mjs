@@ -3,7 +3,7 @@ import {createGraphClient,queryProviderHistory} from '../src/index.mjs';
 // Explicit query operation; config must be operator-owned, not a caller-supplied endpoint.
 export async function queryFromConfig(path,providerId,{live=false}={}){
  const config=JSON.parse(readFileSync(path,'utf8'));
- if(live&&(config.mode!=='live'||config.approvedLiveRead!==true))throw new Error('LIVE_READ_APPROVAL_REQUIRED');
+ if((live||config.mode==='live')&&(config.mode!=='live'||config.approvedLiveRead!==true))throw new Error('LIVE_READ_APPROVAL_REQUIRED');
  const client=createGraphClient({endpoint:config.endpoint,allowLocal:config.mode==='development',token:process.env.INDEXING_GRAPH_TOKEN});
  return await queryProviderHistory({config,client,providerId,signal:AbortSignal.timeout(15000)});
 }

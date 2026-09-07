@@ -67,3 +67,13 @@ test('reorg semantics: host store rollback then replay replaces orphan provenanc
  let old=receipt();handleReceipt(old);clearStore();let canonical=receipt();canonical.block.hash=Bytes.fromHexString('0x'+'ff'.repeat(32));handleReceipt(canonical);
  assert.entityCount('ReceiptClaim',1);assert.fieldEquals('ReceiptClaim','31337:'+ADDRESS+':receipt:'+R,'blockHash','0x'+'ff'.repeat(32));
 });
+
+import {readFile} from 'matchstick-as/assembly/index';
+import {json} from '@graphprotocol/graph-ts';
+test('mapping metadata agrees with shared schema on canonical conformance vectors',()=>{
+ let rows=json.fromBytes(readFile('./tests/metadata-vectors.json')).toArray();
+ for(let i=0;i<rows.length;i++){
+  let r=rows[i].toObject();
+  assert.booleanEquals(validMetadata(r.get('raw')!.toString(),r.get('object')!.toString(),r.get('receipt')!.toString(),r.get('verifier')!.toString(),r.get('method')!.toString(),1,0),r.get('valid')!.toBool(),r.get('name')!.toString());
+ }
+});
