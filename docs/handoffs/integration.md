@@ -2,12 +2,17 @@
 
 ## Scope and candidate
 
-Implementation candidate: `445f5714819fb7a78cff3fdb670e8c66acae7567` on `main`.
+Implementation candidate: `13a1309949ab73e6c25b9e26e2a8fe6164949f93` on `main`.
+Composition runtime first verified at `445f5714819fb7a78cff3fdb670e8c66acae7567`;
+the later candidate changes only the discovery smoke ordering described below.
 This is local synthetic composition, **not public/live/inference qualification**.
 The final evidence-only commit may follow this candidate; compare implementation paths before
 reusing its evidence. Machine-readable final command receipts are in `integration.json`.
 
-### Clean-checkout verification completed
+### Initial clean-checkout verification (historical)
+
+This successful run preceded the later discovery test-ordering failure; it remains valid for its
+named revision, not a substitute for the repaired candidate's final aggregate run.
 
 A new `git clone --no-local` at `ee89eeca690e2a8d459aa2adb8ce0373f381a605` installed all
 package locks from scratch (no copied node_modules or sibling artifacts). From that checkout,
@@ -83,6 +88,13 @@ payment, completed echo, unavailable assessment and literal XSS test text were v
 private signing key or payment proof is in these artifacts. The screenshot is synthetic demo data.
 
 ## Retained failures and adjudication
+
+- Final aggregate at `3a00612025d5577c0a3428dc7387c51d3d1cc617` returned exit 1: discovery's
+  one-second provider record expired during independent CLI startup. `local-scenario.mjs:120`
+  dereferenced a correctly null selection. Log: `artifacts/integration/final-check-all.log`.
+  Candidate `13a1309` moves the positive selection assertion before CLI startup; no TTL or
+  production validation changed. Repaired discovery check passed 14/14 and smoke passed actual
+  Anvil delegation/revocation/reorg/selection cases. Final aggregate revalidation is separate.
 
 - Initial document read was permission-blocked; retried only after explicit user approval.
 - Archived lane `ci/check/smoke` all passed, but background shell selected **Node 22.22.2/npm 10.9.7**.

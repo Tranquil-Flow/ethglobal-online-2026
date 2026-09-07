@@ -1,7 +1,9 @@
 {
   "lane": "discovery",
   "status": "local_ready",
-  "codeRevision": "4842acb92b278ca8228946d086b544f22652eab9",
+  "codeRevision": "13a1309949ab73e6c25b9e26e2a8fe6164949f93",
+  "historicalLaneCodeRevision": "4842acb92b278ca8228946d086b544f22652eab9",
+  "integrationEvidence": "docs/handoffs/integration.md",
   "branch": "lane/discovery",
   "bootstrapRevision": "13f5e295bdeb833b9977a84edc97b2ee64147579",
   "commands": [

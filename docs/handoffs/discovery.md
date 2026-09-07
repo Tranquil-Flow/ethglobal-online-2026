@@ -1,5 +1,7 @@
 # Discovery handoff
 
+> Integration-owner update: `13a1309949ab73e6c25b9e26e2a8fe6164949f93` moves selection before independent CLI startup in the local smoke. Under load the one-second fixture record legitimately expired during CLI startup; production expiry validation correctly rejected it. No TTL or production guard changed. Repaired bytes passed discovery check (14/14, no skips) and local Anvil smoke; current evidence is `docs/handoffs/integration.md`, with logs `artifacts/integration/discovery-ordering-{check,smoke}.log`. Original lane packet below is retained as historical evidence.
+
 ## Outcome and revision
 
 **Local-ready; not live-qualified or combined-integrated.** All owned implementation is in
