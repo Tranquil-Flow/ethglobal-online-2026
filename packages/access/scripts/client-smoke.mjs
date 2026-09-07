@@ -10,6 +10,11 @@ const { url } = await fixture.listen();
 try {
   const c = createClient({
     baseUrl: url,
+    pins: {
+      providerId: "safe.eth",
+      keyId: "fixture-key",
+      publicKeyJwk: fixture.publicKeyJwk,
+    },
     paymentAuthorizer: developmentAuthorizer,
   });
   await c.connect();

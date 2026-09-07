@@ -108,8 +108,17 @@ SDK timeout prevents subsequent submission but cannot undo an external wallet si
 `verifyReceiptIntegrity(receipt, publicKeyJwk)` returns `{integrity,executionVerified:false}`.
 The supplied key is the caller's trust decision. `validateEvidence(bundle,{publicKeyJwk,providerId,keyId})`
 requires a key and verifies request/profile/output/assessment associations and signature before import.
-`getEvidence` uses configured pins or retrieves the receipt's key; the latter proves only self-consistent
-integrity, not provider identity. No archive extraction or replay is implemented/promised.
+`getEvidence` requires all three caller-configured pins; absent/incomplete pins fail `KEY_PIN_REQUIRED`.
+It never bootstraps trust from `/v1/keys`. CLI export requires `--pins-file ./trusted-pins.json`
+(0600 JSON with `publicKeyJwk`, `providerId`, `keyId`). Viewer host configuration accepts the same
+public pins through `createViewerServer({apiUrl,pins})` or `--pins-file`; explicit development-fixture
+mode injects its locally generated public key directly, not through endpoint retrieval. Never put
+private keys in pins. No archive extraction or replay is implemented/promised.
+
+If a payment callback returns invalid headers after potentially spending, the submission becomes
+uncertain and the same idempotency key cannot invoke it again. Explicit CLI `revoke` on an expired
+401 response removes the local capability and reports `{revoked:false,localForgotten:true}`;
+it does not claim server revocation. Other failures retain the file. Reconnection stays explicit.
 
 ### Payment, retries, errors and privacy
 
@@ -152,7 +161,7 @@ npm run cli -- --base-url "$API" inspect "$JOB"
 npm run cli -- --base-url "$API" receipt "$JOB" --check-integrity --key-file ./pinned-public-key.json
 npm run cli -- signature-check --receipt-file ./private-receipt.json --key-file ./pinned-public-key.json
 npm run cli -- --base-url "$API" assess "$JOB" --method independent-replay --idempotency-key "$ASSESS_KEY"
-npm run cli -- --base-url "$API" export "$JOB"
+npm run cli -- --base-url "$API" export "$JOB" --pins-file ./trusted-pins.json
 npm run cli -- --base-url "$API" history safe.eth
 npm run cli -- --base-url "$API" cancel "$JOB"
 npm run cli -- --base-url "$API" revoke

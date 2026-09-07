@@ -646,6 +646,8 @@ export function createClient({
           } finally {
             guard.close();
           }
+          // The callback may already have spent, even when its output is invalid.
+          state.authorized = true;
           if (
             !h ||
             Object.keys(h).length !== 1 ||
@@ -654,7 +656,6 @@ export function createClient({
             /[\r\n]/.test(h["payment-signature"])
           )
             fail("INVALID_PAYMENT_HEADERS");
-          state.authorized = true;
           budgetCheck(q, budget);
           d = await request("/v1/jobs", {
             method: "POST",
@@ -759,10 +760,9 @@ export function createClient({
         options,
       });
       if (b.receipt?.payload?.jobId !== jobId) fail("EVIDENCE_MISMATCH");
-      const key =
-        pins?.publicKeyJwk ||
-        (await client.getKey(b.receipt.keyId, options)).publicKeyJwk;
-      return validateEvidence(b, { ...pins, publicKeyJwk: key });
+      if (!pins?.publicKeyJwk || !pins.providerId || !pins.keyId)
+        fail("KEY_PIN_REQUIRED");
+      return validateEvidence(b, pins);
     },
     async deleteEvidence(jobId, options) {
       return request("/v1/jobs/" + enc(jobId) + "/evidence", {

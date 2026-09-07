@@ -53,6 +53,7 @@ $("connect").onclick = () =>
     if (!config) config = await fetch("/config.json").then((r) => r.json());
     client = createClient({
       baseUrl: config.apiUrl,
+      pins: config.pins,
       paymentAuthorizer: config.fixture
         ? developmentAuthorizer
         : async (context) => {

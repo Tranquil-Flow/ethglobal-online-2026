@@ -116,6 +116,9 @@ export async function runCli(argv) {
     baseUrl: base,
     capability: session?.capability,
     paymentAuthorizer,
+    pins: options["pins-file"]
+      ? await privateRead(options["pins-file"])
+      : undefined,
   });
   const save = (name, value) =>
     privateWrite(join(dir, name + "-" + random() + ".json"), value);
@@ -126,9 +129,15 @@ export async function runCli(argv) {
     return { connected: true, expiresAt: s.expiresAt };
   }
   if (command === "revoke") {
-    await client.revoke();
+    let revoked = true;
+    try {
+      await client.revoke();
+    } catch (e) {
+      if (!(e instanceof AccessError) || e.status !== 401) throw e;
+      revoked = false; // Server did not confirm revocation; discard expired local credential only.
+    }
     await unlink(sessionFile);
-    return { revoked: true };
+    return { revoked, localForgotten: true };
   }
   if (command === "providers") return client.listProviders(pos.slice(1));
   if (command === "profile") return client.getProfile(arg);

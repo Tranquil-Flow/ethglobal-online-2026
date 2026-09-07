@@ -98,3 +98,57 @@ test("review addendum: authorizer cannot override session or add cookie headers 
   assert.equal(server.metrics.paymentAttempts, 1);
   assert.equal(server.metrics.authorizations, 0);
 });
+
+test("malformed potentially-spent authorizer output must never authorize twice", async (t) => {
+  const { url } = await fixture(t);
+  let calls = 0;
+  const c = createClient({
+    baseUrl: url,
+    paymentAuthorizer: async () => {
+      calls++;
+      return {};
+    },
+  });
+  const args = await prepare(c);
+  await assert.rejects(c.submitJob(args), { code: "INVALID_PAYMENT_HEADERS" });
+  await assert.rejects(c.submitJob(args), { code: "SUBMISSION_UNCERTAIN" });
+  assert.equal(calls, 1);
+});
+test("evidence retrieval requires out-of-band complete provider and key pins", async (t) => {
+  const { url } = await fixture(t);
+  const c = createClient({
+    baseUrl: url,
+    paymentAuthorizer: developmentAuthorizer,
+  });
+  const { job } = await c.submitJob(await prepare(c));
+  for await (const event of c.streamJob(job.jobId)) {
+  }
+  await assert.rejects(c.getEvidence(job.jobId), { code: "KEY_PIN_REQUIRED" });
+  const key = await c.getKey("fixture-key"); // Availability alone is insufficient.
+  for (const pins of [
+    { publicKeyJwk: key.publicKeyJwk },
+    { publicKeyJwk: key.publicKeyJwk, providerId: "safe.eth" },
+    { publicKeyJwk: key.publicKeyJwk, keyId: "fixture-key" },
+  ]) {
+    const untrusted = createClient({
+      baseUrl: url,
+      capability: c.capability,
+      pins,
+    });
+    await assert.rejects(untrusted.getEvidence(job.jobId), {
+      code: "KEY_PIN_REQUIRED",
+    });
+  }
+  const wrong = createClient({
+    baseUrl: url,
+    capability: c.capability,
+    pins: {
+      publicKeyJwk: key.publicKeyJwk,
+      providerId: "attacker.eth",
+      keyId: "fixture-key",
+    },
+  });
+  await assert.rejects(wrong.getEvidence(job.jobId), {
+    code: "EVIDENCE_MISMATCH",
+  });
+});

@@ -2,8 +2,26 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { safeBaseUrl } from "../src/index.mjs";
-export function createViewerServer({ apiUrl, fixture = false }) {
+export function createViewerServer({ apiUrl, fixture = false, pins }) {
   const api = safeBaseUrl(apiUrl);
+  // Never serialize an arbitrary config object (especially private JWK material).
+  if (pins) {
+    const k = pins.publicKeyJwk;
+    if (
+      !pins.providerId ||
+      !pins.keyId ||
+      k?.d ||
+      k?.kty !== "OKP" ||
+      k?.crv !== "Ed25519" ||
+      typeof k?.x !== "string"
+    )
+      throw Error("INVALID_PUBLIC_PINS");
+    pins = {
+      providerId: pins.providerId,
+      keyId: pins.keyId,
+      publicKeyJwk: { kty: k.kty, crv: k.crv, x: k.x },
+    };
+  }
   let url;
   const csp = `default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self' ${api}; img-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'`;
   const server = createServer(async (req, res) => {
@@ -22,7 +40,7 @@ export function createViewerServer({ apiUrl, fixture = false }) {
       }
       if (req.url === "/config.json") {
         res.setHeader("content-type", "application/json");
-        return res.end(JSON.stringify({ apiUrl: api, fixture }));
+        return res.end(JSON.stringify({ apiUrl: api, fixture, pins }));
       }
       const file = {
         "/": "index.html",
@@ -79,7 +97,17 @@ if (
       throw Error("Explicit --api-url or --development-fixture required");
     apiUrl = process.argv[i + 1];
   }
-  const viewer = createViewerServer({ apiUrl, fixture: development });
+  const pinIndex = process.argv.indexOf("--pins-file");
+  const pins = development
+    ? {
+        providerId: "safe.eth",
+        keyId: "fixture-key",
+        publicKeyJwk: fixture.publicKeyJwk,
+      }
+    : pinIndex < 0
+      ? undefined
+      : JSON.parse(await readFile(process.argv[pinIndex + 1], "utf8"));
+  const viewer = createViewerServer({ apiUrl, fixture: development, pins });
   const { url } = await viewer.listen({ port: 4350 });
   fixture?.allowOrigin(url);
   console.log(

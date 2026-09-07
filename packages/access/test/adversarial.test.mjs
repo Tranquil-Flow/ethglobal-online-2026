@@ -20,6 +20,11 @@ async function setup(t, fixtureOptions = {}, clientOptions = {}) {
   t.after(() => f.close());
   const c = createClient({
     baseUrl: url,
+    pins: {
+      providerId: "safe.eth",
+      keyId: "fixture-key",
+      publicKeyJwk: f.publicKeyJwk,
+    },
     paymentAuthorizer: developmentAuthorizer,
     ...clientOptions,
   });

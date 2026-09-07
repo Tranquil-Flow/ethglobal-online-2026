@@ -18,7 +18,15 @@ async function withFixture(t, options = {}) {
 
 async function connectedClient(t, options = {}) {
   const { fixture, url } = await withFixture(t, options.fixture);
-  const client = createClient({ baseUrl: url, ...options.client });
+  const client = createClient({
+    baseUrl: url,
+    pins: {
+      providerId: "safe.eth",
+      keyId: "fixture-key",
+      publicKeyJwk: fixture.publicKeyJwk,
+    },
+    ...options.client,
+  });
   await client.connect();
   return { fixture, client, url };
 }

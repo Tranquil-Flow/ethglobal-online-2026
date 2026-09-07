@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, stat, rm } from "node:fs/promises";
+import { mkdtemp, readFile, stat, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
@@ -181,8 +181,27 @@ test("CLI exposes complete operations over real HTTP with private 0600 session s
     ).code,
     0,
   );
+  const pinsFile = join(home, "pins.json");
+  await writeFile(
+    pinsFile,
+    JSON.stringify({
+      providerId: "safe.eth",
+      keyId: "fixture-key",
+      publicKeyJwk: fixture.publicKeyJwk,
+    }),
+    { mode: 0o600 },
+  );
   assert.equal(
     (await run([...common, "export", completed.jobId], env)).code,
+    1,
+  );
+  assert.equal(
+    (
+      await run(
+        [...common, "export", completed.jobId, "--pins-file", pinsFile],
+        env,
+      )
+    ).code,
     0,
   );
   assert.equal((await run([...common, "revoke"], env)).code, 0);
@@ -229,4 +248,24 @@ test("CLI refuses payment without explicit bounded authorization", async (t) => 
   );
   assert.notEqual(result.code, 0);
   assert.match(result.stderr, /explicit.*max-amount.*payment/i);
+});
+
+test("explicit revoke forgets expired local capability and permits explicit reconnect", async (t) => {
+  const f = createFixtureServer();
+  const { url } = await f.listen();
+  t.after(() => f.close());
+  const home = await mkdtemp(join(tmpdir(), "access-expired-"));
+  t.after(() => rm(home, { recursive: true, force: true }));
+  const env = { HOME: home },
+    common = ["--base-url", url];
+  assert.equal((await run([...common, "connect"], env)).code, 0);
+  f.expireSessions();
+  const revoked = await run([...common, "revoke"], env);
+  assert.equal(revoked.code, 0, revoked.stderr);
+  assert.equal(JSON.parse(revoked.stdout).localForgotten, true);
+  assert.equal(JSON.parse(revoked.stdout).revoked, false);
+  await assert.rejects(stat(join(home, ".ethonline-access", "session.json")), {
+    code: "ENOENT",
+  });
+  assert.equal((await run([...common, "connect"], env)).code, 0);
 });

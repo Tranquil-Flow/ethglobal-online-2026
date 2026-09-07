@@ -15,7 +15,15 @@ test("viewer real browser covers keyboard, mobile, states, XSS, streaming and ev
   const fixture = createFixtureServer();
   const { url: apiUrl } = await fixture.listen({ host: "127.0.0.1", port: 0 });
   t.after(() => fixture.close());
-  const viewer = createViewerServer({ apiUrl, fixture: true });
+  const viewer = createViewerServer({
+    apiUrl,
+    fixture: true,
+    pins: {
+      providerId: "safe.eth",
+      keyId: "fixture-key",
+      publicKeyJwk: fixture.publicKeyJwk,
+    },
+  });
   const { url } = await viewer.listen({ host: "127.0.0.1", port: 0 });
   fixture.allowOrigin(url);
   t.after(() => viewer.close());
@@ -142,7 +150,15 @@ test("viewer shows empty, loading, unavailable, error and cancelled paths access
   const fixture = createFixtureServer({ delayMs: 300 });
   const { url: apiUrl } = await fixture.listen({ host: "127.0.0.1", port: 0 });
   t.after(() => fixture.close());
-  const viewer = createViewerServer({ apiUrl, fixture: true });
+  const viewer = createViewerServer({
+    apiUrl,
+    fixture: true,
+    pins: {
+      providerId: "safe.eth",
+      keyId: "fixture-key",
+      publicKeyJwk: fixture.publicKeyJwk,
+    },
+  });
   const { url } = await viewer.listen({ host: "127.0.0.1", port: 0 });
   fixture.allowOrigin(url);
   t.after(() => viewer.close());
