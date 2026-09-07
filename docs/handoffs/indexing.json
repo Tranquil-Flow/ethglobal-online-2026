@@ -1,8 +1,10 @@
 {
   "lane": "indexing",
-  "status": "not_started",
-  "codeRevision": null,
+  "status": "in_progress",
+  "codeRevision": "13f5e295bdeb833b9977a84edc97b2ee64147579",
   "commands": [],
-  "externalGates": [],
+  "externalGates": [
+    "Live deployment and Graph provider qualification require approval and designated credentials."
+  ],
   "contractRequests": []
 }

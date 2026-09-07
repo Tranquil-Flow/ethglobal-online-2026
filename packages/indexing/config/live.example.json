@@ -1,0 +1,16 @@
+{
+  "enabled": false,
+  "deployment": {
+    "mode": "live",
+    "chainId": 11155111,
+    "network": "sepolia",
+    "address": "0x0000000000000000000000000000000000000003",
+    "publisher": "0x0000000000000000000000000000000000000004",
+    "startBlock": 1,
+    "confirmations": 12,
+    "codeHash": "0x2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "maxGasPriceWei": "10000000000",
+  "timeoutMs": 5000,
+  "label": "TEMPLATE ONLY: separate synthetic address/hash, approval required; not deployed"
+}
