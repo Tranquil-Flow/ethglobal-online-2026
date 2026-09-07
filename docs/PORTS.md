@@ -30,13 +30,16 @@ Unavailable is a real terminal assessment outcome, not failure to persist an ans
 createPayments({config,clock,store}) -> port. Clock: () => Date; store is lane-owned durable adapter.
 quote({request:Request,principalId:string,signal}) -> Quote.
 authorize({request:Request,quoteId:string,principalId:string,paymentHeaders:Record<string,string>,idempotencyKey:string,signal}) ->
- {kind:'required',status:402,headers:Record<string,string>,body:Error} |
+ {kind:'required',status:402,headers:Record<string,string>,body:JSONValue} |
  {kind:'authorized',payment:Payment,responseHeaders:Record<string,string>}.
 recordExecutionOutcome({paymentId:string,jobId:string,outcome:'succeeded'|'failed'|'cancelled',signal}) -> Payment.
 getPayment({paymentId:string,principalId:string,signal}) -> Payment.
 close() -> void.
 Payment challenge header names/protocol bytes follow verified x402 SDK, with an explicit allowlist
 owned/exported by payments. Core preserves those bytes, never invents a second x402 protocol.
+JSONValue here is bounded JSON, not necessarily the application Error envelope: the selected
+x402 version may mandate its own payment-required body. Payments owns schema/protocol validation
+for this body; access passes it and allowlisted headers to the explicit paymentAuthorizer callback.
 Caller-supplied principalId is NEVER accepted over HTTP; core derives it from authenticated context.
 An authorized result means required verification/settlement reached the configured safe execution
 gate; the returned payment state is truthful. A pending/ambiguous settlement must not authorize.

@@ -4,6 +4,8 @@ Work only in /Users/evinova-self/Projects/ethglobal-online-2026 main, not anothe
 First inspect worktree list, branches, dirt and docs/handoffs on each actual lane branch. Do not
 trust the stale not_started copies on main before merging. Read exact diff/commit and evidence.
 Check that all workers have stopped writing; otherwise do read-only review, not merge.
+Resolve bootstrap-v1 to the launch SHA; inspect every lane's changed-file allowlist from that base.
+Do not merge out-of-scope changes just because they have no textual conflicts.
 
 1. Run each lane's actual test/check/smoke at its candidate; inspect shared-contract requests.
 2. Adjudicate shared changes with versioned fixtures and compatibility tests. Do not erase errors

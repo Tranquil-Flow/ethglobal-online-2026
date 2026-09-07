@@ -10,6 +10,8 @@ not an active specification. This repository's docs define this authorized scope
 ## Mandatory entry
 Read docs/ARCHITECTURE.md, PORTS.md, HTTP.md, your docs/lanes/<lane>.md and docs/RELEASE.md.
 Verify cwd, git branch/status/worktree and your lane's allowed paths in docs/lanes.json.
+The immutable launch anchor is the local/remote tag bootstrap-v1. Resolve its full SHA and verify
+it is an ancestor of your branch; on a fresh untouched lane HEAD must equal it. Never move the tag.
 Use planning-and-task-execution and test-driven-development skills where available.
 Keep one owner per worktree, preserve dirt, no recursive agents. Fresh sessions must use their
 assigned absolute worktree. Never switch another checkout's branch or write another lane.
@@ -42,6 +44,7 @@ install normal dependencies (<1GB downloads), and use package-local venvs/toolch
 Do not disable guards, delete useful tests, fabricate responses or silently downgrade assurance to get green.
 After repeated failures, change the hypothesis and experiment; retain the failed evidence.
 Checkpoint lane status and implementation commits at coherent milestones. Sole-human Git author:
+Stage explicit owned paths only; never git add . or git add -A in a worker session.
 use existing configured human identity; no agent/co-author trailers. No pushes, PRs, releases or
 remote changes from implementation sessions. Never rewrite shared history or merge other lanes.
 

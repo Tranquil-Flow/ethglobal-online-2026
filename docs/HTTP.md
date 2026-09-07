@@ -1,6 +1,8 @@
 # HTTP v1 boundary (implementation assigned to core)
 
 JSON UTF-8; validate exact DTOs with contracts. Public error envelope = Error schema.
+Exception: 402 challenge body/headers follow the pinned real x402 version and are validated by
+payments, not forced into Error; core relays faithfully and clients handle through paymentAuthorizer.
 Status: 400 invalid input, 401 missing/invalid access, 403 unauthorized, 404 nonexistent/inaccessible,
 409 idempotency/request conflict, 413 bounds, 429 limit (+ Retry-After), 503 unavailable.
 Never echo private bodies/payment headers in errors. Cross-user resource existence must not leak.
@@ -24,7 +26,7 @@ Capabilities travel in headers, not URL/query strings; browser SSE uses fetch st
 | GET /v1/providers?name=<ENS name> (repeat name) | none | 200 {providers:Provider[],errors:{name,code}[]} |
 | POST /v1/providers/select | {providers:Provider[],quotes:Quote[],profileId,maxAmountBaseUnits,network,asset}, authorized | 200 {selected:Provider|null,reasons:{providerId,eligible,codes}[]} |
 | POST /v1/quotes | {request:Request} | 201 Quote |
-| POST /v1/jobs | {request:Request,quoteId:string}, Idempotency-Key header, x402 payment headers if needed | 202 {job:Job,capability:string}; 402 Error + authentic payment challenge headers |
+| POST /v1/jobs | {request:Request,quoteId:string}, Idempotency-Key header, x402 payment headers if needed | 202 {job:Job,capability:string}; 402 protocol-native bounded JSON + authentic payment challenge headers |
 | GET /v1/jobs/:id | authorized | 200 Job |
 | POST /v1/jobs/:id/cancel | {} | 200 Job |
 | GET /v1/jobs/:id/events | authorized; Last-Event-ID header optional | 200 text/event-stream |
