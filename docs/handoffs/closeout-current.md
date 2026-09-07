@@ -29,3 +29,18 @@ No hosted CI, live sponsor qualification, Mycelium execution, Gas Killer
 compatibility or public release approval is established. The revision-bound
 full gate and final-candidate repeated smoke receipt remain separate from
 these prerequisite package results.
+
+## Discovery correction: `04391f596e9a3cdeae48fc0f2f70edd65f7a6a77`
+
+The subsequent fresh full gate rejected real History-driven selection. Diagnostic
+`artifacts/closeout/graph-selection-diagnostic.log` proved History was fresh but
+selection labelled it stale: its clock had been captured before awaiting History.
+The deterministic regression fails on the prior implementation and passes when
+History and observation ages use the post-response clock. Future-date rejection
+is preserved. The initial block-time hypothesis was disproved and its test-wait
+change reverted, restoring the original selection oracle.
+
+Current discovery check and smoke both exited 0 (`discovery-response-clock-green.log`);
+actual local-service composition exited 0 after removing the false-hypothesis wait
+(`response-clock-original-oracle.log`). These logs are under `artifacts/closeout/`.
+Other package code is unchanged from the fresh prerequisite verification above.

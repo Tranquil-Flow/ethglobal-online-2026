@@ -1,7 +1,7 @@
 {
   "lane": "discovery",
   "status": "local_ready",
-  "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
+  "codeRevision": "04391f596e9a3cdeae48fc0f2f70edd65f7a6a77",
   "historicalLaneCodeRevision": "4842acb92b278ca8228946d086b544f22652eab9",
   "integrationEvidence": "docs/handoffs/integration.md",
   "branch": "lane/discovery",
@@ -12,21 +12,21 @@
       "command": "npm --prefix packages/discovery run check",
       "exitCode": 0,
       "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-discovery-check.log"
+      "localLog": "artifacts/closeout/discovery-response-clock-green.log"
     },
     {
       "id": "discovery-smoke",
       "command": "npm --prefix packages/discovery run smoke",
       "exitCode": 0,
       "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-discovery-smoke.log"
+      "localLog": "artifacts/closeout/discovery-response-clock-green.log"
     },
     {
       "id": "composition",
-      "command": "npm run smoke:integration",
+      "command": "npm run check:local-services",
       "exitCode": 0,
       "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-integration.log"
+      "localLog": "artifacts/closeout/response-clock-original-oracle.log"
     }
   ],
   "externalGates": [
@@ -368,5 +368,5 @@
     "validationBefore": "Tagged validator rejected old handoff: Invalid command ID.",
     "validationAfter": "passed: exact tagged validator executed in memory, all 5 acceptance IDs and 4 required external gates covered; command evidence paths tracked; lane gate passed again with 14 discovery tests and actual smoke."
   },
-  "documentationRevisionNote": "Previous handoff preserved in archive/pre-closeout-discovery.json. Current package check/smoke and combined integration executed in a fresh owned checkout of codeRevision."
+  "documentationRevisionNote": "Discovery response-clock regression reproduced deterministically; package check/smoke and actual local-services gate passed on the committed code bytes. See closeout-current.md for adjudicated prior failure."
 }
