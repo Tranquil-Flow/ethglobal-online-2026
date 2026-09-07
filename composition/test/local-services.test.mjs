@@ -25,7 +25,7 @@ test('actual local ENS and Graph observations drive composed selection, consent 
   await infra.graph.waitFor(()=>app.diagnostics().outbox.every(x=>x.status==='confirmed'),'core consented receipt publication');
   const snapshot=await infra.graph.evm.provider.send('evm_snapshot',[]);
   const assessment=await c.createAssessment(paid.job.jobId,fixtureMethod,'test-mismatch');
-  const indexed=await infra.graph.waitFor(async()=>{const h=await c.getHistory(app.providerId);return h.observations.some(x=>x.assessmentId===assessment.assessmentId && Date.parse(x.createdAt)<=Date.now())?h:null;},'indexed observation within discovery time policy');
+  const indexed=await infra.graph.waitFor(async()=>{const h=await c.getHistory(app.providerId);return h.observations.some(x=>x.assessmentId===assessment.assessmentId)?h:null;},'composed observation');
   async function select(){return c.selectProviders({providers:(await c.listProviders([app.providerId])).providers,quotes:[paid.quote],profileId:app.profileId,maxAmountBaseUnits:'10',network:paid.quote.network,asset:paid.quote.asset});}
   const rejected=await select();assert.equal(rejected.selected,null);assert.ok(rejected.reasons[0].codes.includes('OBSERVED_MISMATCH'));
   assert.equal((await c.getReceipt(paid.job.jobId)).payload.mode,'development');
@@ -33,7 +33,7 @@ test('actual local ENS and Graph observations drive composed selection, consent 
   await infra.graph.waitFor(async()=>{const h=await c.getHistory(app.providerId);return h.freshness==='fresh'&&h.observations.length===0;},'composed history rollback');
   assert.equal((await select()).selected.providerId,app.providerId);
   const reconciliation=await app.reconcilePublications();assert.ok(reconciliation.some(x=>x.status==='confirmed'));
-  await infra.graph.waitFor(async()=>{const h=await c.getHistory(app.providerId);return h.observations.some(x=>x.assessmentId===assessment.assessmentId && Date.parse(x.createdAt)<=Date.now());},'composed history recovery');
+  await infra.graph.waitFor(async()=>{const h=await c.getHistory(app.providerId);return h.observations.some(x=>x.assessmentId===assessment.assessmentId);},'composed history recovery');
   assert.equal((await select()).selected,null);
   await infra.ens.write(infra.ens.resolver,'PermissionedResolverImpl','setText',[namehash(app.providerId),'ethonline.profiles',JSON.stringify([digestOf('other-profile')])]);
   await infra.graph.waitFor(async()=>!(await c.listProviders([app.providerId])).providers[0]?.profileIds.includes(app.profileId),'dynamic ENS selection');

@@ -196,3 +196,40 @@ test("abort, deadline and bounded names fail safely", async () => {
   const out = await slow.list({ names: ["worker.example.eth"] });
   assert.equal(out.errors[0].code, "TIMEOUT");
 });
+
+test("history timestamps are evaluated after asynchronous transport completes", async () => {
+  let current = +now;
+  const history = {
+    getHistory: async ({ providerId }) => {
+      current += 100;
+      return {
+        version: "1",
+        providerId,
+        mode: "development",
+        chainId: "31337",
+        observedAt: new Date(current).toISOString(),
+        indexedBlock: 1,
+        indexedBlockHash: "0x" + "ab".repeat(32),
+        freshness: "fresh",
+        observations: [
+          {
+            version: "1",
+            assessmentId: "async",
+            receiptDigest: digestOf("receipt"),
+            method: "test-method",
+            profileId,
+            verifierId: "test-verifier",
+            outcome: "mismatch",
+            mode: "development",
+            createdAt: new Date(current).toISOString(),
+          },
+        ],
+      };
+    },
+  };
+  const { port } = fixture({ history, clock: () => new Date(current) });
+  const { providers } = await port.list({ names: ["worker.example.eth"] });
+  const result = await choose(port, providers);
+  assert.equal(result.selected, null);
+  assert.ok(result.reasons[0].codes.includes("OBSERVED_MISMATCH"));
+});

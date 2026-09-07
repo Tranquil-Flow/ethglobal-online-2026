@@ -292,7 +292,8 @@ export function createDiscovery({
                   cfg.timeoutMs,
                 );
                 validate("History", h);
-                const age = now - Date.parse(h.observedAt);
+                const historyNow = +clock();
+                const age = historyNow - Date.parse(h.observedAt);
                 if (
                   h.providerId !== p.providerId ||
                   h.mode !== p.mode ||
@@ -315,8 +316,9 @@ export function createDiscovery({
                       o.mode === p.mode &&
                       cfg.trustedVerifiers?.includes(o.verifierId) &&
                       cfg.trustedMethods?.includes(o.method) &&
-                      now - Date.parse(o.createdAt) >= 0 &&
-                      now - Date.parse(o.createdAt) <= cfg.historyMaxAgeMs,
+                      historyNow - Date.parse(o.createdAt) >= 0 &&
+                      historyNow - Date.parse(o.createdAt) <=
+                        cfg.historyMaxAgeMs,
                   );
                   if (observations.some((o) => o.outcome === "mismatch")) {
                     historyCode = "OBSERVED_MISMATCH";
