@@ -21,5 +21,20 @@
     {"id":"public-runtime-security-review","status":"unqualified","instructions":"docs/EXTERNAL-GATES.md"},
     {"id":"mycelium-gaskiller-independent-replay","status":"inapplicable","reason":"Explicitly excluded current scope"}
   ],
-  "cleanCheckoutVerification": "pending"
+  "cleanCheckoutVerification": {
+    "status":"passed",
+    "revision":"ee89eeca690e2a8d459aa2adb8ce0373f381a605",
+    "method":"git clone --no-local of this repository; no copied node_modules or sibling worktree artifacts",
+    "cleanBeforeAndAfter":true,
+    "commands":[
+      {"command":"npm run setup","exitCode":0,"log":"artifacts/integration/clean-setup.log","sha256":"f36b404b8a56d56c9e38a0ac0738eaf720ccc60edbeafe6998b8c79a88b9990a"},
+      {"command":"npm run check:all","exitCode":0,"log":"artifacts/integration/clean-check-all.log","sha256":"9ea1563592d13f388715bec9b1fb1439e0ebadff7557bbc291fb11ef611ad30f"},
+      {"command":"npm run smoke:integration","exitCode":0,"tests":7,"failed":0,"skipped":0,"log":"artifacts/integration/clean-composition.log","sha256":"64f83723a7868560a73a33b6cd2f8eddafa0baddb7133e5dee4425aff3ea2634"}
+    ],
+    "syntheticJobId":"ffc4f63d-0653-4ad1-a347-6c2cb944ea7d",
+    "pageErrors":[],
+    "ownedProcessesCleaned":true,
+    "portableEvidence":"docs/handoffs/integration.md",
+    "limitations":"Existing host compiler/npm cache/browser cache may be reused; hosted CI, fresh OS and live providers are not verified"
+  }
 }

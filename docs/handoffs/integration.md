@@ -7,6 +7,30 @@ This is local synthetic composition, **not public/live/inference qualification**
 The final evidence-only commit may follow this candidate; compare implementation paths before
 reusing its evidence. Machine-readable final command receipts are in `integration.json`.
 
+### Clean-checkout verification completed
+
+A new `git clone --no-local` at `ee89eeca690e2a8d459aa2adb8ce0373f381a605` installed all
+package locks from scratch (no copied node_modules or sibling artifacts). From that checkout,
+`npm run setup`, `npm run check:all`, and `npm run smoke:integration` each returned **exit 0**.
+The checkout was clean before and after. This evidence update changes only handoff documents;
+source, dependencies, setup, workflow and test bytes still match the tested implementation.
+
+Full gate groups: contracts 22; root gate tests 6; core 34; payments 40; discovery 14;
+indexing Node tests 16 plus Matchstick mapping tests 10; access 27; composition 7.
+All groups passed with no failures/skips. Contracts and selected access smoke tests are rerun
+inside lane gates, so these are group sizes, not an inflated unique-test total.
+All five exact-revision handoff gates passed. The seven combined tests also passed separately.
+
+The clean-checkout Chromium job `ffc4f63d-0653-4ad1-a347-6c2cb944ea7d` was read by SDK,
+CLI and MCP; page errors were empty, and a separate native CLI submission completed. Both
+restart and abrupt-crash cases passed. Owned test/service processes were absent at cleanup check.
+Logs and SHA-256 values are recorded in `integration.json`; hashes identify retained logs, not
+independent attestation. The host compiler/npm/browser caches may be reused; this is a fresh
+checkout on this host, not a fresh operating-system or hosted-CI qualification.
+
+Reproduce from the repository root: select `.nvmrc`, then `npm run setup && npm run check:all && npm run smoke:integration`.
+
+
 The owner read AGENTS, INTEGRATION, REVIEW-ADDENDUM, ARCHITECTURE, PORTS, HTTP, RELEASE,
 lanes.json, package factories/entrypoints, tests and handoff metadata. All five lane worktrees
 were clean; the user supplied them as completed. No lane worktree was modified.
