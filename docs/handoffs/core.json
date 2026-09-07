@@ -1,8 +1,1 @@
-{
-  "lane": "core",
-  "status": "not_started",
-  "codeRevision": null,
-  "commands": [],
-  "externalGates": [],
-  "contractRequests": []
-}
+{"lane":"core","status":"in_progress","codeRevision":"13f5e295bdeb833b9977a84edc97b2ee64147579","commands":[],"externalGates":["Combined cross-lane composition","Live x402/Blocky402/Hedera payment qualification","Live ENSv2/Graph/publication qualification","Real execution and assessment adapters are outside this lane","Human release/license/sponsor/publication decisions"],"contractRequests":[]}
