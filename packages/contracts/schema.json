@@ -1,0 +1,822 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ethonline.invalid/contracts/v1",
+  "$defs": {
+    "Request": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "1"
+        },
+        "nonce": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "providerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "profileId": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "prompt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32768
+        },
+        "maxOutputTokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "sampling": {
+          "const": "greedy"
+        },
+        "publishConsent": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "version",
+        "nonce",
+        "providerId",
+        "profileId",
+        "prompt",
+        "maxOutputTokens",
+        "seed",
+        "sampling",
+        "publishConsent"
+      ],
+      "additionalProperties": false
+    },
+    "Profile": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "1"
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "digest": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              "uri": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
+              }
+            },
+            "required": [
+              "role",
+              "digest",
+              "uri"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 128
+        },
+        "runtimeRevision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "tokenizerDigest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "templateDigest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "numerics": {
+          "type": "object",
+          "properties": {
+            "dtype": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "quantization": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "backend": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "hardwareClass": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "determinism": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            }
+          },
+          "required": [
+            "dtype",
+            "quantization",
+            "backend",
+            "hardwareClass",
+            "determinism"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "version",
+        "model",
+        "artifacts",
+        "runtimeRevision",
+        "tokenizerDigest",
+        "templateDigest",
+        "numerics"
+      ],
+      "additionalProperties": false
+    },
+    "Quote": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "1"
+        },
+        "quoteId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "requestHash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "providerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "profileId": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "amountBaseUnits": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,77})$"
+        },
+        "asset": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "network": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "receiver": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "mode": {
+          "enum": [
+            "development",
+            "live"
+          ]
+        }
+      },
+      "required": [
+        "version",
+        "quoteId",
+        "requestHash",
+        "providerId",
+        "profileId",
+        "amountBaseUnits",
+        "asset",
+        "network",
+        "receiver",
+        "expiresAt",
+        "mode"
+      ],
+      "additionalProperties": false
+    },
+    "Payment": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "1"
+        },
+        "paymentId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "quoteId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "requestHash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "authorized",
+            "settled",
+            "failed",
+            "paid_but_failed",
+            "refund_pending",
+            "refunded"
+          ]
+        },
+        "mode": {
+          "enum": [
+            "development",
+            "live"
+          ]
+        },
+        "transactionRef": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "failureCode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "version",
+        "paymentId",
+        "quoteId",
+        "requestHash",
+        "status",
+        "mode"
+      ],
+      "additionalProperties": false
+    },
+    "Output": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "maxLength": 1048576
+        },
+        "tokenIds": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4294967295
+          },
+          "maxItems": 4096
+        },
+        "finishReason": {
+          "enum": [
+            "stop",
+            "length",
+            "cancelled"
+          ]
+        }
+      },
+      "required": [
+        "text",
+        "tokenIds",
+        "finishReason"
+      ],
+      "additionalProperties": false
+    },
+    "ReceiptPayload": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "1"
+        },
+        "jobId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "requestHash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "profileId": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "outputHash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "providerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "quoteId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "paymentId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "mode": {
+          "enum": [
+            "development",
+            "live"
+          ]
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "evidenceDigest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "version",
+        "jobId",
+        "requestHash",
+        "profileId",
+        "outputHash",
+        "providerId",
+        "mode",
+        "issuedAt"
+      ],
+      "additionalProperties": false
+    },
+    "SignedReceipt": {
+      "type": "object",
+      "properties": {
+        "payload": {
+          "$ref": "#/$defs/ReceiptPayload"
+        },
+        "keyId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "algorithm": {
+          "const": "Ed25519"
+        },
+        "signature": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{86}$"
+        }
+      },
+      "required": [
+        "payload",
+        "keyId",
+        "algorithm",
+        "signature"
+      ],
+      "additionalProperties": false
+    },
+    "Assessment": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "1"
+        },
+        "assessmentId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "receiptDigest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "method": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "profileId": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "verifierId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "outcome": {
+          "enum": [
+            "pending",
+            "passed",
+            "mismatch",
+            "inconclusive",
+            "unavailable"
+          ]
+        },
+        "mode": {
+          "enum": [
+            "development",
+            "live"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "evidenceDigest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "reasonCode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "version",
+        "assessmentId",
+        "receiptDigest",
+        "method",
+        "profileId",
+        "verifierId",
+        "outcome",
+        "mode",
+        "createdAt"
+      ],
+      "additionalProperties": false
+    },
+    "Job": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "1"
+        },
+        "jobId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "requestHash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "executionStatus": {
+          "enum": [
+            "queued",
+            "running",
+            "succeeded",
+            "failed",
+            "cancelled"
+          ]
+        },
+        "mode": {
+          "enum": [
+            "development",
+            "live"
+          ]
+        },
+        "payment": {
+          "$ref": "#/$defs/Payment"
+        },
+        "output": {
+          "$ref": "#/$defs/Output"
+        },
+        "receiptDigest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "assessmentIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 1024
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "failureCode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "version",
+        "jobId",
+        "requestHash",
+        "executionStatus",
+        "mode",
+        "assessmentIds",
+        "createdAt",
+        "updatedAt"
+      ],
+      "additionalProperties": false
+    },
+    "Provider": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "1"
+        },
+        "providerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "endpoint": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "profileIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "maxItems": 128
+        },
+        "paymentNetwork": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "paymentAsset": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "paymentReceiver": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "mode": {
+          "enum": [
+            "development",
+            "live"
+          ]
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "chainId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "blockNumber": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "blockHash": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "resolvedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "expiresAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "chainId",
+            "blockNumber",
+            "blockHash",
+            "resolvedAt",
+            "expiresAt"
+          ],
+          "additionalProperties": false
+        },
+        "historyEndpoint": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        }
+      },
+      "required": [
+        "version",
+        "providerId",
+        "name",
+        "endpoint",
+        "profileIds",
+        "paymentNetwork",
+        "paymentAsset",
+        "paymentReceiver",
+        "mode",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "History": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "1"
+        },
+        "providerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "observations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Assessment"
+          },
+          "maxItems": 1000
+        },
+        "freshness": {
+          "enum": [
+            "fresh",
+            "stale",
+            "unavailable"
+          ]
+        },
+        "indexedBlock": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "indexedBlockHash": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "chainId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "observedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "mode": {
+          "enum": [
+            "development",
+            "live"
+          ]
+        }
+      },
+      "required": [
+        "version",
+        "providerId",
+        "observations",
+        "freshness",
+        "chainId",
+        "observedAt",
+        "mode"
+      ],
+      "additionalProperties": false
+    },
+    "PublicEvent": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "1"
+        },
+        "kind": {
+          "enum": [
+            "receipt",
+            "assessment"
+          ]
+        },
+        "objectDigest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "receiptDigest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "providerKey": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "mode": {
+          "enum": [
+            "development",
+            "live"
+          ]
+        },
+        "outcome": {
+          "enum": [
+            "pending",
+            "passed",
+            "mismatch",
+            "inconclusive",
+            "unavailable"
+          ]
+        },
+        "verifierKey": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "methodKey": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "assessment": {"$ref": "#/$defs/Assessment"}
+      },
+      "if": {"properties": {"kind": {"const": "assessment"}}},
+      "then": {"properties": {"assessment": {}, "outcome": {}, "verifierKey": {}, "methodKey": {}}, "required": ["assessment", "outcome", "verifierKey", "methodKey"]},
+      "else": {"properties": {"assessment": false, "outcome": false, "verifierKey": false, "methodKey": false}},
+      "required": [
+        "version",
+        "kind",
+        "objectDigest",
+        "receiptDigest",
+        "providerKey",
+        "mode"
+      ],
+      "additionalProperties": false
+    },
+    "Error": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

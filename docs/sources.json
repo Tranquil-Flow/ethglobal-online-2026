@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": 1,
+      "url": "https://ethglobal.com/events/ethonline2026/info/details",
+      "title": "",
+      "accessed": "2026-09-07"
+    },
+    {
+      "id": 2,
+      "url": "https://ethglobal.com/events/ethonline2026/prizes/hedera",
+      "title": "",
+      "accessed": "2026-09-07"
+    },
+    {
+      "id": 3,
+      "url": "https://ethglobal.com/events/ethonline2026/prizes/ens",
+      "title": "",
+      "accessed": "2026-09-07"
+    },
+    {
+      "id": 4,
+      "url": "https://ethglobal.com/events/ethonline2026/prizes/the-graph",
+      "title": "",
+      "accessed": "2026-09-07"
+    },
+    {
+      "id": 5,
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/features/goals",
+      "title": "",
+      "accessed": "2026-09-07"
+    }
+  ]
+}

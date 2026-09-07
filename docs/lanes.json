@@ -1,0 +1,62 @@
+{
+  "core": {
+    "branch": "lane/core",
+    "worktree": "/Users/evinova-self/Projects/ethglobal-online-2026-core",
+    "owned": [
+      "packages/core/",
+      "docs/handoffs/core.md",
+      "docs/handoffs/core.json",
+      "docs/handoffs/core-contract-request.md",
+      "docs/handoffs/core-provenance.md"
+    ],
+    "manualPort": 4310
+  },
+  "payments": {
+    "branch": "lane/payments",
+    "worktree": "/Users/evinova-self/Projects/ethglobal-online-2026-payments",
+    "owned": [
+      "packages/payments/",
+      "docs/handoffs/payments.md",
+      "docs/handoffs/payments.json",
+      "docs/handoffs/payments-contract-request.md",
+      "docs/handoffs/payments-provenance.md"
+    ],
+    "manualPort": 4320
+  },
+  "discovery": {
+    "branch": "lane/discovery",
+    "worktree": "/Users/evinova-self/Projects/ethglobal-online-2026-discovery",
+    "owned": [
+      "packages/discovery/",
+      "docs/handoffs/discovery.md",
+      "docs/handoffs/discovery.json",
+      "docs/handoffs/discovery-contract-request.md",
+      "docs/handoffs/discovery-provenance.md"
+    ],
+    "manualPort": 4330
+  },
+  "indexing": {
+    "branch": "lane/indexing",
+    "worktree": "/Users/evinova-self/Projects/ethglobal-online-2026-indexing",
+    "owned": [
+      "packages/indexing/",
+      "docs/handoffs/indexing.md",
+      "docs/handoffs/indexing.json",
+      "docs/handoffs/indexing-contract-request.md",
+      "docs/handoffs/indexing-provenance.md"
+    ],
+    "manualPort": 4340
+  },
+  "access": {
+    "branch": "lane/access",
+    "worktree": "/Users/evinova-self/Projects/ethglobal-online-2026-access",
+    "owned": [
+      "packages/access/",
+      "docs/handoffs/access.md",
+      "docs/handoffs/access.json",
+      "docs/handoffs/access-contract-request.md",
+      "docs/handoffs/access-provenance.md"
+    ],
+    "manualPort": 4350
+  }
+}
