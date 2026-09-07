@@ -1,8 +1,582 @@
 {
   "lane": "payments",
-  "status": "not_started",
-  "codeRevision": null,
-  "commands": [],
-  "externalGates": [],
-  "contractRequests": []
+  "status": "local_ready",
+  "codeRevision": "a0ead5c969d19c42815429fe446ac416ef5e7e43",
+  "runtime": {
+    "node": "20.19.5",
+    "npm": "10.8.2",
+    "platform": "darwin-arm64",
+    "selectedNodeBin": "/Users/evinova-self/Projects/cheapDisperse-evidence-20260907/node-v20.19.5-darwin-arm64/bin",
+    "note": "PATH selected per command; same Node ABI for npm ci and verification. No other checkout modified."
+  },
+  "verifiedAt": "2026-09-07T15:38:53.612751+00:00",
+  "commands": [
+    {
+      "command": "npm --prefix packages/payments test",
+      "exitCode": 0,
+      "evidence": "packages/payments/test-results/41-final-test.log",
+      "sha256": "6710128e5888687dbbead294d77588d9d7ccf023b907a078b683dea025b6f66a"
+    },
+    {
+      "command": "npm --prefix packages/payments run check",
+      "exitCode": 0,
+      "evidence": "packages/payments/test-results/42-final-check.log",
+      "sha256": "20a6148313815f0faf2e30514a9f2b29bf6648e1d435e94249fc7a1c6148987a"
+    },
+    {
+      "command": "npm --prefix packages/payments run smoke",
+      "exitCode": 0,
+      "evidence": "packages/payments/test-results/43-final-smoke.log",
+      "sha256": "84fc04895e42bb8cc6c5b0fafa2049076fe7a5f7892aa08d1099e727ce160039"
+    },
+    {
+      "command": "npm --prefix packages/payments audit --json",
+      "exitCode": 0,
+      "evidence": "packages/payments/test-results/44-final-audit.json",
+      "sha256": "4e7fcf0f7ac547258e6821604b60e8a323852141806ef5a318812fbcea97a4ae"
+    },
+    {
+      "command": "npm --prefix packages/payments run smoke:live -- --network hedera:testnet --budget 1000",
+      "exitCode": 0,
+      "evidence": "packages/payments/test-results/45-final-live-dry-run.log",
+      "sha256": "336de67a7739d70ca14e6c46005a8b4d2e284e43dfa13df5ca0431176a05aeff"
+    },
+    {
+      "command": "npm --prefix packages/payments run audit:hcs -- --network hedera:testnet --mode development --consent --topic 0.0.1234 --digest sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "exitCode": 0,
+      "evidence": "packages/payments/test-results/46-final-hcs-dry-run.log",
+      "sha256": "842c53a62e90b14f76d9b981a7ab0349bed8de4ea362052ede61b3c272700940"
+    },
+    {
+      "command": "npm --prefix packages/contracts run check",
+      "exitCode": 0,
+      "evidence": "packages/payments/test-results/47-final-contracts-check.log",
+      "sha256": "767d261d143c3c8dc99f385532493106c3c736640f163e832d51509d54063c57"
+    },
+    {
+      "command": "npm run check:lane -- payments",
+      "exitCode": 0,
+      "evidence": "packages/payments/test-results/48-check-lane.log",
+      "sha256": "dc5bf3efdf0a3d2a327584fd6892f6bce348c5985e9910a5341a56bec0657daf"
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "protocol",
+      "status": "verified_local",
+      "result": "Actual x402 v2 exact Hedera serialization and SDK payer verification; documented native pins",
+      "implementationEvidence": [
+        "packages/payments/test/guards.test.mjs",
+        "packages/payments/test/payments.test.mjs",
+        "packages/payments/docs/PROTOCOL.md"
+      ],
+      "commandEvidence": "packages/payments/test-results/42-final-check.log"
+    },
+    {
+      "id": "quote",
+      "status": "verified_local",
+      "result": "Server-derived BigInt bounded quote; retained authority; provider/profile/request/principal/mode and expiry binding",
+      "implementationEvidence": [
+        "packages/payments/test/payments.test.mjs"
+      ],
+      "commandEvidence": "packages/payments/test-results/42-final-check.log"
+    },
+    {
+      "id": "gated-service",
+      "status": "verified_local",
+      "result": "Actual child-process gated synthetic service, not inference; SDK signatures and local HTTP",
+      "implementationEvidence": [
+        "packages/payments/scripts/smoke.mjs"
+      ],
+      "commandEvidence": "packages/payments/test-results/43-final-smoke.log"
+    },
+    {
+      "id": "replay",
+      "status": "verified_local",
+      "result": "Duplicate/replayed proofs return same payment or conflict; cannot transfer to another principal or quote",
+      "implementationEvidence": [
+        "packages/payments/test/payments.test.mjs",
+        "packages/payments/test/guards.test.mjs"
+      ],
+      "commandEvidence": "packages/payments/test-results/42-final-check.log"
+    },
+    {
+      "id": "modified-forged",
+      "status": "verified_local",
+      "result": "Changed receiver/asset/network/amount/request/transaction body; wrong signer; forged headers/challenge/settlement response rejected",
+      "implementationEvidence": [
+        "packages/payments/test/payments.test.mjs",
+        "packages/payments/test/client.test.mjs",
+        "packages/payments/test/guards.test.mjs"
+      ],
+      "commandEvidence": "packages/payments/test-results/42-final-check.log"
+    },
+    {
+      "id": "expired-outage",
+      "status": "verified_local",
+      "result": "Expired quotes and stale signed transactions; real HTTP stale-quote and facilitator outage reject execution",
+      "implementationEvidence": [
+        "packages/payments/test/payments.test.mjs",
+        "packages/payments/test/client.test.mjs",
+        "packages/payments/test/guards.test.mjs"
+      ],
+      "commandEvidence": "packages/payments/test-results/42-final-check.log"
+    },
+    {
+      "id": "concurrency",
+      "status": "verified_local",
+      "result": "Two actual service processes share unique SQLite reservation; simultaneous duplicate proofs settle once; late response cannot overwrite paid_but_failed",
+      "implementationEvidence": [
+        "packages/payments/scripts/smoke.mjs",
+        "packages/payments/test/payments.test.mjs"
+      ],
+      "commandEvidence": "packages/payments/test-results/43-final-smoke.log"
+    },
+    {
+      "id": "ambiguity-restart",
+      "status": "verified_local",
+      "result": "Disconnect after simulated settlement; new process reconciles retained ID without resubmission; unknown/forged result stays pending",
+      "implementationEvidence": [
+        "packages/payments/scripts/smoke.mjs",
+        "packages/payments/test/payments.test.mjs"
+      ],
+      "commandEvidence": "packages/payments/test-results/43-final-smoke.log"
+    },
+    {
+      "id": "budget",
+      "status": "verified_local",
+      "result": "Per-request and cumulative reservations; concurrent client spending cap; integer amounts beyond IEEE-754; quote storage bounds",
+      "implementationEvidence": [
+        "packages/payments/test/payments.test.mjs",
+        "packages/payments/test/client.test.mjs",
+        "packages/payments/test/audit.test.mjs"
+      ],
+      "commandEvidence": "packages/payments/test-results/42-final-check.log"
+    },
+    {
+      "id": "paid-but-failed-refund",
+      "status": "verified_local",
+      "result": "Worker failure/cancellation after payment persists paid_but_failed; idempotent job mapping; operator approval and mirror-confirmed refund states; no sending",
+      "implementationEvidence": [
+        "packages/payments/test/payments.test.mjs",
+        "packages/payments/test/client.test.mjs",
+        "packages/payments/scripts/smoke.mjs"
+      ],
+      "commandEvidence": "packages/payments/test-results/42-final-check.log"
+    },
+    {
+      "id": "bounded-client",
+      "status": "verified_local",
+      "result": "One native challenge, explicit wallet approval, one paid retry; wallet denial/deadline/budget guards; noncustodial SDK signing callback",
+      "implementationEvidence": [
+        "packages/payments/test/client.test.mjs",
+        "packages/payments/test/guards.test.mjs"
+      ],
+      "commandEvidence": "packages/payments/test-results/42-final-check.log"
+    },
+    {
+      "id": "privacy",
+      "status": "verified_local",
+      "result": "No HTTP-selected principal, no durable raw prompt/nonce/proof, typed safe failures, explicit dev/live guards, bounded body/response/abort/redirect behavior",
+      "implementationEvidence": [
+        "packages/payments/test/client.test.mjs",
+        "packages/payments/test/payments.test.mjs",
+        "packages/payments/test/guards.test.mjs"
+      ],
+      "commandEvidence": "packages/payments/test-results/42-final-check.log"
+    },
+    {
+      "id": "operator-scripts",
+      "status": "verified_local",
+      "result": "Live preflight does not import wallet; optional native HCS serialization with consent and distinct claims; external execution remains unverified",
+      "implementationEvidence": [
+        "packages/payments/scripts/live-smoke.mjs",
+        "packages/payments/scripts/hcs-audit.mjs",
+        "packages/payments/test/audit.test.mjs",
+        "packages/payments/test/guards.test.mjs"
+      ],
+      "commandEvidence": "packages/payments/test-results/46-final-hcs-dry-run.log"
+    }
+  ],
+  "observed": {
+    "paymentsTests": {
+      "tests": 35,
+      "pass": 35,
+      "fail": 0,
+      "skipped": 0
+    },
+    "contractsTests": {
+      "tests": 22,
+      "pass": 22,
+      "fail": 0,
+      "skipped": 0
+    },
+    "audit": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "smoke": {
+      "mode": "development",
+      "realBoundaries": [
+        "child-process HTTP service",
+        "SQLite restart",
+        "two-process unique reservation",
+        "SDK signing and v2 serialization"
+      ],
+      "scenarios": [
+        "gated synthetic compute",
+        "replay after process restart",
+        "simultaneous duplicate proof",
+        "ambiguous settlement restart reconciliation",
+        "worker failure after settlement"
+      ],
+      "simulatedFacilitatorVerifyCalls": 4,
+      "simulatedSettlementCalls": 4,
+      "mirrorHttpCalls": 5,
+      "livePayments": 0,
+      "inferenceRuns": 0,
+      "childrenStopped": true
+    }
+  },
+  "failedAttempts": [
+    {
+      "evidence": [
+        "packages/payments/test-results/01-red.log",
+        "packages/payments/test-results/06-client-red.log",
+        "packages/payments/test-results/09-guards-red.log",
+        "packages/payments/test-results/13-audit-red.log",
+        "packages/payments/test-results/15-review-red.log",
+        "packages/payments/test-results/22-response-binding-red.log"
+      ],
+      "classification": "intentional TDD red",
+      "disposition": "Implemented missing behavior, then verified complete final suite without deleted/skipped cases."
+    },
+    {
+      "evidence": [
+        "packages/payments/test-results/02-first-implementation.log",
+        "packages/payments/test-results/03-node-test.log"
+      ],
+      "classification": "early implementation/setup failure",
+      "disposition": "Retained timeout and SQL insert arity failure; repaired eight-column statement and used consistent Node runtime. These are not passing evidence."
+    },
+    {
+      "evidence": [
+        "packages/payments/test-results/08-race-red.log",
+        "packages/payments/test-results/11-smoke-first.log"
+      ],
+      "classification": "concurrency defects",
+      "disposition": "Preserved terminal payment outcome on late response and atomically reused concurrent matching reservation; final process smoke passes."
+    },
+    {
+      "evidence": [
+        "packages/payments/test-results/dependency-audit.json",
+        "packages/payments/test-results/dependency-audit-after.json"
+      ],
+      "classification": "dependency audit failures",
+      "disposition": "Scoped transitive overrides and current ESLint; final audit total zero with SDK regressions passing."
+    },
+    {
+      "evidence": [
+        "packages/payments/test-results/18-http-bigint-red.log"
+      ],
+      "classification": "runtime setup failure",
+      "disposition": "Node 25 ABI 141 attempted to load Node 20 ABI 115 addon; selected consistent existing Node 20.19.5 and performed clean package-local npm ci. No guard disabled or global runtime changed."
+    },
+    {
+      "evidence": [
+        "packages/payments/test-results/19-http-bigint-node20.log"
+      ],
+      "classification": "test-fixture precision defect exposed by expanded acceptance",
+      "disposition": "Synthetic mirror used Number and rounded large amounts. Replaced with BigInt and lossless JSON; the real parser already preserved integer precision. Expanded high-amount settlement now passes."
+    },
+    {
+      "evidence": [
+        "packages/payments/test-results/38-hcs-dry-run.log"
+      ],
+      "classification": "documentation invocation failure",
+      "disposition": "README omitted mandatory network/consent flags and named wrong submit adapter interface. Corrected documentation in a0ead5c; exact CLI invocation passes with no broadcast."
+    }
+  ],
+  "externalGates": [
+    {
+      "id": "live-blocky402",
+      "status": "unverified_external",
+      "owner": "User/operator",
+      "required": "Fresh authorization, funded Hedera testnet wallet and per-action budget, provisioned receiver, approved wallet/service adapter; observe actual paid service and independent transaction reference. Read-only supported discovery is not qualification."
+    },
+    {
+      "id": "live-refund",
+      "status": "unverified_external",
+      "owner": "User/operator",
+      "required": "Separately approve and execute a funded reverse transfer if a real payment failed; verify matching mirror transfer before refunded. This lane never sends refunds."
+    },
+    {
+      "id": "optional-hcs",
+      "status": "unverified_external_optional",
+      "owner": "User/operator",
+      "required": "Provisioned topic, explicit publication consent, wallet/budget/custom-fee approval and real consensus receipt; no broadcast in this goal."
+    },
+    {
+      "id": "combined-integration",
+      "status": "not_claimed_out_of_lane",
+      "owner": "Integration owner",
+      "required": "Merge reviewed lanes and wire actual shared application/auth/jobs/access; run combined HTTP/CLI/browser composition. No sibling runtime imports or changes were made."
+    },
+    {
+      "id": "release-eligibility-license",
+      "status": "unverified_external",
+      "owner": "User",
+      "required": "Confirm sponsor pool and from-scratch eligibility, select license, approve public visibility/push/deployment/submission. None performed."
+    },
+    {
+      "id": "execution-assessment",
+      "status": "not_claimed_out_of_lane",
+      "owner": "Future separately authorized integration",
+      "required": "Mycelium/Gas Killer adapters, physical inference and replay/assessment qualification are explicitly outside this lane."
+    }
+  ],
+  "contractRequests": [],
+  "revisionPolicy": "Implementation committed as 3ff27f3; package README correction committed as a0ead5c. All final tests/check/smoke ran on full codeRevision. Subsequent handoff-only commits do not change packages/payments or contracts. Root gate verifies this.",
+  "setupEvidence": [
+    "packages/payments/test-results/25-contracts-ci.log",
+    "packages/payments/test-results/26-payments-ci.log"
+  ],
+  "evidenceManifest": [
+    {
+      "path": "packages/payments/test-results/01-red.log",
+      "sha256": "3508711b7dfb8a2ff8440c6d91aa4adf5ac47604715cb4cbdbd867e93313d9d5"
+    },
+    {
+      "path": "packages/payments/test-results/02-first-implementation.log",
+      "sha256": "e8d9f4ec64cbd67d479c06fd788993fa3b53701985d983f7c79d2165ab3366e7"
+    },
+    {
+      "path": "packages/payments/test-results/03-node-test.log",
+      "sha256": "575f1a8ef4033715f735297bfd99441a70f98300ac23f320dcc8de08ed5b19e5"
+    },
+    {
+      "path": "packages/payments/test-results/04-green-port.log",
+      "sha256": "e11dc7bd0266c314d001b31ef61a8eb64d18b2671af91e7cac91188ddb55d45a"
+    },
+    {
+      "path": "packages/payments/test-results/05-port-tests.log",
+      "sha256": "8bb26a74cdc47a7ad71c79ac80f8f4488ea5f3645003013253185f7d0a50f99b"
+    },
+    {
+      "path": "packages/payments/test-results/06-client-red.log",
+      "sha256": "64d6560a20709c0b5a11b3807626683d9960a66c87061f541d5cdb8ae7e6f560"
+    },
+    {
+      "path": "packages/payments/test-results/07-http-tests.log",
+      "sha256": "ee1976f74566de1638714c9afc4b14b5a561bb507df8babab06b980dbc0ca134"
+    },
+    {
+      "path": "packages/payments/test-results/08-race-red.log",
+      "sha256": "abd673a7b4a92a2339feb189fdfe7c3660da6ee6cba77dc19e6a26ff2349bfee"
+    },
+    {
+      "path": "packages/payments/test-results/09-guards-red.log",
+      "sha256": "fb5aa9613e0562037930601f1d1b3dd5cccaa241e7bd582477e63a5bf645ab4e"
+    },
+    {
+      "path": "packages/payments/test-results/10-check-first.log",
+      "sha256": "6419d6661c5145b60cb75c64cbca47d49c1a0c0d57dfbc1d5574b8db2ff679f0"
+    },
+    {
+      "path": "packages/payments/test-results/11-smoke-first.log",
+      "sha256": "7309bb3375d4c1c6cbf556ac525b67cad5525d0ef4babff5c2fad3b5d3445fe2"
+    },
+    {
+      "path": "packages/payments/test-results/12-smoke-multiprocess.log",
+      "sha256": "84fc04895e42bb8cc6c5b0fafa2049076fe7a5f7892aa08d1099e727ce160039"
+    },
+    {
+      "path": "packages/payments/test-results/13-audit-red.log",
+      "sha256": "44892fe80abec29d47cff8c02399a0435c096bbd8bc862734c4a026eb1d9dbd4"
+    },
+    {
+      "path": "packages/payments/test-results/14-full-check.log",
+      "sha256": "d27bfe079c7c9381a2e3b21aff53bbe458b3e4fb4c552f062d19d3f79fb39336"
+    },
+    {
+      "path": "packages/payments/test-results/15-review-red.log",
+      "sha256": "2c31ce142f4cf7dff2a81bd0d1d7b2fab4b78c158c96b5273f9d94e66bcb5ed6"
+    },
+    {
+      "path": "packages/payments/test-results/16-review-green.log",
+      "sha256": "13101e4eaea0915f4b35d684688243450cf6caf20781b14a176b5ee186c831a5"
+    },
+    {
+      "path": "packages/payments/test-results/17-smoke-reviewed.log",
+      "sha256": "84fc04895e42bb8cc6c5b0fafa2049076fe7a5f7892aa08d1099e727ce160039"
+    },
+    {
+      "path": "packages/payments/test-results/18-http-bigint-red.log",
+      "sha256": "8a2c183198e3ce9550ad30ddabfb847ad7c36de9c3ac4185ae74fd459fea9c37"
+    },
+    {
+      "path": "packages/payments/test-results/19-http-bigint-node20.log",
+      "sha256": "eeea336ccf40fafcf2a6ac79e0cc9e3e6d53e01864bbdcef2e864c7ef4def279"
+    },
+    {
+      "path": "packages/payments/test-results/20-final-review.log",
+      "sha256": "7e923cbe9d991c5673732655a56d0b4ce0cd1f132d92d82bf806d230dda37f42"
+    },
+    {
+      "path": "packages/payments/test-results/21-final-smoke.log",
+      "sha256": "84fc04895e42bb8cc6c5b0fafa2049076fe7a5f7892aa08d1099e727ce160039"
+    },
+    {
+      "path": "packages/payments/test-results/22-response-binding-red.log",
+      "sha256": "5e6caa4d2704ba6e48e94c2e3a69bec1cb9d1aa7112692792f7e92394625d051"
+    },
+    {
+      "path": "packages/payments/test-results/23-lock-refresh.log",
+      "sha256": "36b9a509c96e0f31cfe3b9935eb707890d575cc1cdd708a9a89c8b553fed030d"
+    },
+    {
+      "path": "packages/payments/test-results/24-format.log",
+      "sha256": "f409ef70001609b80ad3903ead8866e14b90d56661e8d65dcc2ad220bb764141"
+    },
+    {
+      "path": "packages/payments/test-results/25-contracts-ci.log",
+      "sha256": "81936582a454e9026fd94af41c36b29a6e375296713a3b0fea6e9fbd3b509db4"
+    },
+    {
+      "path": "packages/payments/test-results/26-payments-ci.log",
+      "sha256": "7881802de71b45dfe493402ad9d905e157df064246d3713fc661f67ab9f08b5b"
+    },
+    {
+      "path": "packages/payments/test-results/27-clean-check.log",
+      "sha256": "7c56355ff39886ca92ff8adb5e9ebba9326c87abd4a69ea5a5080c6491a54070"
+    },
+    {
+      "path": "packages/payments/test-results/28-clean-smoke.log",
+      "sha256": "84fc04895e42bb8cc6c5b0fafa2049076fe7a5f7892aa08d1099e727ce160039"
+    },
+    {
+      "path": "packages/payments/test-results/29-final-format.log",
+      "sha256": "de580a6d093b5012615cfd0f654b8c965a47776257745820c5bc42ef61ba73e1"
+    },
+    {
+      "path": "packages/payments/test-results/30-candidate-check.log",
+      "sha256": "69e15919eb8fa414bd9d24adc2c3895269d210f19effd172c6ce61b2ccdd6f45"
+    },
+    {
+      "path": "packages/payments/test-results/31-candidate-smoke.log",
+      "sha256": "84fc04895e42bb8cc6c5b0fafa2049076fe7a5f7892aa08d1099e727ce160039"
+    },
+    {
+      "path": "packages/payments/test-results/32-candidate-audit.json",
+      "sha256": "4e7fcf0f7ac547258e6821604b60e8a323852141806ef5a318812fbcea97a4ae"
+    },
+    {
+      "path": "packages/payments/test-results/33-revision-test.log",
+      "sha256": "31dd4cd72c2fd4f266b3f9962b8ca149af2f46fc8bf2db14e7c18e94d1c0319d"
+    },
+    {
+      "path": "packages/payments/test-results/34-revision-check.log",
+      "sha256": "d5ebeebc56b30b25085e468fe2578daa60121ce8ec8af05d03623bdc9c516a85"
+    },
+    {
+      "path": "packages/payments/test-results/35-revision-smoke.log",
+      "sha256": "84fc04895e42bb8cc6c5b0fafa2049076fe7a5f7892aa08d1099e727ce160039"
+    },
+    {
+      "path": "packages/payments/test-results/36-revision-audit.json",
+      "sha256": "4e7fcf0f7ac547258e6821604b60e8a323852141806ef5a318812fbcea97a4ae"
+    },
+    {
+      "path": "packages/payments/test-results/37-live-dry-run.log",
+      "sha256": "336de67a7739d70ca14e6c46005a8b4d2e284e43dfa13df5ca0431176a05aeff"
+    },
+    {
+      "path": "packages/payments/test-results/38-hcs-dry-run.log",
+      "sha256": "674220f1bd1bfd354d677a214ae3cfabd6439eb76103842161cf28f9b5d04aab"
+    },
+    {
+      "path": "packages/payments/test-results/40-hcs-dry-run-fixed.log",
+      "sha256": "842c53a62e90b14f76d9b981a7ab0349bed8de4ea362052ede61b3c272700940"
+    },
+    {
+      "path": "packages/payments/test-results/41-final-test.log",
+      "sha256": "6710128e5888687dbbead294d77588d9d7ccf023b907a078b683dea025b6f66a"
+    },
+    {
+      "path": "packages/payments/test-results/42-final-check.log",
+      "sha256": "20a6148313815f0faf2e30514a9f2b29bf6648e1d435e94249fc7a1c6148987a"
+    },
+    {
+      "path": "packages/payments/test-results/43-final-smoke.log",
+      "sha256": "84fc04895e42bb8cc6c5b0fafa2049076fe7a5f7892aa08d1099e727ce160039"
+    },
+    {
+      "path": "packages/payments/test-results/44-final-audit.json",
+      "sha256": "4e7fcf0f7ac547258e6821604b60e8a323852141806ef5a318812fbcea97a4ae"
+    },
+    {
+      "path": "packages/payments/test-results/45-final-live-dry-run.log",
+      "sha256": "336de67a7739d70ca14e6c46005a8b4d2e284e43dfa13df5ca0431176a05aeff"
+    },
+    {
+      "path": "packages/payments/test-results/46-final-hcs-dry-run.log",
+      "sha256": "842c53a62e90b14f76d9b981a7ab0349bed8de4ea362052ede61b3c272700940"
+    },
+    {
+      "path": "packages/payments/test-results/47-final-contracts-check.log",
+      "sha256": "767d261d143c3c8dc99f385532493106c3c736640f163e832d51509d54063c57"
+    },
+    {
+      "path": "packages/payments/test-results/dependency-audit-after.json",
+      "sha256": "a81ee2376bcc57ca1c2bb289133ef0a773e02f5dd13e18cf07bca8f292855ca3"
+    },
+    {
+      "path": "packages/payments/test-results/dependency-audit-final.json",
+      "sha256": "4e7fcf0f7ac547258e6821604b60e8a323852141806ef5a318812fbcea97a4ae"
+    },
+    {
+      "path": "packages/payments/test-results/dependency-audit.json",
+      "sha256": "57b94bddf00f2d2615b68ee0506ec629249f7507a4889a86df1199e90a728165"
+    },
+    {
+      "path": "packages/payments/test-results/format.log",
+      "sha256": "0fb2149e79f76cc1d356f2b9c34f3ee103e9d5b789d3206672ae85047dadc42b"
+    },
+    {
+      "path": "packages/payments/test-results/sources/blocky-quickstart.txt",
+      "sha256": "9f88b07335d3ccfbf6ac820f8e7462c9bb26ef5b07623f79213c92336f7716a9"
+    },
+    {
+      "path": "packages/payments/test-results/sources/blocky-supported.txt",
+      "sha256": "2f778ea06ea78b1f7976d00b5bced4058f65fb3cfe957eed4621f5ac19610195"
+    },
+    {
+      "path": "packages/payments/test-results/sources/hcs.txt",
+      "sha256": "9c4fabe9067da7535db561db1cbf123a9d6fddbf2fbfbf228bfb51886cf64a85"
+    },
+    {
+      "path": "packages/payments/test-results/sources/hedera-scheme.txt",
+      "sha256": "4d2b0f81ca16c07d9895f0acc7dd032b53f6f21a9ef44838f30a9f14cc327f15"
+    },
+    {
+      "path": "packages/payments/test-results/sources/sponsor-poc.txt",
+      "sha256": "2139b02a1d9c73a0568d196f46cfd14f3e1e677a5f7295401bbb5af42daeca21"
+    },
+    {
+      "path": "packages/payments/test-results/sources/sponsor.txt",
+      "sha256": "ae8ab1ba488562610468391f35c97cfeaac84bb10b1cdbdfea6e463a2f4d3645"
+    },
+    {
+      "path": "packages/payments/test-results/sources/x402-v2.txt",
+      "sha256": "cb66bdef710298233316b02d48fce4a9417ec5449ed9cab7f5d9fe6a454920cd"
+    },
+    {
+      "path": "packages/payments/test-results/48-check-lane.log",
+      "sha256": "dc5bf3efdf0a3d2a327584fd6892f6bce348c5985e9910a5341a56bec0657daf"
+    }
+  ]
 }
