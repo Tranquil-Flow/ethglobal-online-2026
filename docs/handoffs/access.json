@@ -1,8 +1,118 @@
 {
   "lane": "access",
-  "status": "not_started",
-  "codeRevision": null,
-  "commands": [],
-  "externalGates": [],
-  "contractRequests": []
+  "status": "local_ready",
+  "codeRevision": "39b31fbbabab4caaf8852e62be59b52036bf664e",
+  "commands": [
+    {
+      "command": "npm --prefix packages/access run check",
+      "exitCode": 0,
+      "evidence": "artifacts/access/final-check.log"
+    },
+    {
+      "command": "npm --prefix packages/access run smoke",
+      "exitCode": 0,
+      "evidence": "artifacts/access/final-smoke.log"
+    },
+    {
+      "command": "cd packages/access && node examples/history-decision.mjs",
+      "exitCode": 0,
+      "evidence": "artifacts/access/history-example.log"
+    },
+    {
+      "command": "npm run check:lane -- access",
+      "exitCode": 0,
+      "evidence": "artifacts/access/final-lane-gate.log"
+    }
+  ],
+  "acceptance": [
+    {
+      "requirement": "SDK HTTP/session/DTO/errors/timeouts/retries/idempotency/SSE",
+      "implementationAndTests": "packages/access/test/sdk.test.mjs; packages/access/test/adversarial.test.mjs",
+      "evidence": "artifacts/access/final-check.log",
+      "qualification": "local development conformance only"
+    },
+    {
+      "requirement": "CLI providers/select/quote/submit/stream/inspect/cancel/receipt/integrity/assess/export/history",
+      "implementationAndTests": "packages/access/test/cli.test.mjs; real child processes over loopback HTTP",
+      "evidence": "artifacts/access/final-smoke.log",
+      "qualification": "local development conformance only"
+    },
+    {
+      "requirement": "MCP official stdio SDK; explicit host and bounded caller authorization",
+      "implementationAndTests": "packages/access/test/mcp.test.mjs; packages/access/src/mcp.mjs",
+      "evidence": "artifacts/access/final-smoke.log",
+      "qualification": "local development conformance only"
+    },
+    {
+      "requirement": "Graph-derived History affects compatibility/quote/budget selection; stale veto and missing samples unknown",
+      "implementationAndTests": "packages/access/test/adversarial.test.mjs; examples/history-decision.mjs",
+      "evidence": "artifacts/access/history-example.log",
+      "qualification": "local development conformance only"
+    },
+    {
+      "requirement": "Native pinned x402 v2 402 round-trip, no default spending/double spend, corrupt quote challenge rejection",
+      "implementationAndTests": "packages/access/test/sdk.test.mjs; packages/access/test/adversarial.test.mjs; fixture encoded by @x402/core@2.5.0",
+      "evidence": "artifacts/access/final-check.log",
+      "qualification": "local development conformance only"
+    },
+    {
+      "requirement": "Malformed JSON/DTO; auth expiry;409 conflict;429 retry;transport loss;SSE resume;cancel;private logging;over budget",
+      "implementationAndTests": "packages/access/test/sdk.test.mjs; packages/access/test/adversarial.test.mjs; packages/access/test/cli.test.mjs",
+      "evidence": "artifacts/access/final-check.log",
+      "qualification": "local development conformance only"
+    },
+    {
+      "requirement": "Browser keyboard/mobile/loading/error/empty/development/XSS/output/download",
+      "implementationAndTests": "packages/access/test/viewer.test.mjs; actual Chromium with no page errors or dialogs",
+      "evidence": "artifacts/access/browser-observations.json",
+      "qualification": "local development conformance only"
+    },
+    {
+      "requirement": "Real browser cancellation + auth expiry never repays",
+      "implementationAndTests": "packages/access/test/viewer-cancel.test.mjs; running job -> cancelled + paid_but_failed",
+      "evidence": "artifacts/access/viewer-cancelled.png",
+      "qualification": "local development conformance only"
+    },
+    {
+      "requirement": "Browser accessible safe rendering/CSP; memory capability; separate claims; no embedded wallet/Graph secrets",
+      "implementationAndTests": "packages/access/viewer/; scripts/serve-viewer.mjs; browser tests and inspected screenshots",
+      "evidence": "artifacts/access/viewer-desktop.png",
+      "qualification": "local development conformance only"
+    },
+    {
+      "requirement": "Evidence request/profile/output/assessment hashes + receipt signature; corruption rejection; deletion unavailable",
+      "implementationAndTests": "packages/access/test/adversarial.test.mjs; SDK verifyReceiptIntegrity/validateEvidence",
+      "evidence": "artifacts/access/final-check.log",
+      "qualification": "local development conformance only"
+    },
+    {
+      "requirement": "Package-local pinned installation/build/test/check/smoke, real fixture not service claim",
+      "implementationAndTests": "package-lock.json; scripts; installed without root workspace edits",
+      "evidence": "artifacts/access/clean-install.log",
+      "qualification": "local development conformance only"
+    }
+  ],
+  "testResults": {
+    "tests": 22,
+    "passed": 22,
+    "failed": 0,
+    "skipped": 0
+  },
+  "environment": {
+    "finalNode": "25.9.0",
+    "finalNpm": "11.12.1",
+    "initialNode": "20.19.5",
+    "initialNpm": "10.8.2",
+    "note": "Host PATH changed during session outside this lane; initial and intermediate tests used Node20, final recorded check/smoke Node25. No global configuration modified by access."
+  },
+  "externalGates": [
+    "Integrator: actual core + payments + discovery + indexing with SDK/CLI/MCP/browser on same retained job; exact CORS origin/headers, public-key pinning, payment codec profile and error/restart semantics. No sibling runtime imported or tested.",
+    "Human-approved wallet/testnet credentials and budget; actual Blocky402/Hedera paid request, transaction and consumed service. No signing/spending occurred.",
+    "Actual ENSv2 record update/resolution and deployed Graph index query driving a decision. Current history is explicitly synthetic DTO evidence only.",
+    "Human license, sponsor/track eligibility, visibility/push/public deployment and submission approval. No release or push occurred.",
+    "Mycelium/Gas Killer runtime adapter, independent replay/mismatch and physical inference qualification: future separate scope."
+  ],
+  "contractRequests": [],
+  "evidencePrivacy": "Only synthetic data in local ignored logs/screenshots/download; no bearer or payment proof in compact handoff. Export contains a synthetic private request; keep ignored.",
+  "documentationRevisionNote": "Final handoff documentation will be committed after testing this implementation revision; package/contracts bytes must stay unchanged."
 }
