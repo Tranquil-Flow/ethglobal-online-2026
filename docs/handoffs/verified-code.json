@@ -1,0 +1,44 @@
+{
+  "codeCandidate": "af665e0cf18889a2445c388e9d54d7548939eea6",
+  "mode": "local-development",
+  "liveQualified": false,
+  "evidence": [
+    {
+      "path": "artifacts/closeout/fresh-af665e0-setup.log",
+      "sha256": "40c224303664a12ecb060f42543780130298608aefe7d87eb586f988be2ba708",
+      "bytes": 2841,
+      "observedExitCode": 0
+    },
+    {
+      "path": "artifacts/closeout/fresh-af665e0-check-all.log",
+      "sha256": "02a677bd484fbf3beb869c9a6037d314780a36460de58791f42bc9594f977d43",
+      "bytes": 81506,
+      "observedExitCode": 0
+    },
+    {
+      "path": "artifacts/closeout/fresh-af665e0-integration.log",
+      "sha256": "867208b8952aa0f4ad8dfc84ca434af13ef7cb56cdff007e5a6cea61d13c1cc3",
+      "bytes": 4483,
+      "observedExitCode": 0
+    },
+    {
+      "path": "artifacts/closeout/af665e0-repeat-1.log",
+      "sha256": "c5756e8658d1034b8a8672116590cca77dc7587b172bb3e1a61c6d22d21e89ef",
+      "bytes": 4486,
+      "observedExitCode": 0
+    },
+    {
+      "path": "artifacts/closeout/af665e0-repeat-2.log",
+      "sha256": "83fe7f02563f0b748f644620a7e0c5d1ce9dc9a69f89d600ee06067e297a5c40",
+      "bytes": 4489,
+      "observedExitCode": 0
+    },
+    {
+      "path": "artifacts/closeout/af665e0-repeat-3.log",
+      "sha256": "e1f9539bfea42f9b5367ac088d1c6593eec28f74d4af75351060c5de38442759",
+      "bytes": 4490,
+      "observedExitCode": 0
+    }
+  ],
+  "visualInspection": "combined-browser.png inspected: legible layout, explicit synthetic banner, separate claims, literal XSS text and accurate deletion warning"
+}

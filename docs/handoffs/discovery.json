@@ -42,8 +42,9 @@
     },
     {
       "id": "combined-app",
-      "status": "blocked",
-      "reason": "Integration owner must compose core authoritative quotes/provider resolution, payments, live history and clients after lane handoff. No sibling changes, merge or combined verification authorized here."
+      "status": "qualified",
+      "reason": "Actual combined local application verified at af665e0cf18889a2445c388e9d54d7548939eea6; this gate is local composition, not live sponsor or inference qualification.",
+      "evidence": "docs/handoffs/verified-code.json"
     },
     {
       "id": "public-release",

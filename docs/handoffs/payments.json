@@ -313,8 +313,9 @@
     },
     {
       "id": "combined-app",
-      "status": "blocked",
-      "reason": "Integration owner must compose reviewed core/payments/access/discovery/indexing and exercise combined paths. This task owns only the payments package and handoffs."
+      "status": "qualified",
+      "reason": "Actual combined local application verified at af665e0cf18889a2445c388e9d54d7548939eea6; this gate is local composition, not live sponsor or inference qualification.",
+      "evidence": "docs/handoffs/verified-code.json"
     },
     {
       "id": "public-release",

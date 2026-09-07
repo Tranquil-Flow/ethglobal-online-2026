@@ -3,7 +3,7 @@
 ## Ownership and setup
 
 Run from the repository root with Node **22.22.2** and npm **10.9.7** (`nvm install && nvm use`,
-then `npm install --global npm@10.9.7` if necessary). `npm run setup` uses package-local
+with npm 10.9.7 available in that selected runtime). `npm run setup` uses package-local
 lockfiles and rebuilds native modules in that same interpreter. No sibling worktree is needed.
 Setup rejects a different Node/npm pair and loads both SQLite native addons before succeeding.
 The exercised host is macOS arm64; Linux/Windows and hosted CI execution are not claimed.
@@ -78,17 +78,21 @@ Keep CLI HOME isolated if using multiple instances; a session is bound to one or
   on the retained quote, then retry the original body/key. A new attempt is not reconciliation.
 - SIGKILL during execution leaves no success receipt. Restart reconciles to failed/paid_but_failed;
   it does not execute again or fabricate a refund. Tests kill only their owned child.
-- Publication consent creates core outbox work; the actual indexing EventSink is disabled and reports
+- In default synthetic mode, publication consent creates core outbox work; the indexing EventSink is disabled and reports
   unavailable. Pending failure does not alter receipt bytes. No Graph data is fabricated from private
-  bundles. Assessment export is private; public publication remains disabled regardless of consent.
+  bundles. Assessment export is private. Public publication is never enabled by this local mode.
+  The explicit `--local-services` mode instead publishes consented test events to its owned local chain;
+  see [closeout operator notes](CLOSEOUT-OPERATIONS.md) for actual ENS/Graph rehearsal and recovery.
 - Back up the private data directory only after stopping the app; protect it as sensitive data.
-  SQLite logical deletion is not SSD/backup erasure. This run verifies restart, not disaster recovery.
+  SQLite logical deletion is not SSD/backup erasure. The composed encrypted backup/restore gate
+  verifies jobs, pins, evidence and payment deduplication; see CLOSEOUT-OPERATIONS.md for its limits.
 - Never point a development adapter at live infrastructure. There is no CLI live mode or silent fallback.
 
 ## Known local limitations
 
 The simulator is bounded to 1000 ephemeral signer keys per process and the payments budget/storage
 limits. It is a development tool, not multi-tenant production infrastructure. Installed indexing tooling
-has upstream npm advisories, including bundled Ganache test dependencies; see integration evidence.
+retains upstream development-tool advisories. Ganache has been replaced by pinned Anvil;
+see CLOSEOUT-OPERATIONS.md for the measured runtime/development audit split.
 No blanket `npm audit fix --force` is run. A production security/runtime/dependency review, public CI
 execution and live adapter qualification remain distinct from the local acceptance result.

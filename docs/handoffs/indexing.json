@@ -112,8 +112,9 @@
     },
     {
       "id": "combined-app",
-      "status": "blocked",
-      "reason": "Integrating owner must combine lanes and exercise core consent/outbox, discovery history decisions and access clients."
+      "status": "qualified",
+      "reason": "Actual combined local application verified at af665e0cf18889a2445c388e9d54d7548939eea6; this gate is local composition, not live sponsor or inference qualification.",
+      "evidence": "docs/handoffs/verified-code.json"
     },
     {
       "id": "public-release",

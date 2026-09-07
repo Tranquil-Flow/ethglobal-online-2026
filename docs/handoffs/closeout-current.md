@@ -44,3 +44,12 @@ Current discovery check and smoke both exited 0 (`discovery-response-clock-green
 actual local-service composition exited 0 after removing the false-hypothesis wait
 (`response-clock-original-oracle.log`). These logs are under `artifacts/closeout/`.
 Other package code is unchanged from the fresh prerequisite verification above.
+
+## Full clean-candidate closure
+
+`af665e0cf18889a2445c388e9d54d7548939eea6` passed fresh owned-checkout setup,
+`npm run check:all`, separate `npm run smoke:integration`, and three further
+integration smokes, each exit 0. The verification checkout was clean afterward.
+`verified-code.json` retains log hashes and claim boundaries. Subsequent closeout
+documentation changes do not modify package or composition code. The final documentation
+candidate is checked separately; its receipt is `artifacts/closeout/final-verification.json`.

@@ -115,8 +115,9 @@
   "externalGates": [
     {
       "id": "real-core-client-composition",
-      "status": "blocked",
-      "reason": "Integrator-owned real core/payments/discovery/indexing composition has not been exercised; needs exact CORS/payment-header profile and signer pinning, same retained job across SDK/CLI/MCP/browser. No sibling code or worktree was used."
+      "status": "qualified",
+      "reason": "Actual combined local application verified at af665e0cf18889a2445c388e9d54d7548939eea6; this gate is local composition, not live sponsor or inference qualification.",
+      "evidence": "docs/handoffs/verified-code.json"
     },
     {
       "id": "live-wallet-payment",

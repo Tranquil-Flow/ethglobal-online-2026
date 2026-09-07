@@ -28,7 +28,7 @@ viewer/API gateway, a bounded explicitly offline payment/Graph-shaped transport 
 private MCP session handoff, reproducible setup and cross-package browser/process tests.
 The simulator follows the payments lane's native SDK conformance approach; it imports pinned
 lane dependencies via their package manifests rather than copying third-party implementation.
-No new third-party dependency or root lockfile was added. Existing lane provenance/lockfiles
+The initial composition added no new third-party dependency or root lockfile. Existing lane provenance/lockfiles
 remain the dependency/license inventory; no source license was selected or changed.
 
 Hermes/Moonsong assisted integration design, source review, code/test writing, debugging and
@@ -39,3 +39,18 @@ or claim organizer/sponsor acceptance. No Mycelium/Gas Killer artifacts or runti
 See docs/handoffs/integration.md for retained failed hypotheses, exact-candidate verification,
 known dependency/security limits and externally unqualified paths. The actual user-visible
 workflow and demo instructions are docs/LOCAL.md; this is a synthetic demo, not real inference.
+
+## Closeout additions
+
+New AI-assisted work includes actual local ENS/Graph composition, immutable snapshot
+handling, post-response History freshness, encrypted offline backup/restore with
+application locking, evidence deletion, executor injection and conformance, and
+revision-bound verification. Human scope/acceptance authority remains Evi's; automated
+implementation/testing is not represented as human testing.
+
+Indexing replaced Ganache with `@foundry-rs/anvil` 1.7.1 (MIT OR Apache-2.0, installed
+package metadata). Graph CLI 0.98.1 reports Apache-2.0 OR MIT; solc 0.8.36 and ethers
+6.17.0 report MIT. Existing lane provenance and shipped license files cover the other
+retained dependencies. Same-major security overrides and exact versions are in the
+indexing manifest/lock; no third-party source was copied from a sibling repository.
+No application license, repository visibility or sponsor eligibility was selected.

@@ -2,8 +2,8 @@
 
 Local integration authority does not grant any of the approvals below. No public deployment,
 transaction, spending, push, visibility or license change was made. Mycelium/Gas Killer and real
-replay are excluded, not blocked tasks to quietly implement. Existing lane handoffs are historical
-local evidence; `docs/handoffs/integration.md` is the combined local disposition.
+replay are excluded, not blocked tasks to quietly implement. Historical handoffs are retained; `docs/COMPLETION.md` and
+`docs/handoffs/closeout-current.md` hold the current local disposition.
 
 ## One consolidated approval packet (owner: Evi)
 
@@ -22,11 +22,11 @@ Optional HCS publication and refunds need their **own** exact action approval; t
 
 ## Independent pre-public engineering qualification (not claimed complete)
 
-- Node 20.19.5 is the tested local compatibility pin, not a production lifecycle promise. A maintained
-  runtime upgrade must rebuild native addons and repeat the full committed-candidate proof.
-- Review/replace vulnerable indexing dev-tool transitive dependencies before exposing tooling to
-  untrusted projects/data. The application does not import Ganache/Graph CLI at runtime. No claim
-  that `npm audit --omit=dev` is clean: npm includes bundled Ganache subtrees in that report.
+- Node 22.22.2 / npm 10.9.7 is the maintained local pin; native rebuild/load and full
+  clean-checkout gates pass. Other operating systems remain unqualified.
+- Indexing runtime-only npm audit is clean for the recorded candidate. Eight development-tool
+  findings remain, including one critical archive-extraction dependency. See CLOSEOUT-OPERATIONS.md
+  for concrete exposure, pinned remediation and restrictions; no blanket security certification.
 - Execute hosted CI after an approved push. The local clean-checkout result does not establish a
   GitHub runner result. Linux/Windows setup and multi-host/database coordination are unqualified.
 - Live configuration, independent key trust/distribution, rate limits/TLS and operational backup

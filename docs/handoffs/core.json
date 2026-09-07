@@ -91,9 +91,9 @@
   "externalGates": [
     {
       "id": "combined-app",
-      "status": "blocked",
-      "reason": "Integrating owner must compose actual lane factories and clients. Live payment, ENSv2 and Graph/publication need separate credentials/funding approval and real external evidence.",
-      "evidence": "docs/handoffs/core.md"
+      "status": "qualified",
+      "reason": "Actual combined local application verified at af665e0cf18889a2445c388e9d54d7548939eea6; this gate is local composition, not live sponsor or inference qualification.",
+      "evidence": "docs/handoffs/verified-code.json"
     },
     {
       "id": "mycelium-execution",
