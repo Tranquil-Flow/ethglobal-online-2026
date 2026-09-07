@@ -215,3 +215,82 @@ listed in `discovery-provenance.md`. No useful test or safety guard was removed 
 Compiled-bytecode provenance is pinned but not an independent reproducible Solidity-build audit.
 Visual/UI, core database and real payment/inference boundaries are not owned by this package and
 are not claimed exercised. All owned test processes/config files are cleaned up by their harness.
+
+## handoff-review-v1 additive correction
+
+Reviewed immutable tag `handoff-review-v1` at `74ae66f6bd895b13a9ce9de083357c0fcb88e564`:
+REVIEW-ADDENDUM.md, PORTS.md, RELEASE.md and discovery configuration in lanes.json.
+DiscoveryPort is unchanged. The payment-header correction belongs to other lanes; this lane neither
+forwards payment headers nor changes their seam. No pull, merge, reset or shared-file copy/edit occurred.
+Implementation remains exactly `4842acb92b278ca8228946d086b544f22652eab9`.
+
+### Portable command evidence
+
+The JSON command `evidence` fields now point to this committed file. The prior logs remain optional
+`rawEvidence` with `rawEvidenceSha256`, not required ignored-only evidence. The observed output summaries
+below and the detailed acceptance observations above travel with a clean checkout.
+
+| Command ID | Actual successful command | Safe observed output |
+| --- | --- | --- |
+| install-contracts | `npm --prefix packages/contracts ci --ignore-scripts` | added 7 packages; audited 8; found 0 vulnerabilities |
+| install-discovery | `npm --prefix packages/discovery ci` | added 17 packages; audited 18; found 0 vulnerabilities |
+| discovery-test | `npm --prefix packages/discovery test` | tests 14; pass 14; fail 0; skipped 0; cancelled 0 |
+| discovery-check | `npm --prefix packages/discovery run check` | syntax, Prettier and pinned artifact hashes passed; tests 14; pass 14; fail 0; skipped 0 |
+| discovery-smoke | `npm --prefix packages/discovery run smoke` | actual local-contract JSON recorded above: CLI read, record mutation, payment edit rejection, revoke, malformed/unsafe records, alias/expiry/reorg cases true |
+| sepolia-read-only | `node packages/discovery/scripts/verify-deployment.mjs` | chain 11155111; block 11654995; rootMatches true; full observed block/hash and code hash above; NOT live-write qualification |
+| lane-check | `npm run check:lane -- discovery` | contracts 22/22 and discovery 14/14 passed; smoke passed; “discovery: local gate passed. Live qualification and combined integration are separate.” |
+
+### Required acceptance IDs
+
+| acceptance ID | Detailed evidence sections above | Successful command IDs |
+| --- | --- | --- |
+| ensv2-contract-resolution | 1, 2, 7: pinned official ABI/bytecode and actual hierarchy/resolver RPC, canonical subnames, separate CLI, exact operator calldata | discovery-test, discovery-smoke, sepolia-read-only |
+| delegation-revocation | 3, 7: actual service edits, three mined payment-edit reverts, revoked delegate rejection, scoped grant/revoke/provision/update previews executed locally | discovery-test, discovery-smoke |
+| freshness-provenance | 4: normalization, malformed/stale/unknown records, bounded TTL/provenance, reorg cache invalidation, alias rejection and expired parent | discovery-test, discovery-smoke |
+| ssrf-boundary | 5: actual onchain unsafe URL rejection; real consuming HTTP; tampering, redirect, private/mixed DNS, body/deadline/abort limits and forbidden write RPC | discovery-test, discovery-smoke |
+| quote-history-selection | 6: real profile-record mutation changes selection; shared-History fixture transitions; missing/binding/budget/expiry guards and expiry during async history | discovery-test, discovery-smoke |
+
+All five IDs are locally passed; none substitutes a happy-path fixture for the real-contract cases.
+Real Sepolia writes remain separate blocked gates, not an acceptance claim that they happened.
+
+### Required external gate IDs
+
+- **ensv2-sepolia-write — blocked:** no authorized provider write; obtain explicit transaction approval
+  and retain real before/update/after resolution and permission evidence.
+- **ens-name-wallet-approval — blocked:** human-owned canonical parent/registry and wallet/gas authority
+  must be confirmed. Public addresses suffice for previews; never send signing secrets to this package.
+- **combined-app — blocked:** integration owner must compose and verify the lanes; no combined claim here.
+- **public-release — blocked:** sponsor eligibility, licensing/provenance, visibility/push and submission
+  remain human decisions.
+
+Additional live-history decision is blocked. Mycelium execution, Gas Killer integration and independent
+replay are explicitly **inapplicable** to this scope, not qualified. JSON preserves earlier detailed
+external action descriptions in `externalGateDetails`. No external gate has been marked qualified.
+
+### Addendum validation
+
+The exact tagged `validate-handoff.mjs` was loaded directly from `git show` into an in-memory Node module;
+no shared script was copied into the checkout. Before correction it failed with `Invalid command ID`.
+After-correction validation **passed, exit 0**, using the exact command retained as
+`review-handoff-validation` in JSON. No local copy of the reviewed validator or shared config was created.
+
+```text
+Tagged validator PASS: 5 required acceptance IDs, 4 required external IDs; portable committed evidence paths.
+All command evidence paths are tracked.
+```
+
+`review-lane-check` reran `npm run check:lane -- discovery`: **passed, exit 0**.
+Discovery reported tests 14, pass 14, fail 0, skipped 0, cancelled 0; actual local contract/CLI smoke
+reported all guards true, with before block 18 and changed-record block 24. The smoke's observed
+source block hash was `0xde0942382ce30ecd86037a04ac27004a710d081cbb6c48ae171910c157a56044`.
+
+```text
+discovery: local gate passed. Live qualification and combined integration are separate.
+```
+
+Optional raw outputs: `packages/discovery/evidence/final-review-validator.log` and
+`packages/discovery/evidence/final-review-lane.log`. The portable evidence is this committed section.
+The reviewed aggregate script itself was not installed or substituted: the current worktree lane gate
+and the exact tagged handoff validator were exercised separately, respecting the shared-file boundary.
+All original local requirements and the additive evidence criteria are now satisfied; the documented
+external approvals remain blocked, not qualified.
