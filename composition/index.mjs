@@ -33,13 +33,9 @@ import {
 import { acquirePrivateStateLock } from './private-state.mjs';
 
 export async function startDevelopment(options = {}) {
-  if (options.development !== true || typeof options.dataDir !== 'string' || !options.dataDir)
-    return startDevelopmentUnlocked(options);
-  const dir = resolve(options.dataDir);
-  mkdirSync(dir, { recursive: true, mode: 0o700 });
-  const release = acquirePrivateStateLock(dir);
+  let release = () => {};
   try {
-    const app = await startDevelopmentUnlocked(options);
+    const app = await startDevelopmentUnlocked(options, (dir) => { release = acquirePrivateStateLock(dir); });
     return { ...app, async close() { try { await app.close(); } finally { release(); } } };
   } catch (error) { release(); throw error; }
 }
@@ -54,7 +50,7 @@ async function startDevelopmentUnlocked({
   executionPort,
   providerId = "synthetic.local.eth",
   ...unknownOptions
-} = {}) {
+} = {}, onLock) {
   if (Object.keys(unknownOptions).length) throw Error("UNKNOWN_LOCAL_OPTION");
   if (development !== true) throw Error("DEVELOPMENT_REQUIRED");
   assertRuntime();
@@ -86,6 +82,7 @@ async function startDevelopmentUnlocked({
     st.uid !== process.getuid()
   )
     throw Error("PRIVATE_DIRECTORY_REQUIRED");
+  onLock(dir);
   const keyPath = join(dir, "development-ed25519.pem");
   let privateKey;
   try {
