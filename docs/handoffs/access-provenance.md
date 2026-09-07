@@ -52,3 +52,13 @@ the restricted canonical-JSON guard is an access-local adaptation of the supplie
 
 The fixture uses SDK-encoded protocol containers with explicitly synthetic payloads; it does
 not forge a claim of wallet verification, real settlement, Graph observations or execution proof.
+
+
+## Review addendum follow-through
+
+Read immutable `handoff-review-v1` addendum/PORTS/RELEASE/lanes configuration via `git show`.
+Added characterization tests for authenticated request-header isolation and callback header
+injection refusal, plus an owned wrapper executing the tagged handoff validator in memory.
+No shared scripts were copied or edited; no dependency or live protocol implementation changed.
+Migrated all six required acceptance IDs and four required external gate IDs to portable committed
+safe evidence. Additional excluded runtime/replay gates remain explicitly inapplicable, not qualified.
