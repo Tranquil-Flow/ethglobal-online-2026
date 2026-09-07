@@ -1,29 +1,56 @@
 {
   "lane": "core",
   "status": "local_ready",
-  "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
+  "codeRevision": "94ed062623af37f2d1a7de27dbbc6a7bb489b62f",
   "reviewContract": "handoff-review-v1",
   "commands": [
     {
-      "id": "core-check",
+      "id": "contract-install",
+      "command": "npm --prefix packages/contracts ci --ignore-scripts",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "contracts",
+      "command": "npm --prefix packages/contracts run check",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "install",
+      "command": "npm --prefix packages/core ci",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "test",
+      "command": "npm --prefix packages/core test",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "check",
       "command": "npm --prefix packages/core run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-core-check.log"
+      "evidence": "docs/handoffs/core.md"
     },
     {
-      "id": "core-smoke",
+      "id": "smoke",
       "command": "npm --prefix packages/core run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-core-smoke.log"
+      "evidence": "docs/handoffs/core.md"
     },
     {
-      "id": "composition",
-      "command": "npm run smoke:integration",
+      "id": "audit",
+      "command": "npm --prefix packages/core audit --json",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-integration.log"
+      "evidence": "docs/handoffs/core.md"
+    },
+    {
+      "id": "lane-gate",
+      "command": "cd /Users/evinova-self/Projects/ethglobal-online-2026-core && npm run check:lane -- core",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/core.md"
     }
   ],
   "acceptanceCases": [
@@ -31,61 +58,61 @@
       "id": "http-lifecycle",
       "status": "passed",
       "commandIds": [
-        "core-check",
-        "core-smoke",
-        "composition"
+        "test",
+        "check",
+        "smoke"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/core.md"
     },
     {
       "id": "restart-idempotency",
       "status": "passed",
       "commandIds": [
-        "core-check",
-        "core-smoke",
-        "composition"
+        "test",
+        "check",
+        "smoke"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/core.md"
     },
     {
       "id": "private-capabilities",
       "status": "passed",
       "commandIds": [
-        "core-check",
-        "core-smoke",
-        "composition"
+        "test",
+        "check",
+        "smoke"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/core.md"
     },
     {
       "id": "receipt-integrity-export",
       "status": "passed",
       "commandIds": [
-        "core-check",
-        "core-smoke",
-        "composition"
+        "test",
+        "check",
+        "smoke"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/core.md"
     },
     {
       "id": "payment-outbox-failures",
       "status": "passed",
       "commandIds": [
-        "core-check",
-        "core-smoke",
-        "composition"
+        "test",
+        "check",
+        "smoke"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/core.md"
     },
     {
       "id": "assessment-unavailable",
       "status": "passed",
       "commandIds": [
-        "core-check",
-        "core-smoke",
-        "composition"
+        "test",
+        "check",
+        "smoke"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/core.md"
     }
   ],
   "externalGates": [
@@ -120,12 +147,5 @@
       "evidence": "docs/handoffs/core.md"
     }
   ],
-  "contractRequests": [],
-  "environment": {
-    "node": "22.22.2",
-    "npm": "10.9.7",
-    "platform": "darwin",
-    "arch": "arm64"
-  },
-  "documentationRevisionNote": "Previous handoff preserved in archive/pre-closeout-core.json. Current package check/smoke and combined integration executed in a fresh owned checkout of codeRevision."
+  "contractRequests": []
 }

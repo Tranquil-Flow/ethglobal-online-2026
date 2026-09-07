@@ -1,32 +1,81 @@
 {
   "lane": "discovery",
   "status": "local_ready",
-  "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
+  "codeRevision": "13a1309949ab73e6c25b9e26e2a8fe6164949f93",
   "historicalLaneCodeRevision": "4842acb92b278ca8228946d086b544f22652eab9",
   "integrationEvidence": "docs/handoffs/integration.md",
   "branch": "lane/discovery",
   "bootstrapRevision": "13f5e295bdeb833b9977a84edc97b2ee64147579",
   "commands": [
     {
-      "id": "discovery-check",
+      "command": "npm --prefix packages/contracts ci --ignore-scripts",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/discovery.md",
+      "id": "install-contracts",
+      "rawEvidence": "packages/discovery/evidence/final-install-contracts.log",
+      "rawEvidenceSha256": "46ffe56df1427a8f1628aa068025254145d131227c96a34130f44755f63b0875"
+    },
+    {
+      "command": "npm --prefix packages/discovery ci",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/discovery.md",
+      "id": "install-discovery",
+      "rawEvidence": "packages/discovery/evidence/final-install-discovery.log",
+      "rawEvidenceSha256": "ab3c43d1a3869941e8bae688a0a68e17f9a7575853b4bcedecbf793e123a929e"
+    },
+    {
+      "command": "npm --prefix packages/discovery test",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/discovery.md",
+      "id": "discovery-test",
+      "rawEvidence": "packages/discovery/evidence/final-test.log",
+      "rawEvidenceSha256": "c0dfea8b400d06f1d5bd49f7ec422db10838a961cbda7a0a10c81b4d6ec46aa3"
+    },
+    {
       "command": "npm --prefix packages/discovery run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-discovery-check.log"
+      "evidence": "docs/handoffs/discovery.md",
+      "id": "discovery-check",
+      "rawEvidence": "packages/discovery/evidence/final-check.log",
+      "rawEvidenceSha256": "77b66aa5e31828c41e71e89851448d5b4076271fca1635245ed44a09a133ee6e"
     },
     {
-      "id": "discovery-smoke",
       "command": "npm --prefix packages/discovery run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-discovery-smoke.log"
+      "evidence": "docs/handoffs/discovery.md",
+      "id": "discovery-smoke",
+      "rawEvidence": "packages/discovery/evidence/final-smoke.log",
+      "rawEvidenceSha256": "dc7c922d021b550cd67cc7eb8d19501e2961abffc55a6c795d2f69d292df26ef"
     },
     {
-      "id": "composition",
-      "command": "npm run smoke:integration",
+      "command": "node packages/discovery/scripts/verify-deployment.mjs",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-integration.log"
+      "evidence": "docs/handoffs/discovery.md",
+      "id": "sepolia-read-only",
+      "rawEvidence": "packages/discovery/evidence/final-deployment.log",
+      "rawEvidenceSha256": "a89683e9baa7372119e16d1317fe244714faf477f4730c83b90afb4bb28758b2"
+    },
+    {
+      "command": "npm run check:lane -- discovery",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/discovery.md",
+      "id": "lane-check",
+      "rawEvidence": "packages/discovery/evidence/final-lane.log",
+      "rawEvidenceSha256": "819d2fb06162d45f4163270882ba968628d4daee000323d7c3ad48bbc847a154"
+    },
+    {
+      "id": "review-lane-check",
+      "command": "npm run check:lane -- discovery",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/discovery.md",
+      "rawEvidence": "packages/discovery/evidence/final-review-lane.log"
+    },
+    {
+      "id": "review-handoff-validation",
+      "command": "node --input-type=module -e 'import {execFileSync} from \"node:child_process\";import {readFileSync} from \"node:fs\";const src=execFileSync(\"git\",[\"show\",\"handoff-review-v1:scripts/validate-handoff.mjs\"],{encoding:\"utf8\"});const {validateHandoff}=await import(\"data:text/javascript;base64,\"+Buffer.from(src).toString(\"base64\"));const lanes=JSON.parse(execFileSync(\"git\",[\"show\",\"handoff-review-v1:docs/lanes.json\"],{encoding:\"utf8\"}));const h=JSON.parse(readFileSync(\"docs/handoffs/discovery.json\"));validateHandoff(h,lanes.discovery);console.log(\"Tagged validator PASS: 5 required acceptance IDs, 4 required external IDs; portable committed evidence paths.\");for(const c of h.commands)execFileSync(\"git\",[\"ls-files\",\"--error-unmatch\",c.evidence]);console.log(\"All command evidence paths are tracked.\");'",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/discovery.md",
+      "rawEvidence": "packages/discovery/evidence/final-review-validator.log"
     }
   ],
   "externalGates": [
@@ -210,6 +259,13 @@
       }
     }
   ],
+  "testResults": {
+    "tests": 14,
+    "pass": 14,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
   "localSmoke": {
     "unsafeOnchainEndpointRejected": true,
     "reorgInvalidated": true,
@@ -228,10 +284,8 @@
     "malformedRejected": true
   },
   "environment": {
-    "node": "22.22.2",
-    "npm": "10.9.7",
-    "platform": "darwin",
-    "arch": "arm64"
+    "node": "v20.19.5",
+    "npm": "10.8.2"
   },
   "revisionNote": "Implementation committed first, exact revision checked with clean tracked worktree and lockfile reinstall. Following handoff-only commit changes no implementation/contracts bytes. Final evidence logs are ignored inside owned package; full commands/hashes and compact observed results are committed here.",
   "claimBoundary": "local_ready only: not live-provider-qualified, combined/merged, payment/execution/assessment verified, sponsor-eligible or publicly released",
@@ -263,11 +317,11 @@
       "id": "ensv2-contract-resolution",
       "status": "passed",
       "commandIds": [
-        "discovery-check",
+        "discovery-test",
         "discovery-smoke",
-        "composition"
+        "sepolia-read-only"
       ],
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "docs/handoffs/discovery.md",
       "detailedCases": [
         "Official ENSv2 deployment, resolver APIs and provenance",
         "Actual ENSv2 resolver SDK/RPC through canonical hierarchy",
@@ -278,11 +332,10 @@
       "id": "delegation-revocation",
       "status": "passed",
       "commandIds": [
-        "discovery-check",
-        "discovery-smoke",
-        "composition"
+        "discovery-test",
+        "discovery-smoke"
       ],
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "docs/handoffs/discovery.md",
       "detailedCases": [
         "Record-scoped delegated service edits, payment isolation and revocation",
         "Standalone CLI, operator provisioning/update/revocation dry-run and bounded smoke"
@@ -292,11 +345,10 @@
       "id": "freshness-provenance",
       "status": "passed",
       "commandIds": [
-        "discovery-check",
-        "discovery-smoke",
-        "composition"
+        "discovery-test",
+        "discovery-smoke"
       ],
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "docs/handoffs/discovery.md",
       "detailedCases": [
         "Normalization, malformed/stale/unknown records, TTL, block provenance, expiry and reorg invalidation"
       ]
@@ -305,11 +357,10 @@
       "id": "ssrf-boundary",
       "status": "passed",
       "commandIds": [
-        "discovery-check",
-        "discovery-smoke",
-        "composition"
+        "discovery-test",
+        "discovery-smoke"
       ],
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "docs/handoffs/discovery.md",
       "detailedCases": [
         "SSRF at resolver and consuming boundaries, redirect/DNS/body/abort/deadline controls"
       ]
@@ -318,11 +369,10 @@
       "id": "quote-history-selection",
       "status": "passed",
       "commandIds": [
-        "discovery-check",
-        "discovery-smoke",
-        "composition"
+        "discovery-test",
+        "discovery-smoke"
       ],
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "docs/handoffs/discovery.md",
       "detailedCases": [
         "Compatible provider selection changes after real record mutation and observed History changes"
       ]
@@ -367,6 +417,5 @@
     "scope": "DiscoveryPort unchanged; all-lane evidence correction only. No shared files copied or modified.",
     "validationBefore": "Tagged validator rejected old handoff: Invalid command ID.",
     "validationAfter": "passed: exact tagged validator executed in memory, all 5 acceptance IDs and 4 required external gates covered; command evidence paths tracked; lane gate passed again with 14 discovery tests and actual smoke."
-  },
-  "documentationRevisionNote": "Previous handoff preserved in archive/pre-closeout-discovery.json. Current package check/smoke and combined integration executed in a fresh owned checkout of codeRevision."
+  }
 }

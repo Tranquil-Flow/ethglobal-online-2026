@@ -1,7 +1,7 @@
 {
   "lane": "payments",
   "status": "local_ready",
-  "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
+  "codeRevision": "26acc30a6c369c64edde809b751d320300b8b31c",
   "runtime": {
     "node": "20.19.5",
     "npm": "10.8.2",
@@ -12,25 +12,76 @@
   "verifiedAt": "2026-09-07T15:56:23.674930+00:00",
   "commands": [
     {
+      "id": "payments-test",
+      "command": "npm --prefix packages/payments test",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/payments.md",
+      "rawLog": "packages/payments/test-results/59-reviewed-test.log",
+      "rawLogSha256": "da4629f9661b1ac7f9aa80bc2ad71769d7e1ad917bbbc0d5cea15b7eab06df8b"
+    },
+    {
       "id": "payments-check",
       "command": "npm --prefix packages/payments run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-payments-check.log"
+      "evidence": "docs/handoffs/payments.md",
+      "rawLog": "packages/payments/test-results/60-reviewed-check.log",
+      "rawLogSha256": "e97b5253bc448c3574e7758ca2e7892b156b61ee6a25964a878d9758c7426a7e"
     },
     {
       "id": "payments-smoke",
       "command": "npm --prefix packages/payments run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-payments-smoke.log"
+      "evidence": "docs/handoffs/payments.md",
+      "rawLog": "packages/payments/test-results/61-reviewed-smoke.log",
+      "rawLogSha256": "84fc04895e42bb8cc6c5b0fafa2049076fe7a5f7892aa08d1099e727ce160039"
     },
     {
-      "id": "composition",
-      "command": "npm run smoke:integration",
+      "id": "payments-audit",
+      "command": "npm --prefix packages/payments audit --json",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-integration.log"
+      "evidence": "docs/handoffs/payments.md",
+      "rawLog": "packages/payments/test-results/62-reviewed-audit.json",
+      "rawLogSha256": "4e7fcf0f7ac547258e6821604b60e8a323852141806ef5a318812fbcea97a4ae"
+    },
+    {
+      "id": "live-dry-run",
+      "command": "npm --prefix packages/payments run smoke:live -- --network hedera:testnet --budget 1000",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/payments.md",
+      "rawLog": "packages/payments/test-results/63-reviewed-live-dry-run.log",
+      "rawLogSha256": "336de67a7739d70ca14e6c46005a8b4d2e284e43dfa13df5ca0431176a05aeff"
+    },
+    {
+      "id": "hcs-dry-run",
+      "command": "npm --prefix packages/payments run audit:hcs -- --network hedera:testnet --mode development --consent --topic 0.0.1234 --digest sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/payments.md",
+      "rawLog": "packages/payments/test-results/64-reviewed-hcs-dry-run.log",
+      "rawLogSha256": "842c53a62e90b14f76d9b981a7ab0349bed8de4ea362052ede61b3c272700940"
+    },
+    {
+      "id": "contracts-check",
+      "command": "npm --prefix packages/contracts run check",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/payments.md",
+      "rawLog": "packages/payments/test-results/65-reviewed-contracts.log",
+      "rawLogSha256": "33813029d5a9563bc6c90b5b506781eda24640c9f0a0d0ef402f126e83efdcf0"
+    },
+    {
+      "id": "lane-gate",
+      "command": "npm run check:lane -- payments",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/payments.md",
+      "rawLog": "packages/payments/test-results/66-reviewed-check-lane.log",
+      "rawLogSha256": "683f5c826355ac8cf8d6d6d1564e125fe2f6efc0c5309fa92f715a50a4d1431d"
+    },
+    {
+      "id": "reviewed-matrix",
+      "command": "node --input-type=module -e 'import {execFileSync} from \"node:child_process\"; import {readFileSync} from \"node:fs\"; const show=p=>execFileSync(\"git\",[\"show\",\"handoff-review-v1:\"+p],{encoding:\"utf8\"}); const {validateHandoff}=await import(\"data:text/javascript;base64,\"+Buffer.from(show(\"scripts/validate-handoff.mjs\")).toString(\"base64\")); validateHandoff(JSON.parse(readFileSync(\"docs/handoffs/payments.json\")),JSON.parse(show(\"docs/lanes.json\")).payments); console.log(\"handoff-review-v1 payments matrix passed; validator loaded read-only in memory; shared checkout files unchanged.\");'",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/payments.md",
+      "rawLog": "packages/payments/test-results/67-reviewed-matrix.log",
+      "rawLogSha256": "07ebf18f08811f6020fb016a666f2610904994004f1e9f0f6580af98f051cc2d"
     }
   ],
   "acceptance": [
@@ -719,9 +770,11 @@
       "commandIds": [
         "payments-check",
         "payments-smoke",
-        "composition"
+        "live-dry-run",
+        "hcs-dry-run",
+        "lane-gate"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/payments.md"
     },
     {
       "id": "header-policy",
@@ -729,19 +782,18 @@
       "commandIds": [
         "payments-check",
         "payments-smoke",
-        "composition"
+        "lane-gate"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/payments.md"
     },
     {
       "id": "request-budget-binding",
       "status": "passed",
       "commandIds": [
         "payments-check",
-        "payments-smoke",
-        "composition"
+        "lane-gate"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/payments.md"
     },
     {
       "id": "concurrent-replay",
@@ -749,9 +801,9 @@
       "commandIds": [
         "payments-check",
         "payments-smoke",
-        "composition"
+        "lane-gate"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/payments.md"
     },
     {
       "id": "settlement-recovery",
@@ -759,9 +811,9 @@
       "commandIds": [
         "payments-check",
         "payments-smoke",
-        "composition"
+        "lane-gate"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/payments.md"
     },
     {
       "id": "paid-but-failed",
@@ -769,16 +821,9 @@
       "commandIds": [
         "payments-check",
         "payments-smoke",
-        "composition"
+        "lane-gate"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/payments.md"
     }
-  ],
-  "environment": {
-    "node": "22.22.2",
-    "npm": "10.9.7",
-    "platform": "darwin",
-    "arch": "arm64"
-  },
-  "documentationRevisionNote": "Previous handoff preserved in archive/pre-closeout-payments.json. Current package check/smoke and combined integration executed in a fresh owned checkout of codeRevision."
+  ]
 }

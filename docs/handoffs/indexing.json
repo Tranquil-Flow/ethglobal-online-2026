@@ -1,56 +1,29 @@
 {
   "lane": "indexing",
   "status": "local_ready",
-  "codeRevision": "4f7fe27b4b13ef354ba4b8682e5fd97602f79fb3",
+  "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
   "reviewContract": "handoff-review-v1",
   "commands": [
     {
-      "id": "clean-install",
-      "command": "env PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin npm --prefix packages/indexing ci --ignore-scripts",
+      "id": "indexing-check",
+      "command": "npm --prefix packages/indexing run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/indexing.md"
+      "evidence": "docs/handoffs/closeout-current.md",
+      "localLog": "artifacts/closeout/fresh-a4b48df-indexing-check.log"
     },
     {
-      "id": "native-build",
-      "command": "env PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin npm --prefix packages/indexing rebuild fs-ext",
+      "id": "indexing-smoke",
+      "command": "npm --prefix packages/indexing run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/indexing.md"
+      "evidence": "docs/handoffs/closeout-current.md",
+      "localLog": "artifacts/closeout/fresh-a4b48df-indexing-smoke.log"
     },
     {
-      "id": "package-check",
-      "command": "env PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin npm --prefix packages/indexing run check",
+      "id": "composition",
+      "command": "npm run smoke:integration",
       "exitCode": 0,
-      "evidence": "docs/handoffs/indexing.md"
-    },
-    {
-      "id": "local-smoke",
-      "command": "env PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin npm --prefix packages/indexing run smoke",
-      "exitCode": 0,
-      "evidence": "docs/handoffs/indexing.md"
-    },
-    {
-      "id": "local-ingestion",
-      "command": "env PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin npm --prefix packages/indexing run smoke:ingestion",
-      "exitCode": 0,
-      "evidence": "docs/handoffs/indexing.md"
-    },
-    {
-      "id": "dry-run",
-      "command": "env PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin npm --prefix packages/indexing run deploy:dry-run -- config/development.example.json subgraph/subgraph.yaml",
-      "exitCode": 0,
-      "evidence": "docs/handoffs/indexing.md"
-    },
-    {
-      "id": "lane-gate",
-      "command": "env PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin npm run check:lane -- indexing",
-      "exitCode": 0,
-      "evidence": "docs/handoffs/indexing.md"
-    },
-    {
-      "id": "reviewed-evidence",
-      "command": "env PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin node --input-type=module -e \"import {execFileSync} from 'node:child_process';import {readFileSync} from 'node:fs';const source=execFileSync('git',['show','handoff-review-v1:scripts/validate-handoff.mjs']);const {validateHandoff}=await import('data:text/javascript;base64,'+source.toString('base64'));const config=JSON.parse(execFileSync('git',['show','handoff-review-v1:docs/lanes.json'])).indexing;const report=JSON.parse(readFileSync('docs/handoffs/indexing.json'));validateHandoff(report,config);console.log('Reviewed validator passed:',config.acceptanceIds.length,'required acceptance IDs;',config.externalGateIds.length,'required external gates. No shared files copied or changed.');\"",
-      "exitCode": 0,
-      "evidence": "docs/handoffs/indexing.md"
+      "evidence": "docs/handoffs/closeout-current.md",
+      "localLog": "artifacts/closeout/fresh-a4b48df-integration.log"
     }
   ],
   "acceptanceCases": [
@@ -58,59 +31,61 @@
       "id": "local-evm-events",
       "status": "passed",
       "commandIds": [
-        "package-check",
-        "local-smoke",
-        "local-ingestion"
+        "indexing-check",
+        "indexing-smoke",
+        "composition"
       ],
-      "evidence": "docs/handoffs/indexing.md"
+      "evidence": "docs/handoffs/closeout-current.md"
     },
     {
       "id": "publisher-auth-replay",
       "status": "passed",
       "commandIds": [
-        "package-check",
-        "local-smoke"
+        "indexing-check",
+        "indexing-smoke",
+        "composition"
       ],
-      "evidence": "docs/handoffs/indexing.md"
+      "evidence": "docs/handoffs/closeout-current.md"
     },
     {
       "id": "mapping-build-tests",
       "status": "passed",
       "commandIds": [
-        "package-check",
-        "local-ingestion"
+        "indexing-check",
+        "indexing-smoke",
+        "composition"
       ],
-      "evidence": "docs/handoffs/indexing.md"
+      "evidence": "docs/handoffs/closeout-current.md"
     },
     {
       "id": "metadata-provenance",
       "status": "passed",
       "commandIds": [
-        "package-check",
-        "local-ingestion"
+        "indexing-check",
+        "indexing-smoke",
+        "composition"
       ],
-      "evidence": "docs/handoffs/indexing.md"
+      "evidence": "docs/handoffs/closeout-current.md"
     },
     {
       "id": "query-freshness",
       "status": "passed",
       "commandIds": [
-        "package-check",
-        "local-smoke",
-        "local-ingestion",
-        "dry-run"
+        "indexing-check",
+        "indexing-smoke",
+        "composition"
       ],
-      "evidence": "docs/handoffs/indexing.md"
+      "evidence": "docs/handoffs/closeout-current.md"
     },
     {
       "id": "privacy-mode",
       "status": "passed",
       "commandIds": [
-        "package-check",
-        "local-smoke",
-        "dry-run"
+        "indexing-check",
+        "indexing-smoke",
+        "composition"
       ],
-      "evidence": "docs/handoffs/indexing.md"
+      "evidence": "docs/handoffs/closeout-current.md"
     }
   ],
   "externalGates": [
@@ -152,5 +127,12 @@
     "Gas Killer integration: inapplicable to current lane scope, not qualified",
     "Independent replay and physical inference: inapplicable to current scope, not qualified"
   ],
-  "provenance": "docs/handoffs/indexing-provenance.md"
+  "provenance": "docs/handoffs/indexing-provenance.md",
+  "environment": {
+    "node": "22.22.2",
+    "npm": "10.9.7",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "documentationRevisionNote": "Previous handoff preserved in archive/pre-closeout-indexing.json. Current package check/smoke and combined integration executed in a fresh owned checkout of codeRevision."
 }

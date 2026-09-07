@@ -1,7 +1,7 @@
 {
   "lane": "access",
   "status": "local_ready",
-  "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
+  "codeRevision": "445f5714819fb7a78cff3fdb670e8c66acae7567",
   "historicalLaneCodeRevision": "4e15d0c4abc501a3cdb235c787352bba7023ba01",
   "integrationEvidence": "docs/handoffs/integration.md",
   "commands": [
@@ -9,22 +9,36 @@
       "id": "access-check",
       "command": "npm --prefix packages/access run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-access-check.log"
+      "evidence": "docs/handoffs/access.md",
+      "localLog": "artifacts/access/late-final-check.log"
     },
     {
       "id": "access-smoke",
       "command": "npm --prefix packages/access run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-access-smoke.log"
+      "evidence": "docs/handoffs/access.md",
+      "localLog": "artifacts/access/late-final-smoke.log"
     },
     {
-      "id": "composition",
-      "command": "npm run smoke:integration",
+      "id": "history-example",
+      "command": "cd packages/access && node examples/history-decision.mjs",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-integration.log"
+      "evidence": "docs/handoffs/access.md",
+      "localLog": "artifacts/access/late-history.log"
+    },
+    {
+      "id": "reviewed-handoff",
+      "command": "npm --prefix packages/access run check:handoff",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/access.md",
+      "localLog": "artifacts/access/late-handoff.log"
+    },
+    {
+      "id": "lane-gate",
+      "command": "npm run check:lane -- access",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/access.md",
+      "localLog": "artifacts/access/late-lane-gate.log"
     }
   ],
   "acceptance": [
@@ -106,11 +120,18 @@
       "localLog": "artifacts/access/clean-install.log"
     }
   ],
+  "testResults": {
+    "tests": 27,
+    "passed": 27,
+    "failed": 0,
+    "skipped": 0
+  },
   "environment": {
-    "node": "22.22.2",
-    "npm": "10.9.7",
+    "finalNode": "20.19.5",
+    "finalNpm": "10.8.2",
     "platform": "darwin",
-    "arch": "arm64"
+    "arch": "arm64",
+    "note": "Recorded in artifacts/access/addendum-environment.log in same shell invocation as exact-revision check/smoke. Previous candidate also tested under Node25. No global tool configuration modified."
   },
   "externalGates": [
     {
@@ -151,7 +172,7 @@
   ],
   "contractRequests": [],
   "evidencePrivacy": "Only synthetic data in local ignored logs/screenshots/download; no bearer or payment proof in compact handoff. Export contains a synthetic private request; keep ignored.",
-  "documentationRevisionNote": "Previous handoff preserved in archive/pre-closeout-access.json. Current package check/smoke and combined integration executed in a fresh owned checkout of codeRevision.",
+  "documentationRevisionNote": "Handoff-only commit follows tested repair revision 4e15d0c4abc501a3cdb235c787352bba7023ba01; earlier readiness superseded by confirmed late security-review defects and repairs.",
   "reviewTag": {
     "name": "handoff-review-v1",
     "revision": "74ae66f6bd895b13a9ce9de083357c0fcb88e564",
@@ -162,11 +183,9 @@
       "id": "sdk-http-errors",
       "status": "passed",
       "commandIds": [
-        "access-check",
-        "access-smoke",
-        "composition"
+        "access-check"
       ],
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "docs/handoffs/access.md",
       "details": "All HTTP methods; exact shared DTOs and envelopes; malformed JSON/DTOs; safe errors; bounded 429/network retries; AbortSignal/deadline;409 conflict; unsupported/expired quote; request/profile/budget binding."
     },
     {
@@ -174,10 +193,9 @@
       "status": "passed",
       "commandIds": [
         "access-check",
-        "access-smoke",
-        "composition"
+        "access-smoke"
       ],
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "docs/handoffs/access.md",
       "details": "Explicit sessions; expiry/revocation no auto-renew or repay; default no spending; bounded consent; native x402 402 bytes; callback bearer/cookie/header isolation; rejected authorizer header injection; concurrency/replay/ambiguous-paid-outcome controls."
     },
     {
@@ -185,10 +203,9 @@
       "status": "passed",
       "commandIds": [
         "access-check",
-        "access-smoke",
-        "composition"
+        "access-smoke"
       ],
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "docs/handoffs/access.md",
       "details": "Actual fetch SSE resume with Last-Event-ID; no duplicate deltas/paid resubmission; expired cursor409; stream disconnection not cancel; SDK/real-browser explicit cancellation; paid_but_failed remains separate; bounded output."
     },
     {
@@ -197,9 +214,9 @@
       "commandIds": [
         "access-check",
         "access-smoke",
-        "composition"
+        "history-example"
       ],
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "docs/handoffs/access.md",
       "details": "CLI providers/select/profile/quote/submit/stream/inspect/cancel/receipt-integrity/assess/export/history/revoke; official MCP stdio connect/history/quote/select/submit/watch; host and caller authorization; no-quote refusal and stale Graph-derived history veto."
     },
     {
@@ -207,10 +224,9 @@
       "status": "passed",
       "commandIds": [
         "access-check",
-        "access-smoke",
-        "composition"
+        "access-smoke"
       ],
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "docs/handoffs/access.md",
       "details": "Actual Chromium desktop/mobile; Tab/Enter; loading/empty/error/unavailable/development/cancelled paths; accessible alerts/status; CSP/text-only XSS; no page errors/dialogs/horizontal overflow; separate states; consent invalidation; evidence download."
     },
     {
@@ -218,10 +234,9 @@
       "status": "passed",
       "commandIds": [
         "access-check",
-        "access-smoke",
-        "composition"
+        "access-smoke"
       ],
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "docs/handoffs/access.md",
       "details": "Permission-restricted CLI files; memory-only browser capability; no bearer in URL/authorizer; no private normal SDK logs; no wallet/Graph secrets; hash/association/signature-validated private export/import; corruption/pin mismatch rejection; evidence deletion yields unavailable assessment; integrity is not execution verification."
     }
   ],
