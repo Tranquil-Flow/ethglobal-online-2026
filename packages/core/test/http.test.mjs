@@ -142,6 +142,12 @@ test("all private paths isolate principals; real HTTP signed receipt/evidence an
     child = r.body.capability;
   const job = await h.terminal(id, cap);
   validate("Job", job);
+  const profileResponse = await h.call(
+    "/v1/profiles/" + encodeURIComponent(h.request.profileId),
+  );
+  assert.equal(profileResponse.status, 200);
+  assert.equal(digestOf(profileResponse.body), h.request.profileId);
+  assert.equal((await h.call("/v1/keys/not-trusted")).status, 404);
   assert.equal(job.executionStatus, "succeeded");
   assert.equal(job.mode, "development");
   for (const route of ["", "/events", "/receipt", "/evidence", "/assessments"])
@@ -164,6 +170,10 @@ test("all private paths isolate principals; real HTTP signed receipt/evidence an
   });
   assert.equal(a.status, 202);
   assert.equal(a.body.outcome, "unavailable");
+  assert.deepEqual(
+    (await h.call("/v1/jobs/" + id + "/assessments", { cap })).body.assessments,
+    [a.body],
+  );
   assert.deepEqual(
     (await h.call("/v1/jobs/" + id + "/receipt", { cap })).body,
     receipt.body,
@@ -587,6 +597,35 @@ test("unresolved payment timeout stays unavailable on same-key reconciliation an
   assert.equal(calls, 2);
   assert.equal(h.store.list("attempts").length, 1);
   assert.equal(h.executions(), 0);
+});
+
+test("corrupted durable receipt is refused by HTTP and absent payment port cannot authorize", async (t) => {
+  const h = await setup(t),
+    cap = await h.session(),
+    r = await h.submit(cap);
+  const id = r.body.job.jobId;
+  await h.terminal(id, cap);
+  const value = h.store.get("receipts", id);
+  value.receipt.payload.outputHash = digestOf("tamper");
+  h.store.set("receipts", id, value);
+  for (const route of ["receipt", "evidence"])
+    assert.equal(
+      (await h.call("/v1/jobs/" + id + "/" + route, { cap })).status,
+      503,
+    );
+  const missing = await setup(t, { payments: undefined });
+  const session = await missing.session();
+  assert.equal(
+    (
+      await missing.call("/v1/quotes", {
+        method: "POST",
+        body: { request: missing.request },
+        cap: session,
+      })
+    ).status,
+    503,
+  );
+  assert.equal(missing.executions(), 0);
 });
 
 test("session bootstrap is rate-limited and hashed at rest", async (t) => {
