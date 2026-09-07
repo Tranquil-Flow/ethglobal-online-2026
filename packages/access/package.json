@@ -9,7 +9,8 @@
     "ethonline-access-mcp": "./src/mcp.mjs"
   },
   "engines": {
-    "node": ">=20"
+    "node": "22.22.2",
+    "npm": "10.9.7"
   },
   "scripts": {
     "test": "npm run build:viewer && node --test --test-concurrency=1 test/*.test.mjs",

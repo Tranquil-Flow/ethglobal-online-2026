@@ -17,7 +17,7 @@ test('explicit test assessments cover states without changing receipt or executi
   const {job}=await c.submitJob({request,quoteId:q.quoteId,idempotencyKey:'test-states',authorization:{maxAmountBaseUnits:'10',network:q.network,asset:q.asset}});
   for await(const e of c.streamJob(job.jobId)){}
   const before=await c.getReceipt(job.jobId);
-  for(outcome of ['passed','mismatch','inconclusive','unavailable']){
+  for(outcome of ['pending','passed','mismatch','inconclusive','unavailable']){
    const a=await c.createAssessment(job.jobId,testAssessment.method,'fixture-'+outcome);
    assert.equal(a.outcome,outcome);assert.equal(a.mode,'development');assert.equal(a.reasonCode,'TEST_ONLY_NOT_INFERENCE');
   }

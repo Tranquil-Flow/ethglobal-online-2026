@@ -5,7 +5,8 @@
   "type": "module",
   "exports": "./src/index.mjs",
   "engines": {
-    "node": ">=20"
+    "node": "22.22.2",
+    "npm": "10.9.7"
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",

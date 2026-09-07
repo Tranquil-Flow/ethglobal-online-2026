@@ -3,16 +3,22 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": "22.22.2", "npm": "10.9.7" },
+  "engines": {
+    "node": "22.22.2",
+    "npm": "10.9.7"
+  },
   "packageManager": "npm@10.9.7",
   "scripts": {
     "setup": "node scripts/setup.mjs",
     "start": "node composition/serve.mjs",
     "mcp": "node composition/mcp.mjs",
     "test": "npm --prefix packages/contracts test",
-    "check": "npm --prefix packages/contracts run check && node scripts/check-layout.mjs && node --test scripts/test-gates.test.mjs scripts/test-handoff.test.mjs",
+    "check": "npm --prefix packages/contracts run check && node scripts/check-layout.mjs && node --test scripts/test-gates.test.mjs scripts/test-handoff.test.mjs scripts/test-runtime.test.mjs",
     "check:lane": "node scripts/check-lane.mjs",
     "check:all": "node scripts/check-all.mjs",
-    "smoke:integration": "node scripts/check-composition.mjs"
+    "smoke:integration": "node scripts/check-composition.mjs",
+    "check:executor": "node --test conformance/executor-port.test.mjs composition/test/executor.test.mjs",
+    "check:operations": "npm --prefix operations run check && npm --prefix operations run smoke && node --test composition/test/backup.test.mjs",
+    "check:local-services": "node --test composition/test/local-services.test.mjs"
   }
 }

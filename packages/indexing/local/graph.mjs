@@ -47,6 +47,6 @@ try{
  await cli(['deploy','development/indexing',work+'/subgraph.yaml','--node',admin,'--ipfs',ipfs,'--version-label','development-local','--output-dir',work+'/build'],'ingestion-deploy');
  const client=createGraphClient({endpoint,allowLocal:true});
  const meta=await waitFor(async()=>{const d=await client.query({query:'{ _meta { deployment hasIndexingErrors block { number hash timestamp } } }'});return d._meta?.block?.number>=1?d._meta:null;},'initial registry index');
- return {evm,endpoint,client,deployment,deploymentId:meta.deployment,work,waitFor,close};
+ return {evm,endpoint,client,deployment,deploymentId:meta.deployment,work,waitFor,close, setAvailable(available){if(typeof available!=="boolean")throw Error("BOOLEAN_REQUIRED");run([available?"unpause":"pause",names.graph]);}};
  }catch(error){await close();throw error;}
 }

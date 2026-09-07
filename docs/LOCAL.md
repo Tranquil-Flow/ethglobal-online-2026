@@ -2,8 +2,10 @@
 
 ## Ownership and setup
 
-Run from the repository root on the pinned Node/npm in README. `npm run setup` uses package-local
+Run from the repository root with Node **22.22.2** and npm **10.9.7** (`nvm install && nvm use`,
+then `npm install --global npm@10.9.7` if necessary). `npm run setup` uses package-local
 lockfiles and rebuilds native modules in that same interpreter. No sibling worktree is needed.
+Setup rejects a different Node/npm pair and loads both SQLite native addons before succeeding.
 The exercised host is macOS arm64; Linux/Windows and hosted CI execution are not claimed.
 The workflow contains the same commands but has not been pushed/run remotely.
 
@@ -25,7 +27,8 @@ No `.env`, wallet, Graph token, paid account or model is read/downloaded.
 5. Submit/stream. `settled · development` means the offline simulator, not a real transfer.
 6. Request assessment: outcome must be `unavailable`, never verified/passed.
 7. Download private evidence. Public pins are supplied by this local host. This checks integrity,
-   not independent provider trust. Revoke to invalidate the in-memory session.
+   not independent provider trust. Delete private evidence explicitly with the server-deletion button;
+   signed receipts and downloaded copies remain. Revoke to invalidate the in-memory session.
 
 The integration browser smoke performs this flow, verifies XSS text stays text, exports evidence,
 then shares that exact test session privately with the SDK, real CLI and MCP stdio. It writes no

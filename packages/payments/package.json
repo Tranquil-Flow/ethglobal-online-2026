@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=20.19.0 <21"
+    "node": "22.22.2",
+    "npm": "10.9.7"
   },
   "exports": "./src/index.mjs",
   "scripts": {

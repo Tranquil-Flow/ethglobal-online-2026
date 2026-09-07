@@ -8,5 +8,6 @@ for(const lane of Object.keys(JSON.parse(readFileSync('docs/lanes.json')))) {
  const result=spawnSync(process.execPath,['scripts/check-lane.mjs',lane],{stdio:'inherit'});
  if(result.status!==0)failed=true;
 }
+for(const script of ['check:executor','check:operations']){const result=spawnSync('npm',['run',script],{stdio:'inherit'});if(result.status!==0)failed=true;}
 const combined=spawnSync(process.execPath,['scripts/check-composition.mjs'],{stdio:'inherit'});if(combined.status!==0)failed=true;
 process.exitCode=failed?1:0;

@@ -30,19 +30,35 @@ import {
   json,
 } from "./synthetic.mjs";
 
-export async function startDevelopment({
+import { acquirePrivateStateLock } from './private-state.mjs';
+
+export async function startDevelopment(options = {}) {
+  if (options.development !== true || typeof options.dataDir !== 'string' || !options.dataDir)
+    return startDevelopmentUnlocked(options);
+  const dir = resolve(options.dataDir);
+  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  const release = acquirePrivateStateLock(dir);
+  try {
+    const app = await startDevelopmentUnlocked(options);
+    return { ...app, async close() { try { await app.close(); } finally { release(); } } };
+  } catch (error) { release(); throw error; }
+}
+
+async function startDevelopmentUnlocked({
   development = false,
   dataDir,
   port = 4310,
   delayMs = 5,
   localInfrastructure,
   testAssessment,
+  executionPort,
   providerId = "synthetic.local.eth",
   ...unknownOptions
 } = {}) {
   if (Object.keys(unknownOptions).length) throw Error("UNKNOWN_LOCAL_OPTION");
   if (development !== true) throw Error("DEVELOPMENT_REQUIRED");
   assertRuntime();
+  if (executionPort !== undefined && (executionPort?.mode !== "development" || typeof executionPort.execute !== "function")) throw Error("DEVELOPMENT_EXECUTION_PORT_REQUIRED");
   if (testAssessment !== undefined && (testAssessment?.fixture !== true || typeof testAssessment.assess !== "function" || !/^test[-:]/.test(testAssessment.method) || !/^test[-:]/.test(testAssessment.verifierId))) throw Error("EXPLICIT_TEST_ASSESSOR_REQUIRED");
   if (localInfrastructure !== undefined) {
     const local = (value) => {
@@ -276,7 +292,9 @@ export async function startDevelopment({
       },
     };
     const discovery = createDiscovery({
-      config: { mode: "development", allowLoopback: true },
+      config: { mode: "development", allowLoopback: true,
+        trustedVerifiers: infrastructure?.discoveryPolicy?.trustedVerifiers ?? [],
+        trustedMethods: infrastructure?.discoveryPolicy?.trustedMethods ?? [] },
       resolver,
       history,
     });
@@ -291,7 +309,7 @@ export async function startDevelopment({
       },
       store,
       signer: createSigner({ privateKey, keyId }),
-      executor: createDevelopmentExecutor({ delayMs }),
+      executor: executionPort ?? createDevelopmentExecutor({ delayMs }),
       assessor: testAssessment,
       payments,
       discovery,
@@ -311,6 +329,19 @@ export async function startDevelopment({
       profileId,
       pins,
       close,
+      // Explicit operator action: recheck retained consented publications using
+      // their original idempotency keys. Never creates a payment or new event.
+      async reconcilePublications({limit = 64} = {}) {
+        if (!Number.isSafeInteger(limit) || limit < 1 || limit > 128) throw Error("INVALID_RECONCILIATION_LIMIT");
+        const results = [];
+        for (const row of store.list("outbox").slice(0, limit)) {
+          const id = digestOf(row.event);
+          const result = await eventSink.publish({event: row.event, idempotencyKey: id});
+          store.set("outbox", id, {...row, ...result});
+          results.push(result);
+        }
+        return results;
+      },
       authorizeDevelopment: (c) => synthetic.authorize(c),
       setSyntheticHistoryAge: synthetic.setAge,
       setSyntheticFault: synthetic.setFault,

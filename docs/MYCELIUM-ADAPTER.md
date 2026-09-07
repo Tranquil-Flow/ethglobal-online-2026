@@ -67,24 +67,26 @@ await runExecutorPortConformance({
 
 The factory must be deterministic and local. It receives fault scenarios `success`, `overflow-token`, `overflow-bytes`, `profile-mismatch`, `failure`, `timeout`, and `cancel`; it must return a fresh port per scenario and append received calls/abort observations to `observed`. Do not point this runner at a real Mycelium endpoint: its negative cases intentionally fail, overflow, time out and cancel.
 
-## Exact minimal composition hook for the owner
+## Executable composition entrypoints
 
-Core already has the required injection seam. The composition owner should keep adapter construction outside `createApp` and replace only the hard-coded executor expression at the application bootstrap with an explicit dependency:
+`createApp({ config, store, signer, payments, executor, discovery, history, eventSink })`
+from `packages/core/src/index.mjs` is the runtime-neutral bootstrap. Adapter construction
+and credential ownership remain outside core. A live deployment must explicitly supply
+its live ports, provider IDs and exact profile catalog; development defaults are not live configuration.
 
-```diff
--export async function start…(options) {
-+export async function start…({ executionPort, ...options }) {
-+  if (!executionPort || typeof executionPort.execute !== "function")
-+    throw Error("EXECUTION_PORT_REQUIRED");
-   app = createApp({
-     // existing config/store/signer/payments/discovery/history/eventSink
--    executor: createDevelopmentExecutor({ delayMs }),
-+    executor: executionPort,
-   });
- }
+For the fully composed local application, `startDevelopment` from `composition/index.mjs`
+accepts an explicit `executionPort`. It requires `mode: "development"` and `execute`;
+live and malformed ports are rejected. Omission selects the explicitly consented,
+labelled synthetic default. All existing payment, discovery, History and client paths
+remain in use when a test adapter is injected.
+
+```sh
+node --test conformance/executor-port.test.mjs composition/test/executor.test.mjs
 ```
 
-For the existing `startDevelopment`, preserve its current explicit synthetic default and label. If owner wants adapter-fixture composition testing, add an explicit test-only `executionPort` override guarded by `executionPort.mode === "development"`; do not use that as the live Mycelium entrypoint. A future live bootstrap must inject the real port, a live profile catalog and provider IDs together and set `config.mode: "live"`. No core, DTO, receipt, HTTP, payment, discovery, or indexing change is required by this contract.
+`composition/test/executor.test.mjs` proves the injected port receives the exact paid
+request once and that its retained receipt stays labelled development. The application
+owns job persistence/reconnect; the adapter owns upstream cancellation and cleanup.
 
 ## Still required for actual compatibility
 
