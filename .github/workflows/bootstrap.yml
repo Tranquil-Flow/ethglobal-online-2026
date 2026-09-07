@@ -1,17 +1,28 @@
-name: contract-bootstrap
+name: combined-local-application
 on: [push, pull_request]
 permissions:
   contents: read
 jobs:
-  contracts:
-    runs-on: ubuntu-latest
+  local-application:
+    runs-on: macos-14
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: .nvmrc
           cache: npm
-          cache-dependency-path: packages/contracts/package-lock.json
-      - run: npm --prefix packages/contracts ci --ignore-scripts
-      - run: npm run check
-# Integration owner replaces/extends with full application gates once lanes land.
+          cache-dependency-path: packages/*/package-lock.json
+      - run: npm run setup
+      - run: npm run check:all
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: synthetic-local-evidence
+          path: |
+            artifacts/integration/combined-browser.png
+            artifacts/integration/browser-result.json
+# No credentials, deployments, public chain transactions or model execution.
+# macOS is the presently exercised native/Matchstick platform; Linux not qualified.

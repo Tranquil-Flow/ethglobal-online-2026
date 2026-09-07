@@ -596,7 +596,10 @@ export function createClient({
             challenge.x402Version !== 2 ||
             !Array.isArray(challenge.accepts) ||
             challenge.accepts.length !== 1 ||
-            challenge.resource?.url !== base + "/v1/jobs"
+            !new Set([
+              base + "/v1/jobs",
+              base + "/v1/jobs/quotes/" + encodeURIComponent(q.quoteId),
+            ]).has(challenge.resource?.url)
           )
             fail("INVALID_PAYMENT_CHALLENGE");
           const a = challenge.accepts[0];

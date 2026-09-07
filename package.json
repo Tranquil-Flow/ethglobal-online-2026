@@ -3,13 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=20"
-  },
+  "engines": { "node": "20.19.5", "npm": "10.8.2" },
+  "packageManager": "npm@10.8.2",
   "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "start": "node composition/serve.mjs",
+    "mcp": "node composition/mcp.mjs",
     "test": "npm --prefix packages/contracts test",
     "check": "npm --prefix packages/contracts run check && node scripts/check-layout.mjs && node --test scripts/test-gates.test.mjs scripts/test-handoff.test.mjs",
     "check:lane": "node scripts/check-lane.mjs",
-    "check:all": "node scripts/check-all.mjs"
+    "check:all": "node scripts/check-all.mjs",
+    "smoke:integration": "node scripts/check-composition.mjs"
   }
 }
