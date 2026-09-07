@@ -90,7 +90,7 @@ The History DTO stays unchanged. The optional local report adds `provenance`, bo
 
 ```sh
 npm --prefix packages/indexing run history -- /operator-owned/query.json synthetic.eth
-npm --prefix packages/indexing run deploy:dry-run -- packages/indexing/config/development.example.json packages/indexing/subgraph/subgraph.yaml
+npm --prefix packages/indexing run deploy:dry-run -- config/development.example.json subgraph/subgraph.yaml
 npm --prefix packages/indexing run smoke:live -- /operator-owned/approved-live-query.json provider.eth
 ```
 
