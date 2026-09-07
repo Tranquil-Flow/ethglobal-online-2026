@@ -80,17 +80,6 @@ export async function exerciseLocal() {
     });
     const before = await port.list({ names: [name] });
     assert.equal(before.providers.length, 1, JSON.stringify(before.errors));
-    const cliResult = await cli(
-      {
-        rpcUrl: env.url,
-        mode: "development",
-        allowLoopback: true,
-        universal: env.universal,
-        root: env.root,
-      },
-      [name],
-    );
-    assert.equal(cliResult.providers[0]?.paymentReceiver, "0.0.123");
     const p = before.providers[0];
     assert.equal(p.paymentReceiver, "0.0.123");
     assert.equal(p.source.chainId, "31337");
@@ -118,6 +107,19 @@ export async function exerciseLocal() {
         asset: "HBAR",
       });
     assert.equal((await select(before.providers)).selected.name, name);
+    // Select while records are fresh. CLI startup is independent work and can
+    // legitimately outlive this fixture's 1s TTL on a loaded host.
+    const cliResult = await cli(
+      {
+        rpcUrl: env.url,
+        mode: "development",
+        allowLoopback: true,
+        universal: env.universal,
+        root: env.root,
+      },
+      [name],
+    );
+    assert.equal(cliResult.providers[0]?.paymentReceiver, "0.0.123");
     for (const k of ["ethonline.endpoint", "ethonline.profiles"])
       await write(resolver, "PermissionedResolverImpl", "authorizeTextRoles", [
         toHex(packetToBytes(name)),
