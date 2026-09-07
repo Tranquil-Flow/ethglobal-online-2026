@@ -1,10 +1,156 @@
 {
   "lane": "indexing",
-  "status": "in_progress",
-  "codeRevision": "13f5e295bdeb833b9977a84edc97b2ee64147579",
-  "commands": [],
-  "externalGates": [
-    "Live deployment and Graph provider qualification require approval and designated credentials."
+  "status": "local_ready",
+  "codeRevision": "4f7fe27b4b13ef354ba4b8682e5fd97602f79fb3",
+  "reviewContract": "handoff-review-v1",
+  "commands": [
+    {
+      "id": "clean-install",
+      "command": "env PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin npm --prefix packages/indexing ci --ignore-scripts",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/indexing.md"
+    },
+    {
+      "id": "native-build",
+      "command": "env PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin npm --prefix packages/indexing rebuild fs-ext",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/indexing.md"
+    },
+    {
+      "id": "package-check",
+      "command": "env PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin npm --prefix packages/indexing run check",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/indexing.md"
+    },
+    {
+      "id": "local-smoke",
+      "command": "env PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin npm --prefix packages/indexing run smoke",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/indexing.md"
+    },
+    {
+      "id": "local-ingestion",
+      "command": "env PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin npm --prefix packages/indexing run smoke:ingestion",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/indexing.md"
+    },
+    {
+      "id": "dry-run",
+      "command": "env PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin npm --prefix packages/indexing run deploy:dry-run -- config/development.example.json subgraph/subgraph.yaml",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/indexing.md"
+    },
+    {
+      "id": "lane-gate",
+      "command": "env PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin npm run check:lane -- indexing",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/indexing.md"
+    },
+    {
+      "id": "reviewed-evidence",
+      "command": "env PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin node --input-type=module -e \"import {execFileSync} from 'node:child_process';import {readFileSync} from 'node:fs';const source=execFileSync('git',['show','handoff-review-v1:scripts/validate-handoff.mjs']);const {validateHandoff}=await import('data:text/javascript;base64,'+source.toString('base64'));const config=JSON.parse(execFileSync('git',['show','handoff-review-v1:docs/lanes.json'])).indexing;const report=JSON.parse(readFileSync('docs/handoffs/indexing.json'));validateHandoff(report,config);console.log('Reviewed validator passed:',config.acceptanceIds.length,'required acceptance IDs;',config.externalGateIds.length,'required external gates. No shared files copied or changed.');\"",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/indexing.md"
+    }
   ],
-  "contractRequests": []
+  "acceptanceCases": [
+    {
+      "id": "local-evm-events",
+      "status": "passed",
+      "commandIds": [
+        "package-check",
+        "local-smoke",
+        "local-ingestion"
+      ],
+      "evidence": "docs/handoffs/indexing.md"
+    },
+    {
+      "id": "publisher-auth-replay",
+      "status": "passed",
+      "commandIds": [
+        "package-check",
+        "local-smoke"
+      ],
+      "evidence": "docs/handoffs/indexing.md"
+    },
+    {
+      "id": "mapping-build-tests",
+      "status": "passed",
+      "commandIds": [
+        "package-check",
+        "local-ingestion"
+      ],
+      "evidence": "docs/handoffs/indexing.md"
+    },
+    {
+      "id": "metadata-provenance",
+      "status": "passed",
+      "commandIds": [
+        "package-check",
+        "local-ingestion"
+      ],
+      "evidence": "docs/handoffs/indexing.md"
+    },
+    {
+      "id": "query-freshness",
+      "status": "passed",
+      "commandIds": [
+        "package-check",
+        "local-smoke",
+        "local-ingestion",
+        "dry-run"
+      ],
+      "evidence": "docs/handoffs/indexing.md"
+    },
+    {
+      "id": "privacy-mode",
+      "status": "passed",
+      "commandIds": [
+        "package-check",
+        "local-smoke",
+        "dry-run"
+      ],
+      "evidence": "docs/handoffs/indexing.md"
+    }
+  ],
+  "externalGates": [
+    {
+      "id": "local-graph-ingestion",
+      "status": "qualified",
+      "reason": "Actual isolated local Graph/IPFS/PostgreSQL ingestion and reorg query verified on chain 31337. Local deployment QmbJdHBffdfQd3HpRzaaxWN9UhyzBF2FFaXpCcvJ7pKA52 and transaction/block handles retained in evidence; services cleaned up. NOT live provider qualification.",
+      "evidence": "docs/handoffs/indexing.md"
+    },
+    {
+      "id": "graph-live-provider",
+      "status": "blocked",
+      "reason": "Needs approved actual live Graph endpoint/deployment, designated credential source, fresh observations and meaningful combined client decision."
+    },
+    {
+      "id": "registry-testnet-deploy",
+      "status": "blocked",
+      "reason": "Needs explicit funded Sepolia deployment/signing approval and per-action budget with real address/transaction/code-hash/start-block receipts."
+    },
+    {
+      "id": "deployment-credentials-approval",
+      "status": "blocked",
+      "reason": "No designated deployment/query credentials or funded-wallet authorization; no keys were extracted or unrelated credentials reused."
+    },
+    {
+      "id": "combined-app",
+      "status": "blocked",
+      "reason": "Integrating owner must combine lanes and exercise core consent/outbox, discovery history decisions and access clients."
+    },
+    {
+      "id": "public-release",
+      "status": "blocked",
+      "reason": "Human license, sponsor eligibility, visibility/push approval, dependency/security review and truthful demo/submission remain unapproved."
+    }
+  ],
+  "contractRequests": [],
+  "scopeExclusions": [
+    "Mycelium execution: inapplicable to current lane scope, not qualified",
+    "Gas Killer integration: inapplicable to current lane scope, not qualified",
+    "Independent replay and physical inference: inapplicable to current scope, not qualified"
+  ],
+  "provenance": "docs/handoffs/indexing-provenance.md"
 }
