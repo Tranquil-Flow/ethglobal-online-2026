@@ -175,7 +175,7 @@ Dry-run only, safe without a wallet:
 
 ```sh
 npm --prefix packages/payments run smoke:live -- --network hedera:testnet --budget 1000
-npm --prefix packages/payments run audit:hcs -- --mode development --topic 0.0.1234 --digest sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+npm --prefix packages/payments run audit:hcs -- --network hedera:testnet --mode development --consent --topic 0.0.1234 --digest sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 ```
 
 Live smoke requires **fresh human authorization**, `--execute --approved`, exact
@@ -188,9 +188,12 @@ No adapter/credentials are bundled or loaded during dry-run. This is an external
 credential/infrastructure gate, not a stubbed live-success implementation.
 
 Optional HCS creates native `TopicMessageSubmitTransaction` with only version,
-mode and digest. Sending additionally requires `--execute --approved --consent
---budget <tinybars> --adapter /absolute/operator.mjs`; that adapter explicitly
-exports `submit(transaction,{signal,network})`. Topic provisioning, funding,
+mode, digest and a fixed audit-only claim. Dry-run also requires explicit network
+and consent flags; it does not broadcast. Sending additionally requires
+`--submit --approved --budget <tinybars> --adapter /absolute/operator.mjs`;
+that adapter exports `submitHcs({transaction,signal,network,maxAmountBaseUnits})`
+and must return a confirmed `{status:'SUCCESS',transactionId}`. It must enforce
+any custom topic fees against the total authorized budget. Topic provisioning, funding,
 wallet authority and actual consensus confirmation remain external. A digest
 publication is an audit reference, not execution/payment/assessment proof.
 
