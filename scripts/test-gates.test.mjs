@@ -9,8 +9,9 @@ function fixture(t) {
  const root=mkdtempSync(join(tmpdir(),'ethonline-gate-test-'));
  t.after(()=>rmSync(root,{recursive:true,force:true}));
  const put=(p,v)=>{mkdirSync(join(root,p,'..'),{recursive:true});writeFileSync(join(root,p),typeof v==='string'?v:JSON.stringify(v));};
- put('docs/lanes.json',{core:{}});
+ put('docs/lanes.json',{core:{acceptanceIds:['fixture'],externalGateIds:['live-fixture']}});
  put('scripts/check-lane.mjs','');copyFileSync(new URL('./check-lane.mjs',import.meta.url),join(root,'scripts/check-lane.mjs'));
+ copyFileSync(new URL('./validate-handoff.mjs',import.meta.url),join(root,'scripts/validate-handoff.mjs'));
  const run=(cmd,args)=>spawnSync(cmd,args,{cwd:root,encoding:'utf8'});
  const gate=()=>run(process.execPath,['scripts/check-lane.mjs','core']);
  return {root,put,run,gate};
@@ -30,7 +31,8 @@ test('lane gate verifies revision and rejects dirty implementation',t=>{
  assert.equal(f.run('git',['add','.']).status,0);
  assert.equal(f.run('git',['-c','commit.gpgsign=false','commit','-m','fixture']).status,0);
  const revision=f.run('git',['rev-parse','HEAD']).stdout.trim();
- const report={lane:'core',status:'local_ready',codeRevision:revision,commands:[{command:'fixture smoke',exitCode:0,evidence:'fixture-only'}],externalGates:[],contractRequests:[]};
+ f.put('docs/evidence.md','Fixture smoke evidence only.');
+ const report={lane:'core',status:'local_ready',codeRevision:revision,commands:[{id:'smoke',command:'fixture smoke',exitCode:0,evidence:'docs/evidence.md'}],acceptanceCases:[{id:'fixture',status:'passed',commandIds:['smoke'],evidence:'docs/evidence.md'}],externalGates:[{id:'live-fixture',status:'inapplicable',reason:'Unit test fixture, no live provider'}],contractRequests:[]};
  f.put('docs/handoffs/core.json',report);
  let r=f.gate();assert.equal(r.status,0,r.stderr);
  f.put('packages/core/src/index.mjs','export const fixture=false;');

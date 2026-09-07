@@ -35,8 +35,15 @@ authorize({request:Request,quoteId:string,principalId:string,paymentHeaders:Reco
 recordExecutionOutcome({paymentId:string,jobId:string,outcome:'succeeded'|'failed'|'cancelled',signal}) -> Payment.
 getPayment({paymentId:string,principalId:string,signal}) -> Payment.
 close() -> void.
-Payment challenge header names/protocol bytes follow verified x402 SDK, with an explicit allowlist
-owned/exported by payments. Core preserves those bytes, never invents a second x402 protocol.
+headerPolicy: readonly {request:string[],response:string[]} is a property on PaymentsPort itself.
+Names are lowercase HTTP field names derived from the pinned x402 version; never guess them in core.
+Core validates the injected policy at startup, rejecting authorization, cookie, set-cookie, host,
+proxy-authorization and hop-by-hop headers in either list. Only request-listed fields are copied
+into paymentHeaders, with byte values unchanged, bounded lengths and duplicate rejection. Only
+response-listed fields may be relayed back; unknown response fields are an error, not forwarded.
+The paymentAuthorizer callback receives only payment response fields/body, never the session bearer.
+Payment challenge header names/protocol bytes follow the verified x402 SDK. This property crosses
+the dependency-injection boundary without importing the payments implementation from core.
 JSONValue here is bounded JSON, not necessarily the application Error envelope: the selected
 x402 version may mandate its own payment-required body. Payments owns schema/protocol validation
 for this body; access passes it and allowlisted headers to the explicit paymentAuthorizer callback.

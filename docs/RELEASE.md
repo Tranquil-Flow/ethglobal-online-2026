@@ -7,6 +7,19 @@ Remaining external gates are explicit. Handoff includes factory imports, configu
 commands, observed outputs, safe evidence paths, known risks, contract requests and AI/reuse provenance.
 Run npm run check:lane -- <lane>. Bootstrap test success alone does not satisfy this gate.
 
+### Required machine-readable handoff coverage
+docs/lanes.json defines acceptanceIds and externalGateIds per lane. Record every one; none may
+silently disappear. Add acceptanceCases to the handoff JSON. Each entry has id, status:'passed',
+commandIds (nonempty references to commands) and evidence (nonempty file in this checkout).
+Each commands entry has id, command, exitCode:0 and evidence. Prefer a compact committed safe
+evidence summary in docs/handoffs/<lane>.md; ignored logs alone are not portable to clean checkout.
+Each externalGates entry has id, status:'qualified'|'blocked'|'inapplicable' and reason.
+Qualified additionally requires an existing evidence file containing verifiable live references.
+Excluded Mycelium/Gas Killer/replay gates are recorded inapplicable with the current scope reason,
+not erased and not qualified. Blocked live gates do not prevent local-ready, but must be listed.
+The gate checks file existence, coverage and tested source revision; the integrating owner must
+still inspect evidence content and validate external claims. This is not automatic proof of truth.
+
 ## Combined application: integration-ready (no inference claim)
 Owner merges reviewed lane commits, resolves seams once, installs each pinned package, exercises
 actual core + payments + discovery + history + SDK/CLI/MCP/viewer together with explicitly development

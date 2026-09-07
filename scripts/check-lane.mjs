@@ -1,5 +1,6 @@
 import {readFileSync,existsSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
+import {validateHandoff} from './validate-handoff.mjs';
 const lane=process.argv[2];
 const lanes=JSON.parse(readFileSync('docs/lanes.json'));
 function fail(message){console.error(message);process.exit(1);}
@@ -23,4 +24,5 @@ if(untracked.status!==0||untracked.stdout.trim())fail(`${lane}: uncommitted impl
 if(!Array.isArray(handoff.commands)||!handoff.commands.length||handoff.commands.some(x=>typeof x.command!=='string'||x.exitCode!==0||typeof x.evidence!=='string'))fail(`${lane}: successful command evidence missing`);
 if(!Array.isArray(handoff.externalGates)||!Array.isArray(handoff.contractRequests))fail(`${lane}: gate lists missing`);
 if(handoff.contractRequests.length)fail(`${lane}: unresolved shared-contract request`);
+try{validateHandoff(handoff,lanes[lane]);}catch(error){fail(`${lane}: ${error.message}`);}
 console.log(`${lane}: local gate passed. Live qualification and combined integration are separate.`);

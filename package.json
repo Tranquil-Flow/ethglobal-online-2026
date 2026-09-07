@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "npm --prefix packages/contracts test",
-    "check": "npm --prefix packages/contracts run check && node scripts/check-layout.mjs && node --test scripts/test-gates.test.mjs",
+    "check": "npm --prefix packages/contracts run check && node scripts/check-layout.mjs && node --test scripts/test-gates.test.mjs scripts/test-handoff.test.mjs",
     "check:lane": "node scripts/check-lane.mjs",
     "check:all": "node scripts/check-all.mjs"
   }

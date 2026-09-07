@@ -9,7 +9,9 @@
       "docs/handoffs/core-contract-request.md",
       "docs/handoffs/core-provenance.md"
     ],
-    "manualPort": 4310
+    "manualPort": 4310,
+    "acceptanceIds": ["http-lifecycle", "restart-idempotency", "private-capabilities", "receipt-integrity-export", "payment-outbox-failures", "assessment-unavailable"],
+    "externalGateIds": ["combined-app", "mycelium-execution", "gaskiller-integration", "independent-replay", "public-release"]
   },
   "payments": {
     "branch": "lane/payments",
@@ -21,7 +23,9 @@
       "docs/handoffs/payments-contract-request.md",
       "docs/handoffs/payments-provenance.md"
     ],
-    "manualPort": 4320
+    "manualPort": 4320,
+    "acceptanceIds": ["real-sdk-protocol", "header-policy", "request-budget-binding", "concurrent-replay", "settlement-recovery", "paid-but-failed"],
+    "externalGateIds": ["hedera-blocky402-live-payment", "funded-wallet-approval", "combined-app", "public-release"]
   },
   "discovery": {
     "branch": "lane/discovery",
@@ -33,7 +37,9 @@
       "docs/handoffs/discovery-contract-request.md",
       "docs/handoffs/discovery-provenance.md"
     ],
-    "manualPort": 4330
+    "manualPort": 4330,
+    "acceptanceIds": ["ensv2-contract-resolution", "delegation-revocation", "freshness-provenance", "ssrf-boundary", "quote-history-selection"],
+    "externalGateIds": ["ensv2-sepolia-write", "ens-name-wallet-approval", "combined-app", "public-release"]
   },
   "indexing": {
     "branch": "lane/indexing",
@@ -45,7 +51,9 @@
       "docs/handoffs/indexing-contract-request.md",
       "docs/handoffs/indexing-provenance.md"
     ],
-    "manualPort": 4340
+    "manualPort": 4340,
+    "acceptanceIds": ["local-evm-events", "publisher-auth-replay", "mapping-build-tests", "metadata-provenance", "query-freshness", "privacy-mode"],
+    "externalGateIds": ["local-graph-ingestion", "graph-live-provider", "registry-testnet-deploy", "deployment-credentials-approval", "combined-app", "public-release"]
   },
   "access": {
     "branch": "lane/access",
@@ -57,6 +65,8 @@
       "docs/handoffs/access-contract-request.md",
       "docs/handoffs/access-provenance.md"
     ],
-    "manualPort": 4350
+    "manualPort": 4350,
+    "acceptanceIds": ["sdk-http-errors", "session-payment-consent", "sse-reconnect-cancel", "cli-mcp", "browser-accessibility-xss", "privacy-export"],
+    "externalGateIds": ["real-core-client-composition", "live-wallet-payment", "live-graph-decision", "public-release"]
   }
 }
