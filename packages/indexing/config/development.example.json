@@ -1,0 +1,16 @@
+{
+  "enabled": false,
+  "deployment": {
+    "mode": "development",
+    "chainId": 31337,
+    "network": "localhost",
+    "address": "0x0000000000000000000000000000000000000001",
+    "publisher": "0x0000000000000000000000000000000000000002",
+    "startBlock": 1,
+    "confirmations": 1,
+    "codeHash": "0x1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "maxGasPriceWei": "100000000000",
+  "timeoutMs": 5000,
+  "label": "TEMPLATE ONLY: synthetic addresses/hash, not deployed"
+}

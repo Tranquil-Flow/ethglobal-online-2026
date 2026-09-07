@@ -1,0 +1,83 @@
+[
+  {
+    "name": "canonical",
+    "raw": "{\"assessmentId\":\"synthetic-assessment\",\"createdAt\":\"2026-01-01T00:00:00.000Z\",\"method\":\"synthetic-method\",\"mode\":\"development\",\"outcome\":\"passed\",\"profileId\":\"sha256:24df86bc002f6e7082be11a013b107bc28c53d26587fccf9e8303fb099e63359\",\"receiptDigest\":\"sha256:584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f\",\"verifierId\":\"unknown-verifier\",\"version\":\"1\"}",
+    "object": "0x9de1fbf7e27bbad7416a4e881a1d4e344317cb18b23f6564e7d11f8806f296f9",
+    "receipt": "0x584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f",
+    "verifier": "0xa30eabc7b8ea58f91010622cd8e5189aef2a1be7f754831826a481c7236c5f36",
+    "method": "0xfab6d175c33362e959ac8d7bdaea7aa1c2eead6eddd083580cf5126c4e9cab57",
+    "valid": true
+  },
+  {
+    "name": "short offset",
+    "raw": "{\"assessmentId\":\"synthetic-assessment\",\"createdAt\":\"2026-01-01T00:00:00+00\",\"method\":\"synthetic-method\",\"mode\":\"development\",\"outcome\":\"passed\",\"profileId\":\"sha256:24df86bc002f6e7082be11a013b107bc28c53d26587fccf9e8303fb099e63359\",\"receiptDigest\":\"sha256:584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f\",\"verifierId\":\"unknown-verifier\",\"version\":\"1\"}",
+    "object": "0x535bfb3099201d5ae865bd90374e6e145d0fc7cbf681b7cfd9a581a46cf8fe7d",
+    "receipt": "0x584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f",
+    "verifier": "0xa30eabc7b8ea58f91010622cd8e5189aef2a1be7f754831826a481c7236c5f36",
+    "method": "0xfab6d175c33362e959ac8d7bdaea7aa1c2eead6eddd083580cf5126c4e9cab57",
+    "valid": true
+  },
+  {
+    "name": "compact offset",
+    "raw": "{\"assessmentId\":\"synthetic-assessment\",\"createdAt\":\"2026-01-01T00:00:00+0000\",\"method\":\"synthetic-method\",\"mode\":\"development\",\"outcome\":\"passed\",\"profileId\":\"sha256:24df86bc002f6e7082be11a013b107bc28c53d26587fccf9e8303fb099e63359\",\"receiptDigest\":\"sha256:584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f\",\"verifierId\":\"unknown-verifier\",\"version\":\"1\"}",
+    "object": "0x6c132c5ba3fdf5261f8c899138e34b7156c039a55a9b4f2b855adba18df36d93",
+    "receipt": "0x584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f",
+    "verifier": "0xa30eabc7b8ea58f91010622cd8e5189aef2a1be7f754831826a481c7236c5f36",
+    "method": "0xfab6d175c33362e959ac8d7bdaea7aa1c2eead6eddd083580cf5126c4e9cab57",
+    "valid": true
+  },
+  {
+    "name": "leap second",
+    "raw": "{\"assessmentId\":\"synthetic-assessment\",\"createdAt\":\"2026-01-01T23:59:60Z\",\"method\":\"synthetic-method\",\"mode\":\"development\",\"outcome\":\"passed\",\"profileId\":\"sha256:24df86bc002f6e7082be11a013b107bc28c53d26587fccf9e8303fb099e63359\",\"receiptDigest\":\"sha256:584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f\",\"verifierId\":\"unknown-verifier\",\"version\":\"1\"}",
+    "object": "0x9e94b0a72b1c79507b9cb0958ef1120367579c7901b18ba1fef115c9cd7af7b0",
+    "receipt": "0x584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f",
+    "verifier": "0xa30eabc7b8ea58f91010622cd8e5189aef2a1be7f754831826a481c7236c5f36",
+    "method": "0xfab6d175c33362e959ac8d7bdaea7aa1c2eead6eddd083580cf5126c4e9cab57",
+    "valid": true
+  },
+  {
+    "name": "unicode codepoints",
+    "raw": "{\"assessmentId\":\"synthetic-assessment\",\"createdAt\":\"2026-01-01T00:00:00.000Z\",\"method\":\"synthetic-method\",\"mode\":\"development\",\"outcome\":\"passed\",\"profileId\":\"sha256:24df86bc002f6e7082be11a013b107bc28c53d26587fccf9e8303fb099e63359\",\"receiptDigest\":\"sha256:584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f\",\"verifierId\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"version\":\"1\"}",
+    "object": "0xba57a5699499a59fb4b25ecdc1041adcec74829194f266a61ed5b9e24fa94d18",
+    "receipt": "0x584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f",
+    "verifier": "0xcf0977c0d853cf7149d2ae06758da6db2fd93bddbd8c958c74dac7d40837bfd2",
+    "method": "0xfab6d175c33362e959ac8d7bdaea7aa1c2eead6eddd083580cf5126c4e9cab57",
+    "valid": true
+  },
+  {
+    "name": "escaped strings",
+    "raw": "{\"assessmentId\":\"synthetic-assessment\",\"createdAt\":\"2026-01-01T00:00:00.000Z\",\"method\":\"quote\\\" slash\\\\ tab\\t line\\n control\\u0001\",\"mode\":\"development\",\"outcome\":\"passed\",\"profileId\":\"sha256:24df86bc002f6e7082be11a013b107bc28c53d26587fccf9e8303fb099e63359\",\"receiptDigest\":\"sha256:584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f\",\"verifierId\":\"unknown-verifier\",\"version\":\"1\"}",
+    "object": "0x8fbd19e09a73132a1d6f1d53b7f35ecc2c073997e2e64868258342e3ee5782ab",
+    "receipt": "0x584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f",
+    "verifier": "0xa30eabc7b8ea58f91010622cd8e5189aef2a1be7f754831826a481c7236c5f36",
+    "method": "0x5f27eea543aa4c2cf16429329cc7088c516aeb16ccff12d488625fcefcaa3563",
+    "valid": true
+  },
+  {
+    "name": "invalid date",
+    "raw": "{\"assessmentId\":\"synthetic-assessment\",\"createdAt\":\"2026-02-30T00:00:00Z\",\"method\":\"synthetic-method\",\"mode\":\"development\",\"outcome\":\"passed\",\"profileId\":\"sha256:24df86bc002f6e7082be11a013b107bc28c53d26587fccf9e8303fb099e63359\",\"receiptDigest\":\"sha256:584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f\",\"verifierId\":\"unknown-verifier\",\"version\":\"1\"}",
+    "object": "0x4f67083269cf6bad4b894fbe097c3601c5a959f27a4203f84f84b0e05051b232",
+    "receipt": "0x584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f",
+    "verifier": "0xa30eabc7b8ea58f91010622cd8e5189aef2a1be7f754831826a481c7236c5f36",
+    "method": "0xfab6d175c33362e959ac8d7bdaea7aa1c2eead6eddd083580cf5126c4e9cab57",
+    "valid": false
+  },
+  {
+    "name": "private extra",
+    "raw": "{\"assessmentId\":\"synthetic-assessment\",\"createdAt\":\"2026-01-01T00:00:00.000Z\",\"method\":\"synthetic-method\",\"mode\":\"development\",\"outcome\":\"passed\",\"profileId\":\"sha256:24df86bc002f6e7082be11a013b107bc28c53d26587fccf9e8303fb099e63359\",\"prompt\":\"synthetic-private-canary\",\"receiptDigest\":\"sha256:584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f\",\"verifierId\":\"unknown-verifier\",\"version\":\"1\"}",
+    "object": "0xd1ed36481f76507b7b5412288844318abe828b7c35308d014d237448ca116c05",
+    "receipt": "0x584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f",
+    "verifier": "0xa30eabc7b8ea58f91010622cd8e5189aef2a1be7f754831826a481c7236c5f36",
+    "method": "0xfab6d175c33362e959ac8d7bdaea7aa1c2eead6eddd083580cf5126c4e9cab57",
+    "valid": false
+  },
+  {
+    "name": "unsupported outcome",
+    "raw": "{\"assessmentId\":\"synthetic-assessment\",\"createdAt\":\"2026-01-01T00:00:00.000Z\",\"method\":\"synthetic-method\",\"mode\":\"development\",\"outcome\":\"trusted\",\"profileId\":\"sha256:24df86bc002f6e7082be11a013b107bc28c53d26587fccf9e8303fb099e63359\",\"receiptDigest\":\"sha256:584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f\",\"verifierId\":\"unknown-verifier\",\"version\":\"1\"}",
+    "object": "0x6fc9286d50aac37f602115b4c0fb1399c16e6405d80cdff3aac9df986be654f6",
+    "receipt": "0x584761ba89acc3c9ff6a7940bdaed33c439a58721587454085fa1e5e8922353f",
+    "verifier": "0xa30eabc7b8ea58f91010622cd8e5189aef2a1be7f754831826a481c7236c5f36",
+    "method": "0xfab6d175c33362e959ac8d7bdaea7aa1c2eead6eddd083580cf5126c4e9cab57",
+    "valid": false
+  }
+]

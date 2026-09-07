@@ -1,0 +1,35 @@
+{
+  "name": "@ethonline/indexing",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.18.1"
+  },
+  "exports": "./src/index.mjs",
+  "scripts": {
+    "compile": "node scripts/compile.mjs",
+    "codegen": "graph codegen subgraph/subgraph.yaml --output-dir subgraph/generated",
+    "build": "graph build subgraph/subgraph.yaml",
+    "test": "node --test --test-concurrency=1 test/*.test.mjs",
+    "check": "node scripts/syntax.mjs && node scripts/metadata-vectors.mjs && npm run compile && npm run codegen && npm run build && npm test && npm run test:mapping",
+    "test:mapping": "cd subgraph && ../node_modules/.bin/graph test -v 0.6.0",
+    "smoke": "node scripts/smoke.mjs",
+    "smoke:ingestion": "node scripts/ingestion.mjs",
+    "deploy:dry-run": "node scripts/deploy.mjs",
+    "history": "node scripts/history.mjs",
+    "smoke:live": "node scripts/live-smoke.mjs"
+  },
+  "dependencies": {
+    "ethers": "6.17.0",
+    "fs-ext": "2.1.1"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "0.98.1",
+    "@graphprotocol/graph-ts": "0.38.2",
+    "ganache": "7.9.2",
+    "matchstick-as": "0.6.0",
+    "solc": "0.8.36",
+    "yaml": "2.9.0"
+  }
+}
