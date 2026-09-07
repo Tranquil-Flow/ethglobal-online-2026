@@ -1,0 +1,42 @@
+{
+  "name": "@ethonline/access",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.mjs",
+  "bin": {
+    "ethonline-access": "./src/cli.mjs",
+    "ethonline-access-mcp": "./src/mcp.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "npm run build:viewer && node --test --test-concurrency=1 test/*.test.mjs",
+    "test:browser": "npm run build:viewer && node --test --test-concurrency=1 test/viewer.test.mjs test/viewer-cancel.test.mjs",
+    "check": "node scripts/check-syntax.mjs && npm test",
+    "smoke": "node scripts/smoke.mjs",
+    "client": "node scripts/client-smoke.mjs",
+    "cli": "node src/cli.mjs",
+    "mcp": "node src/mcp.mjs",
+    "viewer": "node scripts/serve-viewer.mjs",
+    "build:viewer": "node scripts/build-viewer.mjs",
+    "smoke:client": "node scripts/client-smoke.mjs",
+    "smoke:cli": "node scripts/cli-smoke.mjs",
+    "smoke:mcp": "node scripts/mcp-smoke.mjs",
+    "smoke:viewer": "node scripts/viewer-smoke.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "@x402/core": "2.5.0",
+    "json-canonicalize": "1.2.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "esbuild": "0.28.2",
+    "playwright": "1.63.0",
+    "prettier": "3.6.2"
+  }
+}

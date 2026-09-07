@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Access · Private request viewer</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <header>
+      <span class="eyebrow">ETHONLINE / ACCESS LANE</span>
+      <h1>A clear view of your request.</h1>
+      <p>
+        Discover one provider. Inspect the price. Keep the evidence private.
+      </p>
+      <strong id="mode">Connection not qualified — no inference claim</strong>
+    </header>
+    <main>
+      <section aria-labelledby="session-title">
+        <h2 id="session-title">1 · Connect explicitly</h2>
+        <button id="connect">Connect</button>
+        <button id="revoke">Revoke session</button>
+        <p role="status" aria-live="polite">Not connected</p>
+        <p role="alert" id="error"></p>
+      </section>
+      <section aria-labelledby="provider-title">
+        <h2 id="provider-title">2 · Choose provider & profile</h2>
+        <label
+          >Provider name<input
+            id="provider"
+            value="safe.eth"
+            autocomplete="off" /></label
+        ><label
+          >Profile digest<input
+            id="profile"
+            placeholder="sha256:…"
+            autocomplete="off" /></label
+        ><button id="find">Find provider</button>
+        <div data-testid="provider-state" id="provider-state">
+          No provider selected
+        </div>
+        <p id="profile-info"></p>
+        <p id="history"></p>
+      </section>
+      <section aria-labelledby="request-title">
+        <h2 id="request-title">3 · Inspect & authorize</h2>
+        <label
+          >Prompt<textarea
+            id="prompt"
+            rows="4"
+            maxlength="32768"
+          ></textarea></label
+        ><label
+          >Maximum output tokens<input
+            id="tokens"
+            type="number"
+            min="2"
+            max="4096"
+            value="8" /></label
+        ><button id="quote-button">Get quote</button>
+        <p data-testid="quote" id="quote">No quote yet</p>
+        <label class="consent"
+          ><input type="checkbox" id="consent" /> I authorize up to 10 base
+          units for this quote only</label
+        >
+        <p class="hint">
+          Publication consent is off. No wallet keys are held here. Live payment
+          requires a user-controlled authorizer.
+        </p>
+        <button id="submit">Submit and stream</button>
+        <button id="cancel">Cancel</button>
+      </section>
+      <section aria-labelledby="result-title">
+        <h2 id="result-title">4 · Separate claims</h2>
+        <dl>
+          <dt>Execution</dt>
+          <dd data-testid="job-state" id="job-state">No job</dd>
+          <dt>Payment</dt>
+          <dd data-testid="payment-state" id="payment-state">Not authorized</dd>
+          <dt>Assessment</dt>
+          <dd data-testid="assessment-state" id="assessment-state">
+            Separate — not requested
+          </dd>
+          <dt>Publication</dt>
+          <dd data-testid="publication-state" id="publication-state">
+            Not published — consent off
+          </dd>
+        </dl>
+        <pre data-testid="answer" id="answer" aria-label="Answer"></pre>
+        <button id="assess">Request assessment</button>
+        <button id="download">Download private evidence</button>
+        <p id="integrity">
+          Receipt integrity is not execution verification. Retrieved keys do not
+          establish provider trust.
+        </p>
+      </section>
+    </main>
+    <footer>
+      Private in-memory capability · No model, ENS or Graph text can authorize
+      spending
+    </footer>
+  </body>
+</html>
