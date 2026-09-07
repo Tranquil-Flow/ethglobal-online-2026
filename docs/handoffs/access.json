@@ -1,8 +1,257 @@
 {
   "lane": "access",
-  "status": "not_started",
-  "codeRevision": null,
-  "commands": [],
-  "externalGates": [],
-  "contractRequests": []
+  "status": "local_ready",
+  "codeRevision": "4e15d0c4abc501a3cdb235c787352bba7023ba01",
+  "commands": [
+    {
+      "id": "access-check",
+      "command": "npm --prefix packages/access run check",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/access.md",
+      "localLog": "artifacts/access/late-final-check.log"
+    },
+    {
+      "id": "access-smoke",
+      "command": "npm --prefix packages/access run smoke",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/access.md",
+      "localLog": "artifacts/access/late-final-smoke.log"
+    },
+    {
+      "id": "history-example",
+      "command": "cd packages/access && node examples/history-decision.mjs",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/access.md",
+      "localLog": "artifacts/access/late-history.log"
+    },
+    {
+      "id": "reviewed-handoff",
+      "command": "npm --prefix packages/access run check:handoff",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/access.md",
+      "localLog": "artifacts/access/late-handoff.log"
+    },
+    {
+      "id": "lane-gate",
+      "command": "npm run check:lane -- access",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/access.md",
+      "localLog": "artifacts/access/late-lane-gate.log"
+    }
+  ],
+  "acceptance": [
+    {
+      "requirement": "SDK HTTP/session/DTO/errors/timeouts/retries/idempotency/SSE",
+      "implementationAndTests": "packages/access/test/sdk.test.mjs; packages/access/test/adversarial.test.mjs",
+      "evidence": "docs/handoffs/access.md",
+      "qualification": "local development conformance only",
+      "localLog": "artifacts/access/final-check.log"
+    },
+    {
+      "requirement": "CLI providers/select/quote/submit/stream/inspect/cancel/receipt/integrity/assess/export/history",
+      "implementationAndTests": "packages/access/test/cli.test.mjs; real child processes over loopback HTTP",
+      "evidence": "docs/handoffs/access.md",
+      "qualification": "local development conformance only",
+      "localLog": "artifacts/access/final-smoke.log"
+    },
+    {
+      "requirement": "MCP official stdio SDK; explicit host and bounded caller authorization",
+      "implementationAndTests": "packages/access/test/mcp.test.mjs; packages/access/src/mcp.mjs",
+      "evidence": "docs/handoffs/access.md",
+      "qualification": "local development conformance only",
+      "localLog": "artifacts/access/final-smoke.log"
+    },
+    {
+      "requirement": "Graph-derived History affects compatibility/quote/budget selection; stale veto and missing samples unknown",
+      "implementationAndTests": "packages/access/test/adversarial.test.mjs; examples/history-decision.mjs",
+      "evidence": "docs/handoffs/access.md",
+      "qualification": "local development conformance only",
+      "localLog": "artifacts/access/history-example.log"
+    },
+    {
+      "requirement": "Native pinned x402 v2 402 round-trip, no default spending/double spend, corrupt quote challenge rejection",
+      "implementationAndTests": "packages/access/test/sdk.test.mjs; packages/access/test/adversarial.test.mjs; fixture encoded by @x402/core@2.5.0",
+      "evidence": "docs/handoffs/access.md",
+      "qualification": "local development conformance only",
+      "localLog": "artifacts/access/final-check.log"
+    },
+    {
+      "requirement": "Malformed JSON/DTO; auth expiry;409 conflict;429 retry;transport loss;SSE resume;cancel;private logging;over budget",
+      "implementationAndTests": "packages/access/test/sdk.test.mjs; packages/access/test/adversarial.test.mjs; packages/access/test/cli.test.mjs",
+      "evidence": "docs/handoffs/access.md",
+      "qualification": "local development conformance only",
+      "localLog": "artifacts/access/final-check.log"
+    },
+    {
+      "requirement": "Browser keyboard/mobile/loading/error/empty/development/XSS/output/download",
+      "implementationAndTests": "packages/access/test/viewer.test.mjs; actual Chromium with no page errors or dialogs",
+      "evidence": "docs/handoffs/access.md",
+      "qualification": "local development conformance only",
+      "localLog": "artifacts/access/browser-observations.json"
+    },
+    {
+      "requirement": "Real browser cancellation + auth expiry never repays",
+      "implementationAndTests": "packages/access/test/viewer-cancel.test.mjs; running job -> cancelled + paid_but_failed",
+      "evidence": "docs/handoffs/access.md",
+      "qualification": "local development conformance only",
+      "localLog": "artifacts/access/viewer-cancelled.png"
+    },
+    {
+      "requirement": "Browser accessible safe rendering/CSP; memory capability; separate claims; no embedded wallet/Graph secrets",
+      "implementationAndTests": "packages/access/viewer/; scripts/serve-viewer.mjs; browser tests and inspected screenshots",
+      "evidence": "docs/handoffs/access.md",
+      "qualification": "local development conformance only",
+      "localLog": "artifacts/access/viewer-desktop.png"
+    },
+    {
+      "requirement": "Evidence request/profile/output/assessment hashes + receipt signature; corruption rejection; deletion unavailable",
+      "implementationAndTests": "packages/access/test/adversarial.test.mjs; SDK verifyReceiptIntegrity/validateEvidence",
+      "evidence": "docs/handoffs/access.md",
+      "qualification": "local development conformance only",
+      "localLog": "artifacts/access/final-check.log"
+    },
+    {
+      "requirement": "Package-local pinned installation/build/test/check/smoke, real fixture not service claim",
+      "implementationAndTests": "package-lock.json; scripts; installed without root workspace edits",
+      "evidence": "docs/handoffs/access.md",
+      "qualification": "local development conformance only",
+      "localLog": "artifacts/access/clean-install.log"
+    }
+  ],
+  "testResults": {
+    "tests": 27,
+    "passed": 27,
+    "failed": 0,
+    "skipped": 0
+  },
+  "environment": {
+    "finalNode": "20.19.5",
+    "finalNpm": "10.8.2",
+    "platform": "darwin",
+    "arch": "arm64",
+    "note": "Recorded in artifacts/access/addendum-environment.log in same shell invocation as exact-revision check/smoke. Previous candidate also tested under Node25. No global tool configuration modified."
+  },
+  "externalGates": [
+    {
+      "id": "real-core-client-composition",
+      "status": "blocked",
+      "reason": "Integrator-owned real core/payments/discovery/indexing composition has not been exercised; needs exact CORS/payment-header profile and signer pinning, same retained job across SDK/CLI/MCP/browser. No sibling code or worktree was used."
+    },
+    {
+      "id": "live-wallet-payment",
+      "status": "blocked",
+      "reason": "No approved wallet credentials/funded testnet per-action budget or real Blocky402/Hedera transaction; user-approved wallet callback and actual consumed-service evidence required. Synthetic codec conformance is not settlement."
+    },
+    {
+      "id": "live-graph-decision",
+      "status": "blocked",
+      "reason": "Needs approved deployed Graph-provider/index query with verifiable external handles driving a decision; only synthetic History DTO freshness was exercised. No ENSv2 or index deployment was performed."
+    },
+    {
+      "id": "public-release",
+      "status": "blocked",
+      "reason": "Human selection/approval of license, sponsor track eligibility, visibility/push/deploy/demo/submission remains outstanding. No public action is authorized by local-ready."
+    },
+    {
+      "id": "mycelium-execution",
+      "status": "inapplicable",
+      "reason": "Mycelium runtime integration is explicitly excluded from the current access lane scope; no execution qualification claimed."
+    },
+    {
+      "id": "gaskiller-integration",
+      "status": "inapplicable",
+      "reason": "Gas Killer integration is explicitly excluded from current scope; no code or worktree modified and no settlement claim."
+    },
+    {
+      "id": "independent-replay",
+      "status": "inapplicable",
+      "reason": "Actual inference replay/mismatch and physical inference are future separate scope. Receipt integrity/private export do not claim independent execution verification."
+    }
+  ],
+  "contractRequests": [],
+  "evidencePrivacy": "Only synthetic data in local ignored logs/screenshots/download; no bearer or payment proof in compact handoff. Export contains a synthetic private request; keep ignored.",
+  "documentationRevisionNote": "Handoff-only commit follows tested repair revision 4e15d0c4abc501a3cdb235c787352bba7023ba01; earlier readiness superseded by confirmed late security-review defects and repairs.",
+  "reviewTag": {
+    "name": "handoff-review-v1",
+    "revision": "74ae66f6bd895b13a9ce9de083357c0fcb88e564",
+    "sharedFilesModified": false
+  },
+  "acceptanceCases": [
+    {
+      "id": "sdk-http-errors",
+      "status": "passed",
+      "commandIds": [
+        "access-check"
+      ],
+      "evidence": "docs/handoffs/access.md",
+      "details": "All HTTP methods; exact shared DTOs and envelopes; malformed JSON/DTOs; safe errors; bounded 429/network retries; AbortSignal/deadline;409 conflict; unsupported/expired quote; request/profile/budget binding."
+    },
+    {
+      "id": "session-payment-consent",
+      "status": "passed",
+      "commandIds": [
+        "access-check",
+        "access-smoke"
+      ],
+      "evidence": "docs/handoffs/access.md",
+      "details": "Explicit sessions; expiry/revocation no auto-renew or repay; default no spending; bounded consent; native x402 402 bytes; callback bearer/cookie/header isolation; rejected authorizer header injection; concurrency/replay/ambiguous-paid-outcome controls."
+    },
+    {
+      "id": "sse-reconnect-cancel",
+      "status": "passed",
+      "commandIds": [
+        "access-check",
+        "access-smoke"
+      ],
+      "evidence": "docs/handoffs/access.md",
+      "details": "Actual fetch SSE resume with Last-Event-ID; no duplicate deltas/paid resubmission; expired cursor409; stream disconnection not cancel; SDK/real-browser explicit cancellation; paid_but_failed remains separate; bounded output."
+    },
+    {
+      "id": "cli-mcp",
+      "status": "passed",
+      "commandIds": [
+        "access-check",
+        "access-smoke",
+        "history-example"
+      ],
+      "evidence": "docs/handoffs/access.md",
+      "details": "CLI providers/select/profile/quote/submit/stream/inspect/cancel/receipt-integrity/assess/export/history/revoke; official MCP stdio connect/history/quote/select/submit/watch; host and caller authorization; no-quote refusal and stale Graph-derived history veto."
+    },
+    {
+      "id": "browser-accessibility-xss",
+      "status": "passed",
+      "commandIds": [
+        "access-check",
+        "access-smoke"
+      ],
+      "evidence": "docs/handoffs/access.md",
+      "details": "Actual Chromium desktop/mobile; Tab/Enter; loading/empty/error/unavailable/development/cancelled paths; accessible alerts/status; CSP/text-only XSS; no page errors/dialogs/horizontal overflow; separate states; consent invalidation; evidence download."
+    },
+    {
+      "id": "privacy-export",
+      "status": "passed",
+      "commandIds": [
+        "access-check",
+        "access-smoke"
+      ],
+      "evidence": "docs/handoffs/access.md",
+      "details": "Permission-restricted CLI files; memory-only browser capability; no bearer in URL/authorizer; no private normal SDK logs; no wallet/Graph secrets; hash/association/signature-validated private export/import; corruption/pin mismatch rejection; evidence deletion yields unavailable assessment; integrity is not execution verification."
+    }
+  ],
+  "lateReview": {
+    "status": "repaired",
+    "priorCodeRevision": "e3a0b55eeddc5525437235d242df7752b9db6051",
+    "evidence": "docs/handoffs/access.md",
+    "redLog": "artifacts/access/late-review-red.log",
+    "defects": [
+      "Malformed potentially-spent callback output allowed second authorization",
+      "Evidence get implicitly trusted same-server key retrieval",
+      "Expired CLI session prevented explicit reconnect"
+    ],
+    "fixes": [
+      "Mark callback returned before header validation so errors become uncertain",
+      "Require publicKeyJwk/providerId/keyId pins; wire explicit pins through CLI/viewer",
+      "Explicit revoke discards local capability on401; revoked false, localForgotten true"
+    ]
+  }
 }
