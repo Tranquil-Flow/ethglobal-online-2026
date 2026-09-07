@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: transport rejects invalid bounds and write RPC methods without a socket
+not ok 1 - transport rejects invalid bounds and write RPC methods without a socket
+  ---
+  duration_ms: 5.712541
+  location: '/Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/limits.test.mjs:4:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+
+      Comparison {
+    +   code: 'UNAVAILABLE'
+    -   code: 'INVALID_CONFIG'
+      }
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    code: 'INVALID_CONFIG'
+  actual:
+  error: 'UNAVAILABLE'
+  stack: |-
+    ClientRequest.<anonymous> (file:///Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/src/url-policy.mjs:176:27)
+    ClientRequest.emit (node:events:536:35)
+    emitErrorEvent (node:_http_client:101:11)
+    Socket.socketErrorListener (node:_http_client:504:5)
+    Socket.emit (node:events:524:28)
+    emitErrorNT (node:internal/streams/destroy:169:8)
+    emitErrorCloseNT (node:internal/streams/destroy:128:3)
+    process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+  operator: 'rejects'
+  stack: |-
+    process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    async TestContext.<anonymous> (file:///Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/limits.test.mjs:5:2)
+    async Test.run (node:internal/test_runner/test:797:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 53.431125

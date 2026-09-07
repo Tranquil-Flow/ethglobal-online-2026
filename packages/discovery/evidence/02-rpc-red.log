@@ -1,0 +1,30 @@
+✖ actual ENSv2 hierarchy/resolver RPC, least privilege, revocation and changed selection (282.985375ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 715.597583
+
+✖ failing tests:
+
+test at test/ensv2.test.mjs:35:1
+✖ actual ENSv2 hierarchy/resolver RPC, least privilege, revocation and changed selection (282.985375ms)
+  AssertionError [ERR_ASSERTION]: [{"name":"worker.example.eth","code":"MODE_OR_NAME_MISMATCH"}]
+
+  0 !== 1
+
+      at exerciseLocal (file:///Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/ensv2.test.mjs:18:54)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/ensv2.test.mjs:35:150)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

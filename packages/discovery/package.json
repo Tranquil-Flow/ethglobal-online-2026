@@ -1,0 +1,26 @@
+{
+  "name": "@ethonline/discovery",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": "./src/index.mjs",
+  "bin": {
+    "ethonline-discovery": "./src/cli.mjs"
+  },
+  "scripts": {
+    "test": "node --test --test-concurrency=1 test/*.test.mjs",
+    "check": "node scripts/syntax.mjs && npm test",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "ipaddr.js": "2.2.0",
+    "viem": "2.56.3"
+  },
+  "devDependencies": {
+    "@foundry-rs/anvil": "1.7.1",
+    "prettier": "3.9.6"
+  }
+}

@@ -1,0 +1,67 @@
+TAP version 13
+# Subtest: quote cannot expire during history read then remain selected
+not ok 1 - quote cannot expire during history read then remain selected
+  ---
+  duration_ms: 92.546333
+  location: '/Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/expiry.test.mjs:5:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + {
+    +   endpoint: 'https://example.com',
+    +   mode: 'development',
+    +   name: 'worker.example.eth',
+    +   paymentAsset: 'test',
+    +   paymentNetwork: 'test',
+    +   paymentReceiver: 'test',
+    +   profileIds: [
+    +     'sha256:2021b7c372990f797e86cb0f85931f66372edc040135039b0a741c1827b3475c'
+    +   ],
+    +   providerId: 'worker.example.eth',
+    +   source: {
+    +     blockHash: '0xabababababababababababababababababababababababababababababababab',
+    +     blockNumber: 1,
+    +     chainId: '31337',
+    +     expiresAt: '2026-09-07T12:00:10.000Z',
+    +     resolvedAt: '2026-09-07T12:00:00.000Z'
+    +   },
+    +   version: '1'
+    + }
+    - null
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual:
+    version: '1'
+    providerId: 'worker.example.eth'
+    name: 'worker.example.eth'
+    endpoint: 'https://example.com'
+    profileIds:
+      0: 'sha256:2021b7c372990f797e86cb0f85931f66372edc040135039b0a741c1827b3475c'
+    paymentNetwork: 'test'
+    paymentAsset: 'test'
+    paymentReceiver: 'test'
+    mode: 'development'
+    source:
+      chainId: '31337'
+      blockNumber: 1
+      blockHash: '0xabababababababababababababababababababababababababababababababab'
+      resolvedAt: '2026-09-07T12:00:00.000Z'
+      expiresAt: '2026-09-07T12:00:10.000Z'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/expiry.test.mjs:10:126)
+    async Test.run (node:internal/test_runner/test:797:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 377.078542

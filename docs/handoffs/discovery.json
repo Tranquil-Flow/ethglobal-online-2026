@@ -1,8 +1,1 @@
-{
-  "lane": "discovery",
-  "status": "not_started",
-  "codeRevision": null,
-  "commands": [],
-  "externalGates": [],
-  "contractRequests": []
-}
+{"lane":"discovery","status":"in_progress","codeRevision":"13f5e295bdeb833b9977a84edc97b2ee64147579","commands":[],"externalGates":["Real Sepolia provider update requires owned namespace, wallet authority and explicit transaction approval."],"contractRequests":[]}
