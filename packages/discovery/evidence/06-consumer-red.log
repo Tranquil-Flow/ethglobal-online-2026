@@ -1,0 +1,33 @@
+TAP version 13
+# Subtest: consumer re-resolves and refuses tampered endpoint before actual HTTP
+not ok 1 - consumer re-resolves and refuses tampered endpoint before actual HTTP
+  ---
+  duration_ms: 121.294
+  location: '/Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/consumer.test.mjs:8:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + ''
+    - 'development'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'development'
+  actual: ''
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/consumer.test.mjs:11:145)
+    process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    async Test.run (node:internal/test_runner/test:797:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 357.134875

@@ -1,0 +1,108 @@
+
+> @ethonline/discovery@0.1.0 test
+> node --test --test-concurrency=1 test/*.test.mjs
+
+TAP version 13
+# Subtest: canonical name, schema-shaped records, bounded cache and invalidation
+not ok 1 - canonical name, schema-shaped records, bounded cache and invalidation
+  ---
+  duration_ms: 1.783042
+  location: '/Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/discovery.test.mjs:11:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + undefined
+    - 'worker.example.eth'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'worker.example.eth'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/discovery.test.mjs:11:182)
+    async Test.run (node:internal/test_runner/test:797:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+# Subtest: missing quote, exact budget, mode/receiver/expiry/profile mismatches
+not ok 2 - missing quote, exact budget, mode/receiver/expiry/profile mismatches
+  ---
+  duration_ms: 0.23425
+  location: '/Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/discovery.test.mjs:12:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + undefined
+    - 'worker.example.eth'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'worker.example.eth'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/discovery.test.mjs:12:185)
+    async Test.run (node:internal/test_runner/test:797:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+# Subtest: fresh trusted mismatch changes policy; stale/no observations remain unknown
+not ok 3 - fresh trusted mismatch changes policy; stale/no observations remain unknown
+  ---
+  duration_ms: 0.156
+  location: '/Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/discovery.test.mjs:13:1'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'codes')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/discovery.test.mjs:13:501)
+    async Test.run (node:internal/test_runner/test:797:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+# Subtest: malformed, unsafe, stale and unknown record failures never become providers
+not ok 4 - malformed, unsafe, stale and unknown record failures never become providers
+  ---
+  duration_ms: 1.134125
+  location: '/Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/discovery.test.mjs:14:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    0 !== 1
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/discovery.test.mjs:14:671)
+    async Test.run (node:internal/test_runner/test:797:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+# Subtest: abort, deadline and bounded names fail safely
+not ok 5 - abort, deadline and bounded names fail safely
+  ---
+  duration_ms: 0.438208
+  location: '/Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/discovery.test.mjs:15:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    code: 'ABORTED'
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (file:///Users/evinova-self/Projects/ethglobal-online-2026-discovery/packages/discovery/test/discovery.test.mjs:15:132)
+    async Test.run (node:internal/test_runner/test:797:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 0
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 201.457208

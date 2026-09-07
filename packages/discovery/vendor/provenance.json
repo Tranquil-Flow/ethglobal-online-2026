@@ -1,0 +1,52 @@
+{
+  "repository": "https://github.com/ensdomains/contracts-v2",
+  "revision": "97a57293f3b4279d94b571e678edb53ce62638f4",
+  "docs": "https://docs.ens.domains/learn/deployments/#sepolia-ensv2-beta",
+  "artifacts": {
+    "PermissionedResolverImpl": {
+      "url": "https://raw.githubusercontent.com/ensdomains/contracts-v2/97a57293f3b4279d94b571e678edb53ce62638f4/contracts/deployments/sepolia/PermissionedResolverImpl.json",
+      "upstreamSHA256": "0c9252e227155e9b409f1d6f980676369ce6120631f12048095f8d0868b8526a",
+      "vendoredSHA256": "1cd4dbdd9c280a1493767957b90841713b3bcba94cf760f40a0de2521262653f",
+      "address": "0x9eae5c2730a7dd16bdd1dee6421a1b91e3b0365e",
+      "licenses": [
+        "MIT"
+      ]
+    },
+    "RootRegistry": {
+      "url": "https://raw.githubusercontent.com/ensdomains/contracts-v2/97a57293f3b4279d94b571e678edb53ce62638f4/contracts/deployments/sepolia/RootRegistry.json",
+      "upstreamSHA256": "7d4f0c4b7b3a9d8e4ef5a5340f8eddfeeccb304c7ca42f5f146815a925bb9a48",
+      "vendoredSHA256": "c03b95c1a48e158dafffe57abd3be5754a16a441a4711671e0368e69ccabe851",
+      "address": "0x8115186e8f2e0b0281e86ab91f0f48ba90364354",
+      "licenses": [
+        "MIT"
+      ]
+    },
+    "UniversalResolverV2": {
+      "url": "https://raw.githubusercontent.com/ensdomains/contracts-v2/97a57293f3b4279d94b571e678edb53ce62638f4/contracts/deployments/sepolia/UniversalResolverV2.json",
+      "upstreamSHA256": "6777de0bf7860f154dbbab78adfc1db131d0ed51c05a3324ae3137ec9c30d637",
+      "vendoredSHA256": "29315fc95d50eb598389514163f1f1c70e1e4c433dcbb6a8521cbad8424b2868",
+      "address": "0x4a1817d13e9cf196f471725176355c1234b63c70",
+      "licenses": [
+        "MIT"
+      ]
+    },
+    "VerifiableFactory": {
+      "url": "https://raw.githubusercontent.com/ensdomains/contracts-v2/97a57293f3b4279d94b571e678edb53ce62638f4/contracts/deployments/sepolia/VerifiableFactory.json",
+      "upstreamSHA256": "a0525ca2cea49e8f3b60f925ddf5f464db96b05d9105355e10025be9923e56cf",
+      "vendoredSHA256": "fdbe2d64541290713d9babbad15071a8c681cf7424f026d68158d6ea38410590",
+      "address": "0x10dc6333cdfe1fcef624c6e0a8221b91804cd7ef",
+      "licenses": [
+        "MIT"
+      ]
+    },
+    "LabelStore": {
+      "url": "https://raw.githubusercontent.com/ensdomains/contracts-v2/97a57293f3b4279d94b571e678edb53ce62638f4/contracts/deployments/sepolia/LabelStore.json",
+      "upstreamSHA256": "376b18749cab70968d39cc759826882012ea8d90423d36f86834ee857ae4870c",
+      "vendoredSHA256": "f2bbc038f0889729279139782d1ab1a3c7009fdce8452a01192a011fa57b5803",
+      "address": "0x532cd0cc4ac0793d838f71a67d29b2d790d18777",
+      "licenses": [
+        "MIT"
+      ]
+    }
+  }
+}

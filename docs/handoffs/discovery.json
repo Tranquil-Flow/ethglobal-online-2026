@@ -1,8 +1,419 @@
 {
   "lane": "discovery",
-  "status": "not_started",
-  "codeRevision": null,
-  "commands": [],
-  "externalGates": [],
-  "contractRequests": []
+  "status": "local_ready",
+  "codeRevision": "4842acb92b278ca8228946d086b544f22652eab9",
+  "branch": "lane/discovery",
+  "bootstrapRevision": "13f5e295bdeb833b9977a84edc97b2ee64147579",
+  "commands": [
+    {
+      "command": "npm --prefix packages/contracts ci --ignore-scripts",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/discovery.md",
+      "id": "install-contracts",
+      "rawEvidence": "packages/discovery/evidence/final-install-contracts.log",
+      "rawEvidenceSha256": "46ffe56df1427a8f1628aa068025254145d131227c96a34130f44755f63b0875"
+    },
+    {
+      "command": "npm --prefix packages/discovery ci",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/discovery.md",
+      "id": "install-discovery",
+      "rawEvidence": "packages/discovery/evidence/final-install-discovery.log",
+      "rawEvidenceSha256": "ab3c43d1a3869941e8bae688a0a68e17f9a7575853b4bcedecbf793e123a929e"
+    },
+    {
+      "command": "npm --prefix packages/discovery test",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/discovery.md",
+      "id": "discovery-test",
+      "rawEvidence": "packages/discovery/evidence/final-test.log",
+      "rawEvidenceSha256": "c0dfea8b400d06f1d5bd49f7ec422db10838a961cbda7a0a10c81b4d6ec46aa3"
+    },
+    {
+      "command": "npm --prefix packages/discovery run check",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/discovery.md",
+      "id": "discovery-check",
+      "rawEvidence": "packages/discovery/evidence/final-check.log",
+      "rawEvidenceSha256": "77b66aa5e31828c41e71e89851448d5b4076271fca1635245ed44a09a133ee6e"
+    },
+    {
+      "command": "npm --prefix packages/discovery run smoke",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/discovery.md",
+      "id": "discovery-smoke",
+      "rawEvidence": "packages/discovery/evidence/final-smoke.log",
+      "rawEvidenceSha256": "dc7c922d021b550cd67cc7eb8d19501e2961abffc55a6c795d2f69d292df26ef"
+    },
+    {
+      "command": "node packages/discovery/scripts/verify-deployment.mjs",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/discovery.md",
+      "id": "sepolia-read-only",
+      "rawEvidence": "packages/discovery/evidence/final-deployment.log",
+      "rawEvidenceSha256": "a89683e9baa7372119e16d1317fe244714faf477f4730c83b90afb4bb28758b2"
+    },
+    {
+      "command": "npm run check:lane -- discovery",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/discovery.md",
+      "id": "lane-check",
+      "rawEvidence": "packages/discovery/evidence/final-lane.log",
+      "rawEvidenceSha256": "819d2fb06162d45f4163270882ba968628d4daee000323d7c3ad48bbc847a154"
+    },
+    {
+      "id": "review-lane-check",
+      "command": "npm run check:lane -- discovery",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/discovery.md",
+      "rawEvidence": "packages/discovery/evidence/final-review-lane.log"
+    },
+    {
+      "id": "review-handoff-validation",
+      "command": "node --input-type=module -e 'import {execFileSync} from \"node:child_process\";import {readFileSync} from \"node:fs\";const src=execFileSync(\"git\",[\"show\",\"handoff-review-v1:scripts/validate-handoff.mjs\"],{encoding:\"utf8\"});const {validateHandoff}=await import(\"data:text/javascript;base64,\"+Buffer.from(src).toString(\"base64\"));const lanes=JSON.parse(execFileSync(\"git\",[\"show\",\"handoff-review-v1:docs/lanes.json\"],{encoding:\"utf8\"}));const h=JSON.parse(readFileSync(\"docs/handoffs/discovery.json\"));validateHandoff(h,lanes.discovery);console.log(\"Tagged validator PASS: 5 required acceptance IDs, 4 required external IDs; portable committed evidence paths.\");for(const c of h.commands)execFileSync(\"git\",[\"ls-files\",\"--error-unmatch\",c.evidence]);console.log(\"All command evidence paths are tracked.\");'",
+      "exitCode": 0,
+      "evidence": "docs/handoffs/discovery.md",
+      "rawEvidence": "packages/discovery/evidence/final-review-validator.log"
+    }
+  ],
+  "externalGates": [
+    {
+      "id": "ensv2-sepolia-write",
+      "status": "blocked",
+      "reason": "No public provider record/permission write was authorized or executed. Requires approved exact transaction previews and real before/update/after resolution evidence; read-only deployment checks are not write qualification."
+    },
+    {
+      "id": "ens-name-wallet-approval",
+      "status": "blocked",
+      "reason": "Human must confirm an owned canonical Sepolia parent/registry, public owner/delegate addresses, funded testnet wallet authority and exact action budget. No signing secrets requested or extracted."
+    },
+    {
+      "id": "combined-app",
+      "status": "blocked",
+      "reason": "Integration owner must compose core authoritative quotes/provider resolution, payments, live history and clients after lane handoff. No sibling changes, merge or combined verification authorized here."
+    },
+    {
+      "id": "public-release",
+      "status": "blocked",
+      "reason": "Human track/pool/from-scratch eligibility, licensing/AI provenance review, public visibility/push and submission approval remain outstanding."
+    },
+    {
+      "id": "live-history-decision",
+      "status": "blocked",
+      "reason": "Local shared-History fixtures prove policy only; live indexed observations and provider decision require separately authorized integration evidence."
+    },
+    {
+      "id": "mycelium-execution",
+      "status": "inapplicable",
+      "reason": "Explicitly excluded from current independent discovery lane; no Mycelium adapter, model or physical execution qualification claim."
+    },
+    {
+      "id": "gaskiller-integration",
+      "status": "inapplicable",
+      "reason": "Explicitly excluded from current discovery lane; no Gas Killer runtime, settlement or integration changes."
+    },
+    {
+      "id": "independent-replay",
+      "status": "inapplicable",
+      "reason": "Execution replay and physical inference proof are future separate scope. ENS record integrity and observed assessment history do not establish execution correctness."
+    }
+  ],
+  "contractRequests": [],
+  "acceptance": [
+    {
+      "case": "Official ENSv2 deployment, resolver APIs and provenance",
+      "status": "verified_read_only_and_local",
+      "evidence": [
+        "packages/discovery/vendor/provenance.json",
+        "packages/discovery/evidence/final-deployment.log"
+      ],
+      "observed": {
+        "qualification": "read-only deployment observation, not provider or write qualification",
+        "chainId": 11155111,
+        "blockNumber": "11654995",
+        "blockHash": "0x9a0ecb81b138f78f2569d07c29ede57985ed3ce6bc1dfd93841886efb330bb7c",
+        "universal": "0x4a1817d13e9cf196f471725176355c1234b63c70",
+        "root": "0x8115186E8f2E0B0281e86ab91f0f48Ba90364354",
+        "resolverImplementation": "0x9eae5c2730a7dd16bdd1dee6421a1b91e3b0365e",
+        "observedResolverCodeHash": "0x7a5bbb7f5a8e46232a4437e8eea6cc6e935266ade1b8b027e4e04fb9ca8efd47",
+        "rootMatches": true,
+        "sourceRevision": "97a57293f3b4279d94b571e678edb53ce62638f4"
+      }
+    },
+    {
+      "case": "Actual ENSv2 resolver SDK/RPC through canonical hierarchy",
+      "status": "verified_local",
+      "evidence": [
+        "packages/discovery/test/local-scenario.mjs",
+        "packages/discovery/evidence/final-smoke.log"
+      ],
+      "observed": {
+        "mode": "development",
+        "blockBefore": 18,
+        "blockAfter": 24,
+        "blockHash": "0xd923a39012b6d1a8d3b7b40592e4c2bd9a6de621b5bf811281fd0b0fb0b5ac87",
+        "cliRpcRead": true
+      }
+    },
+    {
+      "case": "Record-scoped delegated service edits, payment isolation and revocation",
+      "status": "verified_local",
+      "evidence": [
+        "packages/discovery/test/local-scenario.mjs",
+        "packages/discovery/test/operator.test.mjs",
+        "packages/discovery/evidence/final-test.log"
+      ],
+      "observed": {
+        "delegatedServiceUpdate": true,
+        "paymentEditsRejected": 3,
+        "revocationRejected": true,
+        "permissionDenials": "actual mined local receipts with reverted status; unrelated transport errors do not satisfy expected LOCAL_REVERT"
+      }
+    },
+    {
+      "case": "Normalization, malformed/stale/unknown records, TTL, block provenance, expiry and reorg invalidation",
+      "status": "verified_local",
+      "evidence": [
+        "packages/discovery/test/discovery.test.mjs",
+        "packages/discovery/test/local-scenario.mjs",
+        "packages/discovery/evidence/final-test.log"
+      ],
+      "observed": {
+        "malformedRejected": true,
+        "reorgInvalidated": true,
+        "aliasRejected": true,
+        "expiredParentRejected": true
+      }
+    },
+    {
+      "case": "SSRF at resolver and consuming boundaries, redirect/DNS/body/abort/deadline controls",
+      "status": "verified_local",
+      "evidence": [
+        "packages/discovery/test/security.test.mjs",
+        "packages/discovery/test/consumer.test.mjs",
+        "packages/discovery/test/limits.test.mjs",
+        "packages/discovery/evidence/final-test.log"
+      ],
+      "observed": {
+        "unsafeOnchainEndpointRejected": true,
+        "actualHTTP": "loopback server GET with no authorization/cookies; redirect not followed; body/time/cancellation limits; tampered provider rejected before request",
+        "DNS": "controlled private and mixed answers rejected before connection; implementation pins approved address to socket lookup; no unrestricted CCIP fetch"
+      }
+    },
+    {
+      "case": "Compatible provider selection changes after real record mutation and observed History changes",
+      "status": "verified_local",
+      "evidence": [
+        "packages/discovery/test/local-scenario.mjs",
+        "packages/discovery/test/discovery.test.mjs",
+        "packages/discovery/test/expiry.test.mjs",
+        "packages/discovery/evidence/final-test.log"
+      ],
+      "observed": {
+        "onchainRecordSelectionChanged": true,
+        "history": "shared-DTO injected fixture: unknown eligible -> fresh trusted mismatch rejected -> stale unknown eligible; synthetic, not live Graph evidence",
+        "quoteGuards": "missing, over-budget, mode/receiver/profile/expiry mismatches rejected; expiry rechecked after async history; BigInt prices, no trust score"
+      }
+    },
+    {
+      "case": "Standalone CLI, operator provisioning/update/revocation dry-run and bounded smoke",
+      "status": "verified_local",
+      "evidence": [
+        "packages/discovery/test/operator.test.mjs",
+        "packages/discovery/test/local-scenario.mjs",
+        "packages/discovery/evidence/final-smoke.log"
+      ],
+      "observed": {
+        "cliRpcRead": true,
+        "operator": "zero-write preview; exact returned calldata executed against actual local factory/registry/resolver; new name resolves, service update changes record, revoke rejects delegate",
+        "cleanup": "own Anvil exit awaited and its former RPC URL checked unreachable; temporary CLI config removed"
+      }
+    },
+    {
+      "case": "Real Sepolia provider record/permission update",
+      "status": "approval_gated_not_executed",
+      "evidence": [
+        "docs/handoffs/discovery.md",
+        "packages/discovery/src/operator.mjs"
+      ],
+      "observed": "Read-only deployment verification is real. No live provider namespace update, transaction, payment, inference or Graph qualification was performed."
+    },
+    {
+      "case": "Package test/check/smoke and locked setup",
+      "status": "verified_exact_code_revision",
+      "evidence": [
+        "packages/discovery/evidence/final-install-contracts.log",
+        "packages/discovery/evidence/final-install-discovery.log",
+        "packages/discovery/evidence/final-test.log",
+        "packages/discovery/evidence/final-check.log",
+        "packages/discovery/evidence/final-smoke.log"
+      ],
+      "observed": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "skipped": 0,
+        "cancelled": 0
+      }
+    }
+  ],
+  "testResults": {
+    "tests": 14,
+    "pass": 14,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "localSmoke": {
+    "unsafeOnchainEndpointRejected": true,
+    "reorgInvalidated": true,
+    "aliasRejected": true,
+    "expiredParentRejected": true,
+    "mode": "development",
+    "contracts": "official pinned ENSv2 bytecode on local Anvil",
+    "blockBefore": 18,
+    "blockAfter": 24,
+    "blockHash": "0xd923a39012b6d1a8d3b7b40592e4c2bd9a6de621b5bf811281fd0b0fb0b5ac87",
+    "cliRpcRead": true,
+    "delegatedServiceUpdate": true,
+    "paymentEditsRejected": 3,
+    "revocationRejected": true,
+    "selectionChanged": true,
+    "malformedRejected": true
+  },
+  "environment": {
+    "node": "v20.19.5",
+    "npm": "10.8.2"
+  },
+  "revisionNote": "Implementation committed first, exact revision checked with clean tracked worktree and lockfile reinstall. Following handoff-only commit changes no implementation/contracts bytes. Final evidence logs are ignored inside owned package; full commands/hashes and compact observed results are committed here.",
+  "claimBoundary": "local_ready only: not live-provider-qualified, combined/merged, payment/execution/assessment verified, sponsor-eligible or publicly released",
+  "aggregateLaneGate": {
+    "status": "passed",
+    "contractsTests": {
+      "tests": 22,
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0
+    },
+    "discoveryTests": {
+      "tests": 14,
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    "smoke": "passed",
+    "output": "discovery: local gate passed. Live qualification and combined integration are separate."
+  },
+  "boundaryVerification": {
+    "allCommittedPathsOwned": true,
+    "implementationUnchangedFromCodeRevision": true,
+    "commandLogHashesVerified": true,
+    "remainingOwnedAnvilPids": []
+  },
+  "acceptanceCases": [
+    {
+      "id": "ensv2-contract-resolution",
+      "status": "passed",
+      "commandIds": [
+        "discovery-test",
+        "discovery-smoke",
+        "sepolia-read-only"
+      ],
+      "evidence": "docs/handoffs/discovery.md",
+      "detailedCases": [
+        "Official ENSv2 deployment, resolver APIs and provenance",
+        "Actual ENSv2 resolver SDK/RPC through canonical hierarchy",
+        "Standalone CLI, operator provisioning/update/revocation dry-run and bounded smoke"
+      ]
+    },
+    {
+      "id": "delegation-revocation",
+      "status": "passed",
+      "commandIds": [
+        "discovery-test",
+        "discovery-smoke"
+      ],
+      "evidence": "docs/handoffs/discovery.md",
+      "detailedCases": [
+        "Record-scoped delegated service edits, payment isolation and revocation",
+        "Standalone CLI, operator provisioning/update/revocation dry-run and bounded smoke"
+      ]
+    },
+    {
+      "id": "freshness-provenance",
+      "status": "passed",
+      "commandIds": [
+        "discovery-test",
+        "discovery-smoke"
+      ],
+      "evidence": "docs/handoffs/discovery.md",
+      "detailedCases": [
+        "Normalization, malformed/stale/unknown records, TTL, block provenance, expiry and reorg invalidation"
+      ]
+    },
+    {
+      "id": "ssrf-boundary",
+      "status": "passed",
+      "commandIds": [
+        "discovery-test",
+        "discovery-smoke"
+      ],
+      "evidence": "docs/handoffs/discovery.md",
+      "detailedCases": [
+        "SSRF at resolver and consuming boundaries, redirect/DNS/body/abort/deadline controls"
+      ]
+    },
+    {
+      "id": "quote-history-selection",
+      "status": "passed",
+      "commandIds": [
+        "discovery-test",
+        "discovery-smoke"
+      ],
+      "evidence": "docs/handoffs/discovery.md",
+      "detailedCases": [
+        "Compatible provider selection changes after real record mutation and observed History changes"
+      ]
+    }
+  ],
+  "externalGateDetails": [
+    {
+      "gate": "Live ENSv2 provisioning/update/revocation",
+      "status": "unverified_approval_required",
+      "owner": "Human namespace/wallet owner",
+      "requiredAction": "Supply an owned canonical Sepolia parent registry and public owner/delegate addresses; approve exact unsigned previews plus funded testnet gas budget in an external wallet. Then verify changed record resolution and revoked permissions. Never supply signing secrets to this package.",
+      "independentWorkRemaining": "none"
+    },
+    {
+      "gate": "Live provider and indexing/history qualification",
+      "status": "unverified_external_integration",
+      "owner": "Integration/indexing owner",
+      "requiredAction": "Wire trusted live HistoryPort, configured verifier/method identities, real provider profile/payment records and retain a live indexed change causing selection change. Local history observations are fixtures."
+    },
+    {
+      "gate": "Combined application integration",
+      "status": "not_claimed",
+      "owner": "Integration owner",
+      "requiredAction": "Merge reviewed lane code under separate authority; wire core principal-scoped authoritative quotes and provider re-resolution/SSRF policy; run combined HTTP/client/payment/index checks. No shared source edits or other-lane runtime imports here."
+    },
+    {
+      "gate": "Public release/sponsor eligibility/license/submission",
+      "status": "human_approval_required",
+      "owner": "Human release owner",
+      "requiredAction": "Confirm track/pool/from-scratch eligibility, application and dependency licensing, human/AI provenance, visibility/push and submission artifacts. No public release action was taken."
+    },
+    {
+      "gate": "Payment, execution and assessment qualification",
+      "status": "outside_discovery_lane_unverified",
+      "owner": "Future authorized integration owners",
+      "requiredAction": "Actual Blocky402/Hedera paid consumption needs explicit authority/budget. Mycelium/Gas Killer adapters, physical inference, replay/mismatch and live assessment remain separate future scope, not a consequence of ENS/name or receipt integrity."
+    }
+  ],
+  "reviewAddendum": {
+    "tag": "handoff-review-v1",
+    "revision": "74ae66f6bd895b13a9ce9de083357c0fcb88e564",
+    "scope": "DiscoveryPort unchanged; all-lane evidence correction only. No shared files copied or modified.",
+    "validationBefore": "Tagged validator rejected old handoff: Invalid command ID.",
+    "validationAfter": "passed: exact tagged validator executed in memory, all 5 acceptance IDs and 4 required external gates covered; command evidence paths tracked; lane gate passed again with 14 discovery tests and actual smoke."
+  }
 }
