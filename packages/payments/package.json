@@ -1,0 +1,42 @@
+{
+  "name": "@ethonline/payments",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0 <21"
+  },
+  "exports": "./src/index.mjs",
+  "scripts": {
+    "test": "node --test --test-reporter=tap test/*.test.mjs",
+    "check": "node scripts/check.mjs && npm test",
+    "smoke": "node scripts/smoke.mjs",
+    "smoke:live": "node scripts/live-smoke.mjs",
+    "audit:hcs": "node scripts/hcs-audit.mjs",
+    "start": "node scripts/serve.mjs"
+  },
+  "overrides": {
+    "@hiero-ledger/proto": {
+      "protobufjs": "8.8.0"
+    },
+    "@hiero-ledger/sdk": {
+      "protobufjs": "8.8.0",
+      "@grpc/grpc-js": "1.12.7"
+    },
+    "ethers": {
+      "ws": "8.21.3"
+    }
+  },
+  "dependencies": {
+    "@hiero-ledger/sdk": "2.85.0",
+    "@x402/core": "2.25.0",
+    "@x402/hedera": "2.25.0",
+    "better-sqlite3": "11.10.0",
+    "lossless-json": "4.3.1"
+  },
+  "devDependencies": {
+    "eslint": "10.10.0",
+    "globals": "16.5.0",
+    "prettier": "3.6.2"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "sources": {
+    "sponsor": {
+      "url": "https://ethglobal.com/events/ethonline2026/prizes/hedera",
+      "sha256": "ae8ab1ba488562610468391f35c97cfeaac84bb10b1cdbdfea6e463a2f4d3645",
+      "bytes": 154628,
+      "checkedAt": "2026-09-07T15:19:49.777404+00:00",
+      "status": "retrieved"
+    },
+    "blocky-quickstart": {
+      "url": "https://blocky402.com/docs/quickstart/",
+      "sha256": "9f88b07335d3ccfbf6ac820f8e7462c9bb26ef5b07623f79213c92336f7716a9",
+      "bytes": 62659,
+      "checkedAt": "2026-09-07T15:19:49.274684+00:00",
+      "status": "retrieved"
+    },
+    "blocky-supported": {
+      "url": "https://api.testnet.blocky402.com/supported",
+      "sha256": "2f778ea06ea78b1f7976d00b5bced4058f65fb3cfe957eed4621f5ac19610195",
+      "bytes": 496,
+      "checkedAt": "2026-09-07T15:19:49.313205+00:00",
+      "status": "retrieved"
+    },
+    "sponsor-poc": {
+      "url": "https://raw.githubusercontent.com/hedera-dev/x402-inference-pay-per-request-poc/main/packages/service/src/x402.ts",
+      "sha256": "2139b02a1d9c73a0568d196f46cfd14f3e1e677a5f7295401bbb5af42daeca21",
+      "bytes": 691,
+      "checkedAt": "2026-09-07T15:19:49.343206+00:00",
+      "status": "retrieved"
+    },
+    "hedera-scheme": {
+      "url": "https://raw.githubusercontent.com/x402-foundation/x402/main/specs/schemes/exact/scheme_exact_hedera.md",
+      "sha256": "4d2b0f81ca16c07d9895f0acc7dd032b53f6f21a9ef44838f30a9f14cc327f15",
+      "bytes": 9872,
+      "checkedAt": "2026-09-07T15:19:49.633934+00:00",
+      "status": "retrieved"
+    },
+    "x402-v2": {
+      "url": "https://raw.githubusercontent.com/x402-foundation/x402/main/specs/x402-specification-v2.md",
+      "sha256": "cb66bdef710298233316b02d48fce4a9417ec5449ed9cab7f5d9fe6a454920cd",
+      "bytes": 38469,
+      "checkedAt": "2026-09-07T15:19:49.863454+00:00",
+      "status": "retrieved"
+    },
+    "hcs": {
+      "url": "https://docs.hedera.com/hedera/sdks-and-apis/sdks/consensus-service/submit-a-message",
+      "sha256": "9c4fabe9067da7535db561db1cbf123a9d6fddbf2fbfbf228bfb51886cf64a85",
+      "bytes": 546404,
+      "checkedAt": "2026-09-07T15:19:50.450558+00:00",
+      "status": "retrieved"
+    }
+  },
+  "sourceMainRevisions": {
+    "x402-foundation/x402": "1ef460686cc861c009e3bd0091554d24297095c9",
+    "hedera-dev/x402-inference-pay-per-request-poc": "a56ad6051bb69a5f6f9ef8dafbcdf2f97c69b236",
+    "blockydevs/blocky402": {
+      "errorType": "HTTPError"
+    }
+  },
+  "failedAdditionalSources": [
+    {
+      "url": "https://blocky402.com/docs/networks/",
+      "result": "web_extract failed twice; quickstart, native scheme and read-only /supported used instead"
+    }
+  ]
+}
