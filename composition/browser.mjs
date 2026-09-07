@@ -5,7 +5,7 @@ document.getElementById("provider").value = config.providerId;
 document.getElementById("profile").value = config.profileId;
 const banner = document.createElement("p");
 banner.textContent =
-  "SYNTHETIC LOCAL APPLICATION — offline payment simulation, synthetic ENS records and Graph-shaped responses. No funds, live inference or execution verification. Publication disabled.";
+  `SYNTHETIC LOCAL APPLICATION — ${config.payment}; ${config.discovery}; ${config.history}. Execution: ${config.execution}. Assessment: ${config.assessment}. No real funds or inference verification. Publication: ${config.publication}.`;
 banner.setAttribute("role", "note");
 document.body.prepend(banner);
 setPaymentAuthorizer(async ({ body, quote }) => {

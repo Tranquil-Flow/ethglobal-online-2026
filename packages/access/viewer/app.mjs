@@ -232,6 +232,14 @@ $("download").onclick = () =>
       "Private evidence downloaded — integrity only, not provider trust or execution proof",
     );
   });
+$("delete-evidence").onclick = () =>
+  action(async () => {
+    need();
+    if (!job) throw new AccessError("No job");
+    await client.deleteEvidence(job.jobId);
+    text("answer", "");
+    status("Private evidence deleted from server; receipts and downloaded copies remain");
+  });
 fetch("/config.json")
   .then((r) => r.json())
   .then((c) => {

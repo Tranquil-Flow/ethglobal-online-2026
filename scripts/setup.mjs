@@ -1,7 +1,9 @@
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
-import { assertRuntime } from "./runtime.mjs";
+import { assertRuntime, NPM_VERSION } from "./runtime.mjs";
 assertRuntime();
+const npmVersion = spawnSync('npm', ['--version'], {encoding:'utf8'});
+if (npmVersion.status !== 0 || npmVersion.stdout.trim() !== NPM_VERSION) throw Error(`Use npm ${NPM_VERSION} for reproducible setup`);
 const run = (cmd, args) => {
   const r = spawnSync(cmd, args, { stdio: "inherit" });
   if (r.status !== 0) throw Error(`Setup failed: ${cmd} ${args.join(" ")}`);

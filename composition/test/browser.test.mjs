@@ -272,6 +272,12 @@ test(
         { ...process.env, HOME: home },
       );
       assert.equal(cliSubmit.job.executionStatus, "succeeded");
+      assert.equal(await page.locator('#delete-evidence').count(), 1);
+      await page.locator('#delete-evidence').click();
+      await page.waitForFunction(() => document.querySelector('[role=status]').textContent.includes('Private evidence deleted'));
+      await assert.rejects(client.getEvidence(jobId));
+      await page.locator('#assess').click();
+      await page.waitForFunction(() => document.querySelector('#assessment-state').textContent.includes('unavailable'));
       await writeFile(
         "artifacts/integration/browser-result.json",
         JSON.stringify(

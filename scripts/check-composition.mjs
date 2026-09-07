@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { readdirSync } from "node:fs";
 import { assertRuntime } from "./runtime.mjs";
 assertRuntime();
 for (const [cmd, args] of [
@@ -8,11 +9,7 @@ for (const [cmd, args] of [
     [
       "--test",
       "--test-concurrency=1",
-      "composition/test/browser.test.mjs",
-      "composition/test/failures.test.mjs",
-      "composition/test/integration.test.mjs",
-      "composition/test/synthetic.test.mjs",
-      "composition/test/snapshot-clock.test.mjs",
+      ...readdirSync('composition/test').filter(x => x.endsWith('.test.mjs')).sort().map(x => 'composition/test/' + x),
     ],
   ],
 ]) {

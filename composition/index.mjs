@@ -35,9 +35,21 @@ export async function startDevelopment({
   dataDir,
   port = 4310,
   delayMs = 5,
+  localInfrastructure,
+  testAssessment,
+  providerId = "synthetic.local.eth",
+  ...unknownOptions
 } = {}) {
+  if (Object.keys(unknownOptions).length) throw Error("UNKNOWN_LOCAL_OPTION");
   if (development !== true) throw Error("DEVELOPMENT_REQUIRED");
   assertRuntime();
+  if (testAssessment !== undefined && (testAssessment?.fixture !== true || typeof testAssessment.assess !== "function" || !/^test[-:]/.test(testAssessment.method) || !/^test[-:]/.test(testAssessment.verifierId))) throw Error("EXPLICIT_TEST_ASSESSOR_REQUIRED");
+  if (localInfrastructure !== undefined) {
+    const local = (value) => {
+      try { const u = new URL(value); return u.protocol === "http:" && ["127.0.0.1", "[::1]"].includes(u.hostname) && !u.username && !u.password && !u.search && !u.hash; } catch { return false; }
+    };
+    if (localInfrastructure?.mode !== "development" || localInfrastructure.chainId !== 31337 || !local(localInfrastructure.rpcUrl) || !local(localInfrastructure.graphEndpoint) || typeof localInfrastructure.create !== "function") throw Error("LOCAL_INFRASTRUCTURE_REQUIRED");
+  }
   if (
     !dataDir ||
     !Number.isInteger(port) ||
@@ -79,12 +91,12 @@ export async function startDevelopment({
       { flag: "wx", mode: 0o600 },
     );
   }
-  const providerId = "synthetic.local.eth",
-    profileId = digestOf(developmentProfile),
+  const profileId = digestOf(developmentProfile),
     publicKeyJwk = createPublicKey(privateKey).export({ format: "jwk" }),
     keyId = digestOf(publicKeyJwk),
     pins = { providerId, keyId, publicKeyJwk };
   let store,
+    infrastructure,
     synthetic,
     payments,
     app,
@@ -102,11 +114,18 @@ export async function startDevelopment({
       server.closeAllConnections();
       await new Promise((r) => server.close(r));
     }
-    await app?.close();
-    payments?.close();
-    await eventSink?.close();
-    await synthetic?.close();
-    store?.close();
+    const errors = [];
+    for (const release of [
+      () => app?.close(),
+      () => payments?.close(),
+      () => eventSink?.close(),
+      () => infrastructure?.close?.(),
+      () => synthetic?.close(),
+      () => store?.close(),
+    ]) {
+      try { await release(); } catch (error) { errors.push(error); }
+    }
+    if (errors.length) throw new AggregateError(errors, "LOCAL_CLEANUP_FAILED");
   };
   try {
     store = createStore({ path: join(dir, "core.sqlite") });
@@ -172,10 +191,11 @@ export async function startDevelopment({
             profileId,
             development: true,
             execution: "synthetic-not-inference",
-            assessment: "unavailable",
+            assessment: testAssessment ? "test-fixture-not-inference-verification" : "unavailable",
             payment: "offline-synthetic-settlement",
-            discovery: "synthetic-records-not-ENS",
-            history: "synthetic-Graph-shaped-not-deployed",
+            publication: infrastructure ? "consented-test-events-local-chain-only" : "disabled",
+            discovery: infrastructure ? "local-ENSv2-contracts" : "synthetic-records-not-ENS",
+            history: infrastructure ? "local-Graph-Node-not-public-provider" : "synthetic-Graph-shaped-not-deployed",
           });
         const files = {
           "/": ["../packages/access/dist/index.html", "text/html"],
@@ -217,7 +237,9 @@ export async function startDevelopment({
         resourceUrl: url + "/v1/jobs",
       },
     });
-    const history = createHistory({
+    infrastructure = localInfrastructure ? await localInfrastructure.create({url, providerId, profileId, store}) : undefined;
+    if (localInfrastructure && (!infrastructure || typeof infrastructure.resolver?.resolve !== "function" || typeof infrastructure.history?.getHistory !== "function" || typeof infrastructure.eventSink?.publish !== "function" || typeof infrastructure.close !== "function")) throw Error("INCOMPLETE_LOCAL_INFRASTRUCTURE");
+    const history = infrastructure?.history ?? createHistory({
       config: {
         mode: "development",
         chainId: "31337",
@@ -229,7 +251,7 @@ export async function startDevelopment({
         allowLocal: true,
       }),
     });
-    const resolver = {
+    const resolver = infrastructure?.resolver ?? {
       route: "explicit-synthetic-records",
       async resolve({ name }) {
         if (name !== providerId) throw Error("UNAVAILABLE");
@@ -258,17 +280,19 @@ export async function startDevelopment({
       resolver,
       history,
     });
-    eventSink = createEventSink({ config: { enabled: false } }); // Validates events; unavailable, never signs/publishes.
+    eventSink = infrastructure?.eventSink ?? createEventSink({ config: { enabled: false } }); // Validates events; unavailable, never signs/publishes.
     app = createApp({
       config: {
         mode: "development",
         profiles: [developmentProfile],
         providerIds: [providerId],
         maintenanceMs: 50,
+        ...(testAssessment ? {assessor: {method: testAssessment.method, verifierId: testAssessment.verifierId}} : {}),
       },
       store,
       signer: createSigner({ privateKey, keyId }),
       executor: createDevelopmentExecutor({ delayMs }),
+      assessor: testAssessment,
       payments,
       discovery,
       history,
