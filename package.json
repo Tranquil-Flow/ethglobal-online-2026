@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": "20.19.5", "npm": "10.8.2" },
-  "packageManager": "npm@10.8.2",
+  "engines": { "node": "22.22.2", "npm": "10.9.7" },
+  "packageManager": "npm@10.9.7",
   "scripts": {
     "setup": "node scripts/setup.mjs",
     "start": "node composition/serve.mjs",

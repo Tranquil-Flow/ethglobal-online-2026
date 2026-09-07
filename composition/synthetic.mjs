@@ -41,8 +41,9 @@ export function json(res, value, status = 200) {
   });
   res.end(stringify(value));
 }
-export async function createSyntheticTransport({ store }) {
+export async function createSyntheticTransport({ store, clock = Date.now }) {
   const keys = new Map();
+  const blocks = new Map();
   let fault = null,
     ageMs = 0,
     url;
@@ -142,11 +143,21 @@ export async function createSyntheticTransport({ store }) {
       if (req.url === "/graph") {
         bump("graphQueries");
         if (fault === "graph-outage") return json(res, {}, 503);
-        const block = {
-          number: 1,
-          hash: "0x" + digestOf("synthetic-index-block").slice(7),
-          timestamp: Math.floor((Date.now() - ageMs) / 1000),
-        };
+        // The follow-up query is pinned to its head hash. Never change the
+        // timestamp behind that hash when wall time or injected age changes.
+        let block;
+        if (body.variables?.block) {
+          block = blocks.get(body.variables.block);
+          if (!block) return json(res, { errors: [{ message: "UNKNOWN_BLOCK" }] });
+        } else {
+          const timestamp = Math.floor((clock() - ageMs) / 1000);
+          const hash = "0x" + digestOf(["synthetic-index-block", timestamp]).slice(7);
+          block = blocks.get(hash) ?? { number: timestamp, hash, timestamp };
+          blocks.set(hash, block);
+          // Bounded fixture history. Evicted hashes fail explicitly, not as a
+          // newly generated snapshot under an old identity.
+          if (blocks.size > 128) blocks.delete(blocks.keys().next().value);
+        }
         const meta = {
           deployment: deploymentId,
           hasIndexingErrors: false,

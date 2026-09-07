@@ -1,5 +1,5 @@
 import { dirname, delimiter } from "node:path";
-export const NODE_VERSION = "20.19.5";
+export const NODE_VERSION = "22.22.2";
 export function assertRuntime() {
   if (process.versions.node !== NODE_VERSION)
     throw Error(

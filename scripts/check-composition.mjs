@@ -11,6 +11,8 @@ for (const [cmd, args] of [
       "composition/test/browser.test.mjs",
       "composition/test/failures.test.mjs",
       "composition/test/integration.test.mjs",
+      "composition/test/synthetic.test.mjs",
+      "composition/test/snapshot-clock.test.mjs",
     ],
   ],
 ]) {

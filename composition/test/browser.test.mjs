@@ -97,13 +97,15 @@ test(
       const page = await browser.newPage();
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
-      let session, jobId;
-      page.on("response", async (r) => {
-        if (r.url() === app.url + "/v1/sessions" && r.status() === 201)
-          session = await r.json();
-      });
+      let jobId;
       await page.goto(app.url);
-      await page.locator("#connect").click();
+      const sessionBody = page.waitForResponse(
+        (r) => r.url() === app.url + "/v1/sessions" && r.status() === 201,
+      ).then((r) => r.json());
+      const [session] = await Promise.all([
+        sessionBody,
+        page.locator("#connect").click(),
+      ]);
       await page.waitForFunction(() =>
         document
           .querySelector("[role=status]")
@@ -130,11 +132,16 @@ test(
           .textContent.includes("Quote ready"),
       );
       await page.locator("#consent").check();
-      const jobResponse = page.waitForResponse(
+      // Consume the body immediately on the response event, concurrently with
+      // click completion. A stored Response handle is not retained body evidence.
+      const jobBody = page.waitForResponse(
         (r) => r.url() === app.url + "/v1/jobs" && r.status() === 202,
-      );
-      await page.locator("#submit").click();
-      jobId = (await (await jobResponse).json()).job.jobId;
+      ).then((r) => r.json());
+      const [submission] = await Promise.all([
+        jobBody,
+        page.locator("#submit").click(),
+      ]);
+      jobId = submission.job.jobId;
       await page.waitForFunction(
         () => document.querySelector("#job-state").textContent === "Completed",
       );
