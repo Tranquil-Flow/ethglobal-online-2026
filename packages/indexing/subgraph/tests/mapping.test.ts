@@ -5,7 +5,18 @@ import {handleReceipt,handleAssessment} from '../src/mapping';
 const R='0x'+'11'.repeat(32),P='0x'+'22'.repeat(32);
 const ADDRESS='0xa16081f360e3847006db660bae1c6d1b2e17ec2a';
 function setup(): void {clearStore();let c=new DataSourceContext();c.setString('chainId','31337');c.setI32('mode',0);c.setBytes('publisher',Bytes.fromHexString(ADDRESS));dataSourceMock.setAddressAndContext(ADDRESS,c);}
-beforeEach(setup);
+import {createMockedFunction} from 'matchstick-as/assembly/index';
+import {Address} from '@graphprotocol/graph-ts';
+beforeEach(()=>{setup();createMockedFunction(Address.fromString(ADDRESS),'publisher','publisher():(address)').returns([ethereum.Value.fromAddress(Address.fromString(ADDRESS))]);});
+test('wrong configured publisher cannot create self-consistent false attribution',()=>{
+ let c=new DataSourceContext();c.setString('chainId','31337');c.setI32('mode',0);c.setBytes('publisher',Bytes.fromHexString('0x'+'99'.repeat(20)));dataSourceMock.setAddressAndContext(ADDRESS,c);
+ handleReceipt(receipt());assert.entityCount('ReceiptClaim',0);
+ handleAssessment(assessmentEvent());assert.fieldEquals('AssessmentClaim','31337:'+ADDRESS+':assessment:'+A,'publisher',ADDRESS);assert.fieldEquals('AssessmentClaim','31337:'+ADDRESS+':assessment:'+A,'valid','false');
+});
+test('immutable publisher is not transaction origin and failed lookup cannot invent identity',()=>{
+ let e=receipt();e.transaction.from=Address.fromString('0x'+'88'.repeat(20));handleReceipt(e);assert.fieldEquals('ReceiptClaim','31337:'+ADDRESS+':receipt:'+R,'publisher',ADDRESS);
+ clearStore();createMockedFunction(Address.fromString(ADDRESS),'publisher','publisher():(address)').reverts();handleReceipt(e);assert.entityCount('ReceiptClaim',0);handleAssessment(assessmentEvent());assert.fieldEquals('AssessmentClaim','31337:'+ADDRESS+':assessment:'+A,'valid','false');
+});
 function receipt(): ReceiptPublished {
  let e=changetype<ReceiptPublished>(newMockEvent());
  e.parameters=[new ethereum.EventParam('receiptDigest',ethereum.Value.fromFixedBytes(Bytes.fromHexString(R))),new ethereum.EventParam('providerKey',ethereum.Value.fromFixedBytes(Bytes.fromHexString(P))),new ethereum.EventParam('mode',ethereum.Value.fromI32(0))];return e;

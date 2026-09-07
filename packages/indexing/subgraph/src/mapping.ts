@@ -1,5 +1,5 @@
 import {Bytes,BigInt,dataSource,ethereum} from '@graphprotocol/graph-ts';
-import {ReceiptPublished,AssessmentPublished} from '../generated/Registry/Registry';
+import {Registry,ReceiptPublished,AssessmentPublished} from '../generated/Registry/Registry';
 import {ReceiptClaim,AssessmentClaim,ProviderCount,VerifierOutcomeCount} from '../generated/schema';
 import {validMetadata} from './metadata';
 function scope(event:ethereum.Event):string{return dataSource.context().getString('chainId')+':'+event.address.toHexString();}
@@ -9,21 +9,24 @@ function count(event:ethereum.Event,provider:Bytes):ProviderCount{
 }
 export function handleReceipt(event:ReceiptPublished):void{
  let p=event.params;
+ const publisher=Registry.bind(event.address).try_publisher();
+ if(publisher.reverted||!publisher.value.equals(dataSource.context().getBytes('publisher')))return;
  if(p.mode!=dataSource.context().getI32('mode'))return;
  let id=scope(event)+':receipt:'+p.receiptDigest.toHexString();if(ReceiptClaim.load(id)!==null)return;
  let row=new ReceiptClaim(id);row.objectDigest=p.receiptDigest;row.providerKey=p.providerKey;row.mode=p.mode;
- row.chainId=dataSource.context().getString('chainId');row.contractAddress=event.address;row.publisher=dataSource.context().getBytes('publisher');
+ row.chainId=dataSource.context().getString('chainId');row.contractAddress=event.address;row.publisher=publisher.reverted?Bytes.fromHexString('0x'+'00'.repeat(20)):publisher.value;
  row.transactionHash=event.transaction.hash;row.blockNumber=event.block.number;row.blockHash=event.block.hash;row.logIndex=event.logIndex;row.save();
  let c=count(event,p.providerKey);c.receiptCount=c.receiptCount.plus(BigInt.fromI32(1));c.save();
 }
 export function handleAssessment(event:AssessmentPublished):void{
  let p=event.params,id=scope(event)+':assessment:'+p.assessmentDigest.toHexString();if(AssessmentClaim.load(id)!==null)return;
  let receipt=ReceiptClaim.load(scope(event)+':receipt:'+p.receiptDigest.toHexString());
- let valid=p.mode==dataSource.context().getI32('mode')&&receipt!==null;
+ const publisher=Registry.bind(event.address).try_publisher();
+ let valid=!publisher.reverted&&publisher.value.equals(dataSource.context().getBytes('publisher'))&&p.mode==dataSource.context().getI32('mode')&&receipt!==null;
  if(valid){valid=receipt!.providerKey.equals(p.providerKey)&&receipt!.mode==p.mode;}
  if(valid)valid=validMetadata(p.publicMetadata,p.assessmentDigest.toHexString(),p.receiptDigest.toHexString(),p.verifierKey.toHexString(),p.methodKey.toHexString(),p.outcome,p.mode);
  let row=new AssessmentClaim(id);row.objectDigest=p.assessmentDigest;row.receiptDigest=p.receiptDigest;row.providerKey=p.providerKey;row.verifierKey=p.verifierKey;row.methodKey=p.methodKey;row.outcome=valid?p.outcome:4;row.mode=p.mode;
- row.publicMetadata=valid?p.publicMetadata:'';row.valid=valid;row.chainId=dataSource.context().getString('chainId');row.contractAddress=event.address;row.publisher=dataSource.context().getBytes('publisher');
+ row.publicMetadata=valid?p.publicMetadata:'';row.valid=valid;row.chainId=dataSource.context().getString('chainId');row.contractAddress=event.address;row.publisher=publisher.reverted?Bytes.fromHexString('0x'+'00'.repeat(20)):publisher.value;
  row.transactionHash=event.transaction.hash;row.blockNumber=event.block.number;row.blockHash=event.block.hash;row.logIndex=event.logIndex;row.save();
  let c=count(event,p.providerKey);c.assessmentCount=c.assessmentCount.plus(BigInt.fromI32(1));if(!valid)c.invalidCount=c.invalidCount.plus(BigInt.fromI32(1));c.save();
  // Attribution only. No trusted flag or inferred trust score exists.

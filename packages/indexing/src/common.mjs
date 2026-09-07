@@ -19,6 +19,9 @@ export async function bounded(promise,signal){
 export function validateEvent(event){
  try{
   validate('PublicEvent',event);
+  // Graph's JSON host cannot represent lone UTF-16 surrogates. Reject before durable signing.
+  const unicode=value=>{if(typeof value==='string'){for(let i=0;i<value.length;i++){const cp=value.codePointAt(i);if(cp>=0xd800&&cp<=0xdfff)throw 0;if(cp>0xffff)i++;}}else if(value&&typeof value==='object'){for(const item of Object.values(value))unicode(item);}};
+  unicode(event);
   if(event.kind==='receipt') {if(event.receiptDigest!==event.objectDigest)throw 0;}
   else{
    const a=event.assessment;

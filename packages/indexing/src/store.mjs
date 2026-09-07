@@ -2,7 +2,9 @@ import {open,mkdir,readFile,rename,unlink,lstat} from 'node:fs/promises';
 import {resolve,join} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {checkAbort,failure} from './common.mjs';
-// A private, single-owner journal. O_EXCL lock is cross-process; never guess a stale lock is safe.
+import {constants} from 'node:fs';
+import fsExt from 'fs-ext';
+// Local-filesystem advisory lock: kernel releases ownership on process death. Never unlink its inode.
 export function createPublicationStore({directory}){
  const dir=resolve(directory),path=join(dir,'journal.json'),lock=join(dir,'journal.lock');
  let closed=false;
@@ -12,7 +14,8 @@ export function createPublicationStore({directory}){
   await mkdir(dir,{recursive:true,mode:0o700});
   if((await lstat(dir)).isSymbolicLink())throw failure('UNSAFE_STORE');
   let handle;
-  try{handle=await open(lock,'wx',0o600);}catch{throw failure('STORE_BUSY',true);}
+  try{handle=await open(lock,constants.O_RDWR|constants.O_CREAT|constants.O_NOFOLLOW,0o600);fsExt.flockSync(handle.fd,'exnb');}
+  catch(error){await handle?.close();throw failure(error.code==='EAGAIN'||error.code==='EWOULDBLOCK'?'STORE_BUSY':'STORE_UNAVAILABLE',true);}
   try{
    let data={version:1,entries:{}};
    try{const stat=await lstat(path);if(stat.isSymbolicLink()||stat.size>16*1024*1024)throw failure('UNSAFE_STORE');data=JSON.parse(await readFile(path,'utf8'));}
@@ -25,7 +28,7 @@ export function createPublicationStore({directory}){
     finally{if(file)await file.close();await unlink(temp).catch(()=>{});}
    };
    return await fn(data,save);
-  }finally{await handle.close();await unlink(lock);}
+  }finally{await handle.close();}
  },async close(){closed=true;}
  };
 }

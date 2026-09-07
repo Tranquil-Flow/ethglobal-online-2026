@@ -21,7 +21,8 @@
     "smoke:live": "node scripts/live-smoke.mjs"
   },
   "dependencies": {
-    "ethers": "6.17.0"
+    "ethers": "6.17.0",
+    "fs-ext": "2.1.1"
   },
   "devDependencies": {
     "@graphprotocol/graph-cli": "0.98.1",

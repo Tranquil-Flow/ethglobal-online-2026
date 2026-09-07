@@ -4,11 +4,12 @@ Attributed, append-only receipt/assessment publication and bounded Graph history
 
 ## Reproduce
 
-From the repository root (Node >=20.18.1):
+From the repository root (Node >=20.18.1, local POSIX filesystem, Python 3 and C/C++ build tools for the package-local `fs-ext` native binding; tested macOS ARM64):
 
 ```sh
 npm --prefix packages/contracts ci --ignore-scripts
 npm --prefix packages/indexing ci --ignore-scripts
+npm --prefix packages/indexing rebuild fs-ext
 npm --prefix packages/indexing run check
 npm --prefix packages/indexing run smoke
 npm --prefix packages/indexing run smoke:ingestion
@@ -25,7 +26,7 @@ npm run check:lane -- indexing
 - `ipfs/kubo@sha256:803fac58ba15bd763b97a1ce17bca57f75348f2088d384a908b77e8540f35560` — v0.17.0, offline-only test dependency.
 - `postgres@sha256:004f63c1e58096cd86ba6d4ccc80e89897776553f654e935b33e920b6e141ba9` — existing PostgreSQL 16 image.
 
-Docker executable defaults to the installed macOS app path; set `INDEXING_DOCKER=docker` on another supported host. Docker Desktop's resource bin directory must be in PATH for explicit image pulls, because its credential helper is there. The test allocates unique `indexing-<random>` names, ephemeral databases, random loopback ports, 128 PID caps, memory caps (Graph 1024 MiB, IPFS 256 MiB, PostgreSQL 384 MiB), and CPU caps (1.5/0.5/0.5). Finally blocks remove only named test containers, anonymous volumes and the test network. No existing workload is restarted. A normal increasing-height replacement fork is needed to wake Graph's head ingestor; the same-height experiment timed out and is retained in the handoff. If this optional stack cannot run elsewhere, compiled mappings plus supported Matchstick tests remain the lane's documented fallback, not ingestion evidence.
+Docker executable defaults to the installed macOS app path; set `INDEXING_DOCKER=docker` on another supported host. Docker Desktop's resource bin directory must be in PATH for explicit image pulls, because its credential helper is there. The test allocates unique `indexing-<random>` names, ephemeral databases, random loopback ports, 128 PID caps, memory caps (Graph 1024 MiB, IPFS 256 MiB, PostgreSQL 384 MiB), and CPU caps (1.5/0.5/0.5). Finally blocks remove only named test containers, anonymous volumes and the test network. No existing workload is restarted. The local Ganache RPC explicitly uses Graph Node's documented `no_eip1898,archive` capability: Ganache rejects EIP-1898 `eth_call` objects, so immutable-publisher reads here use block numbers. This is a local fixture limitation, not a change to live Graph configuration or the History query's block-hash pin. The reorg test checks rollback and replacement provenance. A normal increasing-height replacement fork is needed to wake Graph's head ingestor; the same-height experiment timed out and is retained in the handoff. If this optional stack cannot run elsewhere, compiled mappings plus supported Matchstick tests remain the lane's documented fallback, not ingestion evidence.
 
 Tests bind port 0. Manual lane port reservation is **4340**; the package intentionally has no public server/autostart command. `check:lane` additionally checks the handoff and exact committed code revision.
 
@@ -66,7 +67,7 @@ Every publication checks live RPC chain ID, runtime code hash, signer address, a
 
 Statuses are `pending`, `confirmed`, `unavailable`. Confirmation is checked against canonical block hash and depth on **every** retry, never permanently cached. A previously confirmed transaction can become pending after a reorg. Ambiguous broadcast remains pending; a reverted transaction is unavailable. No automatic replacement transaction, fee bump, spend loop or remote fallback occurs. Callers retry explicitly with a bounded policy. An abort after durable signing may leave a signed intent (and an in-flight broadcast may still land); retry that same key to reconcile, never presume cancellation undid a chain operation.
 
-The private journal uses 0600 atomic files, fsync+rename, a 16 MiB cap and exclusive cross-process lock. A crash while holding the lock intentionally fails `STORE_BUSY`; after proving no owner is alive, the operator may remove **only that journal's stale lock** and retry original keys. Do not delete the journal to unblock publication: it holds transaction identity/nonce reservations. Back up/restore it as a unit. Injected stores must implement `transact(async (data, save) => result, {signal})` with equivalent exclusive durable-save semantics and `close()`. Errors expose stable `code`, `retryable` and safe messages, never raw RPC/SDK payloads.
+The private journal uses 0600 atomic files, fsync+rename, a 16 MiB cap and exclusive cross-process lock. The kernel releases the advisory `flock` on process death (including SIGKILL), so restart recovers the original signed transaction automatically. `journal.lock` is a permanent inode: **never unlink it** while this store is in use. Stop all old-version writers before upgrading from the former O_EXCL lock. NFS/shared-network filesystems and Windows are unsupported for this store; inject a qualified store instead. Do not delete the journal to unblock publication: it holds transaction identity/nonce reservations. Back up/restore it as a unit. Injected stores must implement `transact(async (data, save) => result, {signal})` with equivalent exclusive durable-save semantics and `close()`. Errors expose stable `code`, `retryable` and safe messages, never raw RPC/SDK payloads.
 
 ### History / agent query
 
@@ -98,7 +99,7 @@ Query config adds `endpoint` to the History config above. Only these explicit qu
 
 ## Reorg / metadata policy
 
-Graph Node performs transactional store rollback on reorg; entity IDs namespace chain+contract+kind+digest and prevent duplicate counts. Mappings parse only full canonical shared Assessment metadata, implement the same SHA-256 relation (independent test vectors), validate field allowlists/types/lengths/date-time/outcomes and receipt association, and retain invalid records as `valid:false`, `outcome:unavailable`, empty metadata. Unknown verifier identity is preserved, never relabelled trusted. No raw malformed metadata is copied into query results. The onchain registry does not parse JSON or prove SHA relations; authorized publisher and mapping checks provide attribution.
+Graph Node performs transactional store rollback on reorg; entity IDs namespace chain+contract+kind+digest and prevent duplicate counts. Mappings parse only full canonical shared Assessment metadata, implement the same SHA-256 relation (independent test vectors), validate field allowlists/types/lengths/date-time/outcomes and receipt association, and retain invalid records as `valid:false`, `outcome:unavailable`, empty metadata. Publisher identity is read from the actual registry immutable `publisher()` at the event block and compared with manifest context, not copied from that context. A reverted lookup/mismatch cannot create a valid observation. This also handles contract-based publishers without incorrectly treating transaction origin as msg.sender. Publisher validation rejects lone UTF-16 surrogates (`INVALID_EVENT`) before signing because the Graph JSON host cannot represent them; valid Unicode pairs remain supported. Unknown verifier identity is preserved, never relabelled trusted. No raw malformed metadata is copied into query results. The onchain registry does not parse JSON or prove SHA relations; authorized publisher and mapping checks provide attribution.
 
 ## Remaining risks / release authority
 
