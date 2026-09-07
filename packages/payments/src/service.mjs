@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { once } from "node:events";
 import { PaymentError, fail, textId } from "./safety.mjs";
-import { PAYMENT_REQUEST_HEADERS } from "./protocol.mjs";
+import { validateHeaderPolicy, validateResponseHeaders } from "./headers.mjs";
 /** Lane-local synthetic test service, NOT the application's HTTP API. Authentication
  * is explicitly injected; never accepts principalId from HTTP. No inference. */
 export function createSyntheticService({
@@ -15,12 +15,14 @@ export function createSyntheticService({
     !["development", "live"].includes(mode)
   )
     fail("INVALID_CONFIG");
+  const policy = validateHeaderPolicy(payments.headerPolicy);
   const server = createServer({ maxHeaderSize: 20000 }, async (req, res) => {
     res.setHeader("cache-control", "no-store");
     res.setHeader("content-type", "application/json");
     const signal = AbortSignal.timeout(10000);
     function send(status, body, headers = {}) {
-      for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);
+      const entries = validateResponseHeaders(headers, policy);
+      for (const [k, v] of entries) res.setHeader(k, v);
       res.writeHead(status).end(JSON.stringify(body));
     }
     try {
@@ -91,18 +93,25 @@ export function createSyntheticService({
       }
       const paymentHeaders = {};
       for (const [name, value] of Object.entries(req.headers)) {
-        if (
-          PAYMENT_REQUEST_HEADERS.includes(name) ||
-          name.startsWith("x-payment") ||
-          name.startsWith("payment-")
-        )
+        if (policy.request.includes(name)) {
+          if (
+            typeof value !== "string" ||
+            value.length > 16384 ||
+            /[^\x20-\x7e]/.test(value)
+          )
+            fail("INVALID_PAYMENT");
           paymentHeaders[name] = value;
+        } else if (name.startsWith("x-payment") || name.startsWith("payment-"))
+          fail("INVALID_PAYMENT");
       }
       // Reject duplicate proof headers: Node may otherwise merge or discard them.
       if (
-        req.rawHeaders.filter(
-          (h, i) => i % 2 === 0 && h.toLowerCase() === "payment-signature",
-        ).length > 1
+        policy.request.some(
+          (name) =>
+            req.rawHeaders.filter(
+              (h, i) => i % 2 === 0 && h.toLowerCase() === name,
+            ).length > 1,
+        )
       )
         fail("INVALID_PAYMENT");
       const result = await payments.authorize({

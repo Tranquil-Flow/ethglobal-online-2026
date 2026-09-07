@@ -2,6 +2,10 @@ import { randomUUID } from "node:crypto";
 import { validate, requestHash, digestOf } from "../../contracts/index.mjs";
 import { createSqliteStore } from "./store.mjs";
 import {
+  PAYMENT_REQUEST_HEADERS,
+  PAYMENT_RESPONSE_HEADERS,
+} from "./protocol.mjs";
+import {
   PaymentError,
   fail,
   checkAbort,
@@ -114,20 +118,22 @@ export {
 } from "./client.mjs";
 export { createSyntheticService } from "./service.mjs";
 function safePort(port) {
-  return Object.fromEntries(
-    Object.entries(port).map(([name, fn]) => [
-      name,
-      name === "close"
-        ? fn
-        : async (...args) => {
-            try {
-              return await fn(...args);
-            } catch (e) {
-              if (e instanceof PaymentError) throw e;
-              fail("PAYMENTS_UNAVAILABLE", true);
-            }
-          },
-    ]),
+  return Object.freeze(
+    Object.fromEntries(
+      Object.entries(port).map(([name, fn]) => [
+        name,
+        name === "close" || name === "headerPolicy"
+          ? fn
+          : async (...args) => {
+              try {
+                return await fn(...args);
+              } catch (e) {
+                if (e instanceof PaymentError) throw e;
+                fail("PAYMENTS_UNAVAILABLE", true);
+              }
+            },
+      ]),
+    ),
   );
 }
 function configuration(input) {
@@ -280,6 +286,10 @@ export function createPayments({
     });
   }
   return safePort({
+    headerPolicy: Object.freeze({
+      request: PAYMENT_REQUEST_HEADERS,
+      response: PAYMENT_RESPONSE_HEADERS,
+    }),
     async quote({ request, principalId, signal }) {
       ready(signal);
       const hash = validRequest(request);

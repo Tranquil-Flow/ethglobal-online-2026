@@ -103,9 +103,16 @@ The example provider/profile/accounts do not establish provisioned live resource
   session-local total before opening the wallet.
 - Quote storage caps prevent unlimited retained rows. Reaching a cap refuses new
   quotes; there is no automatic deletion of replay/attempt history.
-- Core relays only exported request `payment-signature` and response
-  `payment-required`, `payment-response` header bytes, including the native 402
-  body. Do not forward Authorization or invent `x-payment`/v1 aliases.
+- The port exposes deeply readonly `headerPolicy: {request:['payment-signature'],
+  response:['payment-required','payment-response']}` per `handoff-review-v1`.
+  Core reads that property from the injected port, never a sibling-package import.
+  Validate the policy at startup; reject credential/session, host and hop-by-hop
+  fields. The lane-local service snapshots/validates it, rejects duplicate or
+  oversized request fields before calling the port, and validates all response
+  fields before relaying any. Native challenge bytes are preserved unchanged.
+  Never forward Authorization/cookies to payments or a wallet callback, and do
+  not invent `x-payment`/v1 aliases. The named array exports remain available for
+  package consumers but are not the core dependency-injection contract.
 - A required response is not authorization. Only `kind:'authorized'` with a
   truthful settled payment permits execution. Pending/errors never do.
 - Core still owns durable job creation and job idempotency, session TTL/revocation,
