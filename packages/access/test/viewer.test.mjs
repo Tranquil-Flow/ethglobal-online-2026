@@ -76,7 +76,7 @@ test("viewer real browser covers keyboard, mobile, states, XSS, streaming and ev
   await page.getByRole("button", { name: "Submit and stream" }).click();
   assert.match(await page.getByRole("alert").textContent(), /consent/i);
   assert.equal(await page.locator("#budget").inputValue(), "10");
-  await page.getByLabel(/authorize up to the budget ceiling/i).check();
+  await page.getByLabel(/authorize up to the budget\s+ceiling/i).check();
   await page.getByRole("button", { name: "Submit and stream" }).click();
   await page.getByText("Completed").waitFor();
   const answer = await page.getByTestId("answer").textContent();
