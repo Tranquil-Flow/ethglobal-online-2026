@@ -49,3 +49,26 @@ BLOCKED on faucet human verification and a supported Graph wallet login/signing 
 No faucet receipt, settlement, chain deployment or hosted Graph query is claimed.
 No CAPTCHA evasion, existing-wallet secret discovery, mainnet spending or paid service
 was attempted. Local completion evidence is preserved; external qualification is open.
+
+## Funding and first deployment follow-up
+
+Owner completed faucet verification and funded Sepolia. Live checks observed payer
+0.0.10419268 with 1000000000 tinybars and Sepolia deployer with
+210000000000000000 wei on chain 11155111. These observations supersede funding blockers.
+
+`testnet-deployments.json` records the confirmed Sepolia registry deployment and
+successful Hedera receiver creation (0.0.10419316). Registry runtime code was fetched
+and hashed after two confirmations. The initial 0.001-test-ETH fee ceiling rejected
+the estimate before broadcast; observed estimate justified a bounded 0.003-test-ETH
+ceiling, using testnet funds only.
+
+Hedera alias account construction failed before execute with an SDK key-type error.
+Mirror checks found no transaction/account. The preserved no-alias account creation
+succeeded using the intended public key, with 0.1 test HBAR initial balance and a
+1-test-HBAR fee ceiling. The receiver is identified by its numeric account ID, not
+the originally generated EVM address. Failed attempts remain in artifacts/closeout.
+
+All pinned ENSv2 addresses have code on Sepolia; UniversalResolver ROOT_REGISTRY
+returns the expected pinned root. This does not establish owned-name provisioning.
+Graph wallet connection/project creation, real x402 settlement/consumption and ENS
+name provisioning remain open. No assessment claims have been published.

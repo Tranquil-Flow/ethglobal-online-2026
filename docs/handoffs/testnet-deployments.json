@@ -1,0 +1,33 @@
+{
+  "registry": {
+    "chainId": 11155111,
+    "publisher": "0xb4f0b42fbB0fCAf62703475039A7E26EF6dD5EaE",
+    "mode": "live",
+    "purpose": "testnet qualification; no assessment truth claim",
+    "gasLimit": "600589",
+    "maxFeePerGas": "2189660746",
+    "creationDataHash": "0xcde0b3236ec7e2f73f31f4eaa18316d2d1694198c90e134492907487b47c1781",
+    "status": "confirmed",
+    "transactionHash": "0x16232043e4eb25b1bfbf1d26a0576617b69f13c05fe539f74d0e05696f05d979",
+    "address": "0x9fd43D7b41c82406A776b700702EEA3813ac426A",
+    "blockNumber": 11660194,
+    "blockHash": "0x5ad673e891f3e553682e5528d017c7e3560bc01eaa509b827678aad533daa168",
+    "runtimeCodeHash": "0xf77feb2f6bf2c331cc0151fb3f5a134410a223745e7df4ead4a51b83e3727821"
+  },
+  "hederaReceiver": {
+    "network": "hedera:testnet",
+    "transactionId": "0.0.10419268@1788859527.295406600",
+    "maxFeeTinybars": "100000000",
+    "initialBalanceTinybars": "10000000",
+    "status": "SUCCESS",
+    "alias": false,
+    "accountId": "0.0.10419316"
+  },
+  "hederaPayer": "0.0.10419268",
+  "qualification": {
+    "settlement": false,
+    "ensNameWrite": false,
+    "hostedGraph": false,
+    "assessmentPublication": false
+  }
+}
