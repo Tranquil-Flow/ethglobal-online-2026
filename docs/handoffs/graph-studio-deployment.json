@@ -57,5 +57,38 @@
     "counts": {},
     "provenance": [],
     "truncated": false
+  },
+  "combinedSelection": {
+    "selected": {
+      "version": "1",
+      "providerId": "service.ethonline-provider-2026.eth",
+      "name": "service.ethonline-provider-2026.eth",
+      "endpoint": "https://qualification.example.invalid",
+      "profileIds": [
+        "sha256:826c57252bad9c4eadc6462f63b15a2d8ddec7bc1ce49dc5ec6a3949a86323a6"
+      ],
+      "paymentNetwork": "hedera:testnet",
+      "paymentAsset": "0.0.0",
+      "paymentReceiver": "0.0.10419316",
+      "mode": "live",
+      "source": {
+        "chainId": "11155111",
+        "blockNumber": 11660631,
+        "blockHash": "0x060c6bae97a6b3146fe84001b1ab1e329090eda174b8473d0f6544fd13ec16c5",
+        "resolvedAt": "2026-09-08T10:54:13.465Z",
+        "expiresAt": "2026-09-08T10:54:43.465Z"
+      },
+      "historyEndpoint": "https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.1.0"
+    },
+    "reasons": [
+      {
+        "providerId": "service.ethonline-provider-2026.eth",
+        "eligible": true,
+        "codes": [
+          "HISTORY_UNKNOWN",
+          "ELIGIBLE"
+        ]
+      }
+    ]
   }
 }

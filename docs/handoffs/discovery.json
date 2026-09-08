@@ -32,13 +32,15 @@
   "externalGates": [
     {
       "id": "ensv2-sepolia-write",
-      "status": "blocked",
-      "reason": "No public provider record/permission write was authorized or executed. Requires approved exact transaction previews and real before/update/after resolution evidence; read-only deployment checks are not write qualification."
+      "status": "qualified",
+      "reason": "Canonical ENSv2 registration, owned resolver records, parent link and service subname were written on Sepolia and read through Discovery. Initial write/ownership qualification; no live delegate rotation/revocation claim.",
+      "evidence": "docs/handoffs/ens-qualification.json"
     },
     {
       "id": "ens-name-wallet-approval",
-      "status": "blocked",
-      "reason": "Human must confirm an owned canonical Sepolia parent/registry, public owner/delegate addresses, funded testnet wallet authority and exact action budget. No signing secrets requested or extracted."
+      "status": "qualified",
+      "reason": "Dedicated testnet signer and conservative ETH/test-USDC caps authorized and used; canonical name owned and resolved.",
+      "evidence": "docs/handoffs/ens-qualification.json"
     },
     {
       "id": "combined-app",
@@ -49,12 +51,13 @@
     {
       "id": "public-release",
       "status": "blocked",
-      "reason": "Human track/pool/from-scratch eligibility, licensing/AI provenance review, public visibility/push and submission approval remain outstanding."
+      "reason": "Outside authorized technical qualification: no source push/public visibility, license change, mainnet/paid hosting, production inference, demo publication or hackathon submission. Testnet actions are separately authorized and documented."
     },
     {
       "id": "live-history-decision",
-      "status": "blocked",
-      "reason": "Local shared-History fixtures prove policy only; live indexed observations and provider decision require separately authorized integration evidence."
+      "status": "qualified",
+      "reason": "Canonical ENS provider and real loopback application quote are selected using hosted Graph History; HISTORY_UNKNOWN preserved and no assessment pass claimed.",
+      "evidence": "docs/handoffs/graph-studio-deployment.json"
     },
     {
       "id": "mycelium-execution",

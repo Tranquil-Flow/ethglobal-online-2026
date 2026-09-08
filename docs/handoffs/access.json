@@ -121,18 +121,20 @@
     },
     {
       "id": "live-wallet-payment",
-      "status": "blocked",
-      "reason": "No approved wallet credentials/funded testnet per-action budget or real Blocky402/Hedera transaction; user-approved wallet callback and actual consumed-service evidence required. Synthetic codec conformance is not settlement."
+      "status": "qualified",
+      "reason": "Actual SDK/client payment submission, reconciliation, receipt verification and same-job replay succeeded; no inference claim.",
+      "evidence": "docs/handoffs/hedera-qualification.json"
     },
     {
       "id": "live-graph-decision",
-      "status": "blocked",
-      "reason": "Needs approved deployed Graph-provider/index query with verifiable external handles driving a decision; only synthetic History DTO freshness was exercised. No ENSv2 or index deployment was performed."
+      "status": "qualified",
+      "reason": "Real application quote plus canonical ENS and hosted Graph adapters drive selection with HISTORY_UNKNOWN, without another payment.",
+      "evidence": "docs/handoffs/graph-studio-deployment.json"
     },
     {
       "id": "public-release",
       "status": "blocked",
-      "reason": "Human selection/approval of license, sponsor track eligibility, visibility/push/deploy/demo/submission remains outstanding. No public action is authorized by local-ready."
+      "reason": "Outside authorized technical qualification: no source push/public visibility, license change, mainnet/paid hosting, production inference, demo publication or hackathon submission. Testnet actions are separately authorized and documented."
     },
     {
       "id": "mycelium-execution",

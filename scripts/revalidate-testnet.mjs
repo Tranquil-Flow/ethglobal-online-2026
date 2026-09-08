@@ -56,6 +56,27 @@ try {
   const universal = artifact('UniversalResolverV2');
   const owner = await new Contract(universal.address, universal.abi, provider).findOwner('0x' + Buffer.from(packetToBytes(ens.name)).toString('hex'));
   assert.equal(owner.toLowerCase(), ens.owner.toLowerCase()); result.ensOwner = owner;
+  // Exercise the selection decision with a real application quote and the live
+  // ENS/Graph ports. This temporary loopback host cannot authorize a payment.
+  const { mkdtemp, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { generateKeyPairSync } = await import('node:crypto');
+  const { createSigner } = await import('../packages/core/src/index.mjs');
+  const { createRequest } = await import('../packages/access/src/index.mjs');
+  const { startTestnetPaymentQualification } = await import('../composition/qualification-payment.mjs');
+  const temporary = await mkdtemp(tmpdir() + '/ethonline-decision-');
+  let app;
+  try {
+    const keyId = 'read-only-decision';
+    app = await startTestnetPaymentQualification({ approval: 'hedera-testnet-live-settlement', dataDir: temporary, resourceUrl: found.endpoint + '/v1/jobs', signer: createSigner({ privateKey: generateKeyPairSync('ed25519').privateKey, keyId }), receiptKeyId: keyId, paymentAuthorizer: async () => { throw Error('READ_ONLY_QUALIFICATION'); }, paymentConfig: { mode: 'live', network: 'hedera:testnet', asset: '0.0.0', receiver: hedera.receiver, feePayer: hedera.feePayer, providerId: found.providerId, baseAmountBaseUnits: '1', perOutputTokenBaseUnits: '0', maxAmountBaseUnits: '1', maxTotalAmountBaseUnits: '1', facilitatorUrl: 'https://api.testnet.blocky402.com/', mirrorUrl: 'https://testnet.mirrornode.hedera.com/' } });
+    await app.client.connect();
+    const request = await createRequest({ providerId: found.providerId, profileId: app.profileId, prompt: 'Test-only quote qualification; no job submitted', maxOutputTokens: 8, seed: 0 });
+    const quote = await app.client.createQuote(request);
+    result.decision = await discovery.select({ providers: result.discovery.providers, quotes: [quote], profileId: app.profileId, network: 'hedera:testnet', asset: '0.0.0', maxAmountBaseUnits: '1' });
+    assert.equal(result.decision.selected?.providerId, found.providerId);
+    assert.ok(result.decision.reasons[0].codes.includes('HISTORY_UNKNOWN'));
+    assert.ok(!result.decision.reasons[0].codes.includes('OBSERVED_PASS_NOT_PROOF'));
+  } finally { await app?.close(); await rm(temporary, { recursive: true, force: true }); }
   result.totalSepoliaFeesWei = String(result.transactions.reduce((sum, t) => sum + BigInt(t.feeWei), 0n));
   result.status = 'passed'; result.completedAt = new Date().toISOString();
   fs.mkdirSync(new URL('../artifacts/closeout/', import.meta.url), { recursive: true });

@@ -116,7 +116,7 @@
     {
       "id": "public-release",
       "status": "blocked",
-      "reason": "Human license, visibility/push, eligibility, deployment/funding and final submission approvals are pending; no public actions or spending performed.",
+      "reason": "Outside authorized technical qualification: no source push/public visibility, license change, mainnet/paid hosting, production inference, demo publication or hackathon submission. Testnet actions are separately authorized and documented.",
       "evidence": "docs/handoffs/core.md"
     }
   ],

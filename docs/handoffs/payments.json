@@ -303,13 +303,15 @@
   "externalGates": [
     {
       "id": "hedera-blocky402-live-payment",
-      "status": "blocked",
-      "reason": "No approval for funded testnet settlement or provisioned live wallet/service adapter. Local SDK/facilitator/mirror fixtures and read-only supported discovery are not live payment evidence."
+      "status": "qualified",
+      "reason": "Two actual bounded Blocky402/Hedera settlements consumed successful non-inference jobs; delayed confirmations and same-job replays reconciled without another signature.",
+      "evidence": "docs/handoffs/hedera-qualification.json"
     },
     {
       "id": "funded-wallet-approval",
-      "status": "blocked",
-      "reason": "Fresh user authorization, funded testnet wallet, receiver, explicit per-action cap and operator wallet callback are required. No credentials searched or funds spent."
+      "status": "qualified",
+      "reason": "Dedicated owner-authorized funded testnet identities and explicit per-action/total caps were used.",
+      "evidence": "docs/handoffs/hedera-qualification.json"
     },
     {
       "id": "combined-app",
@@ -320,17 +322,17 @@
     {
       "id": "public-release",
       "status": "blocked",
-      "reason": "Human license selection, sponsor/from-scratch eligibility, public visibility/push/deployment/demo/submission approval remain outstanding."
+      "reason": "Outside authorized technical qualification: no source push/public visibility, license change, mainnet/paid hosting, production inference, demo publication or hackathon submission. Testnet actions are separately authorized and documented."
     },
     {
       "id": "live-refund",
-      "status": "blocked",
-      "reason": "A real refund requires a separately authorized reverse transfer and matching mirror evidence. Local refund state tests do not qualify it; package never sends refunds."
+      "status": "inapplicable",
+      "reason": "Not part of this bounded receipt-payment/ENS/Graph qualification; no live refund or optional HCS publication is claimed."
     },
     {
       "id": "optional-hcs",
-      "status": "blocked",
-      "reason": "Optional live HCS publication requires provisioned topic, consent, funded wallet, total/custom-fee budget approval and consensus receipt. Only native dry-run serialization was performed."
+      "status": "inapplicable",
+      "reason": "Not part of this bounded receipt-payment/ENS/Graph qualification; no live refund or optional HCS publication is claimed."
     },
     {
       "id": "mycelium-execution",

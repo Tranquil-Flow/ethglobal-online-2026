@@ -1,21 +1,21 @@
 {
   "lane": "indexing",
   "status": "local_ready",
-  "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
+  "codeRevision": "c59a71579aaa7d8cd131dfe4ae265aeaba4c8293",
   "reviewContract": "handoff-review-v1",
   "commands": [
     {
       "id": "indexing-check",
       "command": "npm --prefix packages/indexing run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "artifacts/closeout/final-indexing-check.log",
       "localLog": "artifacts/closeout/fresh-a4b48df-indexing-check.log"
     },
     {
       "id": "indexing-smoke",
       "command": "npm --prefix packages/indexing run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "artifacts/closeout/final-indexing-smoke.log",
       "localLog": "artifacts/closeout/fresh-a4b48df-indexing-smoke.log"
     },
     {
@@ -97,18 +97,21 @@
     },
     {
       "id": "graph-live-provider",
-      "status": "blocked",
-      "reason": "Needs approved actual live Graph endpoint/deployment, designated credential source, fresh observations and meaningful combined client decision."
+      "status": "qualified",
+      "reason": "Hosted Graph ingested the exact consented receipt. RPC-backed 12-confirmation History is fresh; actual live ENS/Graph ports plus loopback application quote drive a selection with HISTORY_UNKNOWN, not inference proof.",
+      "evidence": "docs/handoffs/graph-studio-deployment.json"
     },
     {
       "id": "registry-testnet-deploy",
-      "status": "blocked",
-      "reason": "Needs explicit funded Sepolia deployment/signing approval and per-action budget with real address/transaction/code-hash/start-block receipts."
+      "status": "qualified",
+      "reason": "Existing approved Sepolia deployment retained and runtime hash/publisher/mode revalidated; no duplicate deployment.",
+      "evidence": "docs/handoffs/testnet-deployments.json"
     },
     {
       "id": "deployment-credentials-approval",
-      "status": "blocked",
-      "reason": "No designated deployment/query credentials or funded-wallet authorization; no keys were extracted or unrelated credentials reused."
+      "status": "qualified",
+      "reason": "Owner-authorized dedicated testnet funds and free Graph Studio session used; deploy key stayed in dedicated private state.",
+      "evidence": "docs/handoffs/graph-studio-deployment.json"
     },
     {
       "id": "combined-app",
@@ -119,7 +122,7 @@
     {
       "id": "public-release",
       "status": "blocked",
-      "reason": "Human license, sponsor eligibility, visibility/push approval, dependency/security review and truthful demo/submission remain unapproved."
+      "reason": "Outside authorized technical qualification: no source push/public visibility, license change, mainnet/paid hosting, production inference, demo publication or hackathon submission. Testnet actions are separately authorized and documented."
     }
   ],
   "contractRequests": [],
