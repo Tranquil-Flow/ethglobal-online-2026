@@ -1,0 +1,28 @@
+{
+  "project": "ethonline-sepolia-receipts",
+  "studioUrl": "https://thegraph.com/studio/subgraph/ethonline-sepolia-receipts",
+  "queryUrl": "https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.1.0",
+  "version": "v0.1.0",
+  "deploymentId": "QmYqnKTZb8fHcwqNaQ18Bt3Y5eH8VCm8ThEYjChXntEcVw",
+  "observedMeta": {
+    "deployment": "QmYqnKTZb8fHcwqNaQ18Bt3Y5eH8VCm8ThEYjChXntEcVw",
+    "hasIndexingErrors": false,
+    "block": {
+      "number": 11660389,
+      "hash": "0xc99904f96a31ac0985a428b7b71751d5ca1b4c9a7840a97c783fd73058a0139e"
+    }
+  },
+  "deployment": {
+    "mode": "live",
+    "chainId": 11155111,
+    "network": "sepolia",
+    "startBlock": 11660194,
+    "address": "0x9fd43D7b41c82406A776b700702EEA3813ac426A",
+    "publisher": "0xb4f0b42fbB0fCAf62703475039A7E26EF6dD5EaE",
+    "codeHash": "0xf77feb2f6bf2c331cc0151fb3f5a134410a223745e7df4ead4a51b83e3727821",
+    "confirmations": 12
+  },
+  "deploymentExitCode": 0,
+  "initialPythonQuery": "HTTP 403; subsequent Node fetch HTTP 200",
+  "qualification": "Hosted deployment and metadata query verified; event ingestion and application consumption not yet qualified"
+}
