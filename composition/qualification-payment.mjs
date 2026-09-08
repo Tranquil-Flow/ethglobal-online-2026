@@ -65,7 +65,7 @@ function privateDirectory(dataDir) {
 function httpsResourceIdentity(value) {
   try {
     const url = new URL(value);
-    if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash)
+    if (url.protocol !== "https:" || url.pathname !== "/v1/jobs" || url.username || url.password || url.search || url.hash)
       throw Error();
     return url.href.replace(/\/$/, "");
   } catch {
@@ -88,6 +88,7 @@ export async function startTestnetPaymentQualification({
   signer,
   receiptKeyId,
   paymentAuthorizer,
+  eventSink,
   profile = NON_INFERENCE_PROFILE,
   executor = createUtf8CountNonInferenceExecutor(),
   ...unknown
@@ -149,10 +150,19 @@ export async function startTestnetPaymentQualification({
       signer,
       executor,
       payments,
+      eventSink,
     });
     const { url } = await app.listen({ host: "127.0.0.1", port });
+    const origin = new URL(identity).origin;
     const client = createClient({
-      baseUrl: url,
+      baseUrl: origin,
+      // The protocol identity is HTTPS; this qualification-only transport maps
+      // that one pinned origin to loopback. Never forward to public networking.
+      fetch: (target, options) => {
+        const parsed = new URL(target);
+        if (parsed.origin !== origin) throw Error("QUALIFICATION_ORIGIN_MISMATCH");
+        return fetch(url + parsed.pathname + parsed.search, options);
+      },
       paymentAuthorizer,
       pins: {
         providerId: paymentConfig.providerId,

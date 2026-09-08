@@ -52,6 +52,7 @@ test("UTF8-count executor is deterministic and explicitly not inference", async 
 test("real createApp, PaymentsPort and access SDK quote path stays loopback", async () => {
   const dataDir = await mkdtemp(join(tmpdir(), "qualification-payment-"));
   let app;
+  let walletCalls = 0;
   try {
     app = await startTestnetPaymentQualification({
       approval: "hedera-testnet-live-settlement",
@@ -61,7 +62,8 @@ test("real createApp, PaymentsPort and access SDK quote path stays loopback", as
       paymentConfig,
       signer: receiptSigner(),
       receiptKeyId: "qualification-test-receipt-key",
-      paymentAuthorizer: async () => null,
+      eventSink: { publish: async () => ({ status: "unavailable" }) },
+      paymentAuthorizer: async () => { walletCalls++; throw new Error("LOCAL_WALLET_DECLINED"); },
     });
     assert.equal(new URL(app.url).hostname, "127.0.0.1");
     assert.equal(app.resourceUrl, "https://qualification.example.invalid/v1/jobs");
@@ -78,6 +80,14 @@ test("real createApp, PaymentsPort and access SDK quote path stays loopback", as
     assert.equal(quote.mode, "live");
     assert.equal(quote.network, "hedera:testnet");
     assert.equal(quote.amountBaseUnits, "1");
+    // A local wallet rejection must be reached without HTTPS network traffic.
+    // SDK translates callback failures to NETWORK_ERROR, but must not reject
+    // the pinned resource challenge before asking the wallet.
+    await assert.rejects(app.client.submitJob({
+      request, quoteId: quote.quoteId, idempotencyKey: "qualification-decline",
+      authorization: { maxAmountBaseUnits: "1", asset: "0.0.0", network: "hedera:testnet" },
+    }), error => error.code === "NETWORK_ERROR");
+    assert.equal(walletCalls, 1);
   } finally {
     await app?.close();
     await rm(dataDir, { recursive: true, force: true });

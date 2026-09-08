@@ -1,0 +1,35 @@
+{
+  "network": "hedera:testnet",
+  "payer": "0.0.10419268",
+  "receiver": "0.0.10419316",
+  "feePayer": "0.0.7162784",
+  "totalPaidTinybars": "2",
+  "totalLimitTinybars": "10",
+  "runs": [
+    {
+      "transactionId": "0.0.7162784@1788862682.819285020",
+      "executionStatus": "succeeded",
+      "paymentStatus": "settled",
+      "jobId": "f4217cc1-6a10-4bde-9680-66d73df30354",
+      "receiptDigest": "sha256:ef72b3c875fa9cb90668093182f2fa7cb55e62bb573d8704c1d096111f941545",
+      "publishConsent": false,
+      "amountTinybars": "1",
+      "replaySameJob": true
+    },
+    {
+      "transactionId": "0.0.7162784@1788863010.583285593",
+      "executionStatus": "succeeded",
+      "paymentStatus": "settled",
+      "jobId": "a1ae0a26-b63a-4487-8156-90ca3e6bc672",
+      "receiptDigest": "sha256:3b205094f9aeffbe1a73e4177d1a0d8404717be6814b9a7561327eb5d52a0729",
+      "publishConsent": true,
+      "amountTinybars": "1",
+      "replaySameJob": true
+    }
+  ],
+  "serviceKind": "deterministic-noninference",
+  "inferenceVerified": false,
+  "recovery": "Initial requests returned PAYMENT_UNAVAILABLE while mirror confirmation was pending. Both SUCCESS transfers were independently verified, then original requests reconciled without new signing or payment. Failed logs retained.",
+  "evidenceDirectory": "artifacts/closeout",
+  "privateEvidence": "~/.ethonline-testnet/qualification-payment{,-public}-v1"
+}
