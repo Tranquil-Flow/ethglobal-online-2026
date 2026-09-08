@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "codeRevision": "5c76af329661fab1a2e237c2b9b328db49c4b131",
+  "priorPackageRevision": "612257c5c124403c576e91dc9ba58acebbbf4254",
+  "inheritance": "core/payments/discovery/indexing and contracts byte equality checked with git diff --exit-code; access and combined composition freshly exercised at codeRevision.",
+  "commands": [
+    {
+      "name": "contracts-check",
+      "command": "npm --prefix packages/contracts run check",
+      "exitCode": 0,
+      "log": "artifacts/closeout/workbench-code-contracts-check.log",
+      "sha256": "d5109f8571d913d6d7562f4e75226bdbb8059389fac6d23d91a9096b00dbf430"
+    },
+    {
+      "name": "core-check",
+      "command": "npm --prefix packages/core run check",
+      "exitCode": 0,
+      "log": "artifacts/closeout/workbench-code-core-check.log",
+      "sha256": "601f2bb8bb8041d31d90940a17444e63f4d36f832fd5c4273610deddd041aa32"
+    },
+    {
+      "name": "core-smoke",
+      "command": "npm --prefix packages/core run smoke",
+      "exitCode": 0,
+      "log": "artifacts/closeout/workbench-code-core-smoke.log",
+      "sha256": "88cc2c7bcc366ef8650887037a5b0f114e4128ecc80ec818c3587c86042edffb"
+    },
+    {
+      "name": "payments-check",
+      "command": "npm --prefix packages/payments run check",
+      "exitCode": 0,
+      "log": "artifacts/closeout/workbench-code-payments-check.log",
+      "sha256": "a3c2805f3e643943b7b4aedf780a911f2af7c9399bca59c83e21edea6d8160ff"
+    },
+    {
+      "name": "payments-smoke",
+      "command": "npm --prefix packages/payments run smoke",
+      "exitCode": 0,
+      "log": "artifacts/closeout/workbench-code-payments-smoke.log",
+      "sha256": "84fc04895e42bb8cc6c5b0fafa2049076fe7a5f7892aa08d1099e727ce160039"
+    },
+    {
+      "name": "discovery-check",
+      "command": "npm --prefix packages/discovery run check",
+      "exitCode": 0,
+      "log": "artifacts/closeout/workbench-code-discovery-check.log",
+      "sha256": "a146819d1d34a7a50411e9b21e74e76265e30810650babd606c9cac7e6ceeb7b"
+    },
+    {
+      "name": "discovery-smoke",
+      "command": "npm --prefix packages/discovery run smoke",
+      "exitCode": 0,
+      "log": "artifacts/closeout/workbench-code-discovery-smoke.log",
+      "sha256": "6c01ed33d92141c3b4f375e70c77d84fb00709a52529b293357ba5319a790623"
+    },
+    {
+      "name": "indexing-check",
+      "command": "npm --prefix packages/indexing run check",
+      "exitCode": 0,
+      "log": "artifacts/closeout/workbench-code-indexing-check.log",
+      "sha256": "b87b5d5de4d4ece23200a53d32689fef01570545ffea7d188a44e87f903da7b1"
+    },
+    {
+      "name": "indexing-smoke",
+      "command": "npm --prefix packages/indexing run smoke",
+      "exitCode": 0,
+      "log": "artifacts/closeout/workbench-code-indexing-smoke.log",
+      "sha256": "69821b2ae4e64d1c96f3e6678a44ab0f6f5eed3cfd0f12c2d9906b338c89357f"
+    },
+    {
+      "name": "access-check",
+      "command": "npm --prefix packages/access run check",
+      "exitCode": 0,
+      "log": "artifacts/closeout/workbench-access-final-check.log",
+      "sha256": "99cab0d5ca1aeac6b49a5ae20ab0551ea563a97ad11a168bee4db9e07ccdddd0"
+    },
+    {
+      "name": "access-smoke",
+      "command": "npm --prefix packages/access run smoke",
+      "exitCode": 0,
+      "log": "artifacts/closeout/workbench-access-final-smoke.log",
+      "sha256": "8c0e21766ac4727bd30a079fd3441741fa16bd1f7e9375df320fcec6abd5b6ba"
+    },
+    {
+      "name": "integration",
+      "command": "npm run smoke:integration",
+      "exitCode": 0,
+      "log": "artifacts/closeout/workbench-code-final-integration.log",
+      "sha256": "106d925c8923b43563512fd9e7b1f7f71a6362daa7f070069318d24d391244e1"
+    }
+  ],
+  "integration": {
+    "tests": 38,
+    "passed": 38,
+    "failed": 0,
+    "skipped": 0
+  },
+  "scope": "Local simulator and real local ENS/EVM/Graph; no real inference, public exposure or final fresh-checkout claim."
+}

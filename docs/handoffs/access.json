@@ -1,7 +1,7 @@
 {
   "lane": "access",
   "status": "local_ready",
-  "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
+  "codeRevision": "5c76af329661fab1a2e237c2b9b328db49c4b131",
   "historicalLaneCodeRevision": "4e15d0c4abc501a3cdb235c787352bba7023ba01",
   "integrationEvidence": "docs/handoffs/integration.md",
   "commands": [
@@ -9,22 +9,22 @@
       "id": "access-check",
       "command": "npm --prefix packages/access run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-access-check.log"
+      "evidence": "docs/handoffs/workbench-code-verification.json",
+      "localLog": "artifacts/closeout/workbench-access-final-check.log"
     },
     {
       "id": "access-smoke",
       "command": "npm --prefix packages/access run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-access-smoke.log"
+      "evidence": "docs/handoffs/workbench-code-verification.json",
+      "localLog": "artifacts/closeout/workbench-access-final-smoke.log"
     },
     {
       "id": "composition",
       "command": "npm run smoke:integration",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-integration.log"
+      "evidence": "docs/handoffs/workbench-code-verification.json",
+      "localLog": "artifacts/closeout/workbench-code-final-integration.log"
     }
   ],
   "acceptance": [
@@ -243,5 +243,33 @@
       "Require publicKeyJwk/providerId/keyId pins; wire explicit pins through CLI/viewer",
       "Explicit revoke discards local capability on401; revoked false, localForgotten true"
     ]
-  }
+  },
+  "verificationHistory": [
+    {
+      "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
+      "commands": [
+        {
+          "id": "access-check",
+          "command": "npm --prefix packages/access run check",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/closeout-current.md",
+          "localLog": "artifacts/closeout/fresh-a4b48df-access-check.log"
+        },
+        {
+          "id": "access-smoke",
+          "command": "npm --prefix packages/access run smoke",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/closeout-current.md",
+          "localLog": "artifacts/closeout/fresh-a4b48df-access-smoke.log"
+        },
+        {
+          "id": "composition",
+          "command": "npm run smoke:integration",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/closeout-current.md",
+          "localLog": "artifacts/closeout/fresh-a4b48df-integration.log"
+        }
+      ]
+    }
+  ]
 }

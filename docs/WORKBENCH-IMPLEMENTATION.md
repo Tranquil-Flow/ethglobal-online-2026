@@ -25,8 +25,8 @@ No Mycelium/Gas Killer/model/fleet operation, bonds, slashing, bounty market or 
 - [x] HTTP/SDK/CLI/MCP/browser exercise the same retained jobs, replay and privacy controls.
 - [x] Local TLS proxy topology, readiness, outage/shutdown, resource bounds and backup/restore.
 - [x] Compatibility, missing-live-runtime and mode-isolation negative gates.
-- [ ] Reviewed source, current lane handoffs, clean candidate: setup/check:all/integration + 3 repeats.
-- [ ] Read-only existing testnet replay; exact evidence and precise remaining runtime/exposure gates.
+- Final gate: reviewed source, current lane handoffs, clean candidate; setup/check:all/integration + 3 repeats.
+- Final gate: read-only existing testnet replay; exact evidence and precise remaining runtime/exposure gates.
 
 ## Evidence and remaining closure
 
@@ -36,8 +36,10 @@ real local ENS/registry/Graph and actual HTTP/SDK/CLI/MCP/Chromium, including re
 jobs and publication reconstruction. Runtime tests cover replay faults and commitments.
 Historical RED and GREEN logs remain in artifacts/closeout/workbench-*.log.
 
-Final-candidate closure is still pending until the last two boxes are checked. Prior
-package or targeted successes do not substitute for fresh-checkout aggregate gates.
+Final gate outcomes are resolved by `artifacts/closeout/workbench-final-verification.json`,
+which must report passed and bind the exact candidate. Missing, failed or revision-mismatched
+evidence means unqualified. Prior package or targeted successes do not substitute for
+fresh-checkout aggregate gates.
 No public source/service exposure or real Mycelium qualification is claimed.
 
 ## Ownership

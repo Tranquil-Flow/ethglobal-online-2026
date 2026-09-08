@@ -1,29 +1,29 @@
 {
   "lane": "core",
   "status": "local_ready",
-  "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
+  "codeRevision": "5c76af329661fab1a2e237c2b9b328db49c4b131",
   "reviewContract": "handoff-review-v1",
   "commands": [
     {
       "id": "core-check",
       "command": "npm --prefix packages/core run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-core-check.log"
+      "evidence": "docs/handoffs/workbench-code-verification.json",
+      "localLog": "artifacts/closeout/workbench-code-core-check.log"
     },
     {
       "id": "core-smoke",
       "command": "npm --prefix packages/core run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-core-smoke.log"
+      "evidence": "docs/handoffs/workbench-code-verification.json",
+      "localLog": "artifacts/closeout/workbench-code-core-smoke.log"
     },
     {
       "id": "composition",
       "command": "npm run smoke:integration",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-integration.log"
+      "evidence": "docs/handoffs/workbench-code-verification.json",
+      "localLog": "artifacts/closeout/workbench-code-final-integration.log"
     }
   ],
   "acceptanceCases": [
@@ -127,5 +127,33 @@
     "platform": "darwin",
     "arch": "arm64"
   },
-  "documentationRevisionNote": "Previous handoff preserved in archive/pre-closeout-core.json. Current package check/smoke and combined integration executed in a fresh owned checkout of codeRevision."
+  "documentationRevisionNote": "Previous handoff preserved in archive/pre-closeout-core.json. Current package check/smoke and combined integration executed in a fresh owned checkout of codeRevision.",
+  "verificationHistory": [
+    {
+      "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
+      "commands": [
+        {
+          "id": "core-check",
+          "command": "npm --prefix packages/core run check",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/closeout-current.md",
+          "localLog": "artifacts/closeout/fresh-a4b48df-core-check.log"
+        },
+        {
+          "id": "core-smoke",
+          "command": "npm --prefix packages/core run smoke",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/closeout-current.md",
+          "localLog": "artifacts/closeout/fresh-a4b48df-core-smoke.log"
+        },
+        {
+          "id": "composition",
+          "command": "npm run smoke:integration",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/closeout-current.md",
+          "localLog": "artifacts/closeout/fresh-a4b48df-integration.log"
+        }
+      ]
+    }
+  ]
 }

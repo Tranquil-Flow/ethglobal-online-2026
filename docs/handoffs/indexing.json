@@ -1,29 +1,29 @@
 {
   "lane": "indexing",
   "status": "local_ready",
-  "codeRevision": "c59a71579aaa7d8cd131dfe4ae265aeaba4c8293",
+  "codeRevision": "5c76af329661fab1a2e237c2b9b328db49c4b131",
   "reviewContract": "handoff-review-v1",
   "commands": [
     {
       "id": "indexing-check",
       "command": "npm --prefix packages/indexing run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/indexing.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-indexing-check.log"
+      "evidence": "docs/handoffs/workbench-code-verification.json",
+      "localLog": "artifacts/closeout/workbench-code-indexing-check.log"
     },
     {
       "id": "indexing-smoke",
       "command": "npm --prefix packages/indexing run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/indexing.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-indexing-smoke.log"
+      "evidence": "docs/handoffs/workbench-code-verification.json",
+      "localLog": "artifacts/closeout/workbench-code-indexing-smoke.log"
     },
     {
       "id": "composition",
       "command": "npm run smoke:integration",
       "exitCode": 0,
-      "evidence": "docs/handoffs/closeout-current.md",
-      "localLog": "artifacts/closeout/fresh-a4b48df-integration.log"
+      "evidence": "docs/handoffs/workbench-code-verification.json",
+      "localLog": "artifacts/closeout/workbench-code-final-integration.log"
     }
   ],
   "acceptanceCases": [
@@ -138,5 +138,33 @@
     "platform": "darwin",
     "arch": "arm64"
   },
-  "documentationRevisionNote": "Previous handoff preserved in archive/pre-closeout-indexing.json. Current package check/smoke and combined integration executed in a fresh owned checkout of codeRevision."
+  "documentationRevisionNote": "Previous handoff preserved in archive/pre-closeout-indexing.json. Current package check/smoke and combined integration executed in a fresh owned checkout of codeRevision.",
+  "verificationHistory": [
+    {
+      "codeRevision": "c59a71579aaa7d8cd131dfe4ae265aeaba4c8293",
+      "commands": [
+        {
+          "id": "indexing-check",
+          "command": "npm --prefix packages/indexing run check",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/indexing.md",
+          "localLog": "artifacts/closeout/fresh-a4b48df-indexing-check.log"
+        },
+        {
+          "id": "indexing-smoke",
+          "command": "npm --prefix packages/indexing run smoke",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/indexing.md",
+          "localLog": "artifacts/closeout/fresh-a4b48df-indexing-smoke.log"
+        },
+        {
+          "id": "composition",
+          "command": "npm run smoke:integration",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/closeout-current.md",
+          "localLog": "artifacts/closeout/fresh-a4b48df-integration.log"
+        }
+      ]
+    }
+  ]
 }
