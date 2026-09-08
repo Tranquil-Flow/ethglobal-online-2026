@@ -2,6 +2,7 @@ import {digestOf,validate} from '../../contracts/index.mjs';
 import {validateEvent,digest,failure,deadline,bounded,checkAbort,modes,outcomes} from './common.mjs';
 import {validateDeployment} from './config.mjs';
 const META=`query IndexHead { _meta { deployment hasIndexingErrors block { number hash timestamp } } }`;
+const STABLE_META=`query StableHead($block: Bytes!) { _meta(block: {hash: $block}) { deployment hasIndexingErrors block { number hash timestamp } } }`;
 export const PROVIDER_QUERY=`query ProviderHistory($provider: Bytes!, $block: Bytes!, $limit: Int!) {
  _meta(block: {hash: $block}) { deployment hasIndexingErrors block { number hash timestamp } }
  assessmentClaims(first: $limit, orderBy: blockNumber, orderDirection: desc, where: {providerKey: $provider}, block: {hash: $block}) {
@@ -53,11 +54,16 @@ function historyConfig(config){
  if(config.deployment){c.deployment=validateDeployment(config.deployment);if(String(c.deployment.chainId)!==String(c.chainId)||c.deployment.mode!==c.mode||typeof c.deploymentId!=='string'||!c.deploymentId.length||c.deploymentId.length>256)throw failure('INVALID_HISTORY_CONFIG');}
  return c;
 }
-export function createHistory({config,client}={}){
+export function createHistory({config,client,provider}={}){
  const c=historyConfig(config||{mode:'development',chainId:'31337'});
- return {async getHistory({providerId,signal}){return (await queryProviderHistory({config:c,client,providerId,signal})).history;}};
+ return {async getHistory({providerId,signal}){return (await queryProviderHistory({config:c,client,provider,providerId,signal})).history;}};
 }
-export async function queryProviderHistory({config,client,providerId,signal}){
+function sameHash(a,b){return typeof a==='string'&&typeof b==='string'&&a.toLowerCase()===b.toLowerCase();}
+function canonicalBlock(block,number){
+ if(!block||block.number!==number||!/^0x[0-9a-f]{64}$/i.test(block.hash)||!Number.isSafeInteger(block.timestamp))throw failure('INVALID_INDEX');
+ return block;
+}
+export async function queryProviderHistory({config,client,provider,providerId,signal}){
  const c=historyConfig(config);checkAbort(signal);
  if(typeof providerId!=='string'||providerId.length<1||providerId.length>256)throw failure('INVALID_PROVIDER');
  const now=Date.now(),history={version:'1',providerId,observations:[],freshness:'unavailable',chainId:String(c.chainId),observedAt:new Date(now).toISOString(),mode:c.mode};
@@ -65,12 +71,27 @@ export async function queryProviderHistory({config,client,providerId,signal}){
  if(client&&c.deployment){
   const sig=deadline(signal,c.timeoutMs);
   try{
+   if(provider){
+    if(typeof provider.send!=='function'||typeof provider.getBlock!=='function')throw failure('INVALID_INDEX');
+    const chainId=await bounded(provider.send('eth_chainId',[]),sig);
+    let actual;try{actual=BigInt(chainId).toString();}catch{throw failure('INVALID_INDEX');}
+    if(actual!==String(c.chainId))throw failure('CHAIN_MISMATCH');
+   }
    let meta=(await bounded(client.query({query:META,signal:sig}),sig))._meta;
    if(!meta||meta.hasIndexingErrors!==false||meta.deployment!==c.deploymentId||!Number.isSafeInteger(meta.block?.number)||meta.block.number<c.deployment.startBlock||!/^0x[0-9a-f]{64}$/i.test(meta.block.hash)||!Number.isSafeInteger(meta.block.timestamp)||meta.block.timestamp*1000>now+30000)throw failure('INVALID_INDEX');
+   if(provider){
+    const head=canonicalBlock(await bounded(provider.getBlock(meta.block.number),sig),meta.block.number);
+    if(!sameHash(head.hash,meta.block.hash)||head.timestamp!==meta.block.timestamp)throw failure('INVALID_INDEX');
+   }
    if(c.deployment.confirmations>1){
     const number=meta.block.number-c.deployment.confirmations+1;
     if(number<c.deployment.startBlock)throw failure('INDEX_CONFIRMATIONS_PENDING');
-    const stable=(await bounded(client.query({query:'query StableHead($number: Int!) { _meta(block: {number: $number}) { deployment hasIndexingErrors block { number hash timestamp } } }',variables:{number},signal:sig}),sig))._meta;
+    let stable;
+    if(provider){
+     const block=canonicalBlock(await bounded(provider.getBlock(number),sig),number);
+     stable=(await bounded(client.query({query:STABLE_META,variables:{block:block.hash},signal:sig}),sig))._meta;
+     if(!stable?.block||!sameHash(stable.block.hash,block.hash)||stable.block.timestamp!==block.timestamp)throw failure('INVALID_INDEX');
+    }else stable=(await bounded(client.query({query:'query StableHead($number: Int!) { _meta(block: {number: $number}) { deployment hasIndexingErrors block { number hash timestamp } } }',variables:{number},signal:sig}),sig))._meta;
     if(stable?.deployment!==meta.deployment||stable.hasIndexingErrors!==false||stable.block?.number!==number||!/^0x[0-9a-f]{64}$/i.test(stable.block.hash)||!Number.isSafeInteger(stable.block.timestamp)||stable.block.timestamp>meta.block.timestamp)throw failure('INVALID_INDEX');
     meta=stable;
    }

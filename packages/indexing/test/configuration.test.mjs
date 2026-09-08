@@ -20,10 +20,12 @@ const base={
 };
 
 test('safe adapter composition requires explicit provider/deployment pins and keeps credentials injected',()=>{
-  const adapters=createIndexingAdapters({config:base,graphToken:'synthetic-token'});
+  const provider={send(){},getBlock(){}};
+  const adapters=createIndexingAdapters({config:base,graphToken:'synthetic-token',provider});
   assert.equal(typeof adapters.history.getHistory,'function');
   assert.equal(typeof adapters.eventSink.publish,'function');
   assert.equal(Object.hasOwn(adapters,'graphToken'),false);
+  assert.equal(Object.hasOwn(adapters,'provider'),false);
   for(const changed of [
     {...base,graph:{...base.graph,endpoint:'https://user:credential@example.invalid'}},
     {...base,graph:{...base.graph,deploymentId:''}},
