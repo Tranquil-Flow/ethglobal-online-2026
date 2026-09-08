@@ -9,7 +9,7 @@ const allowed=(value,keys)=>value&&typeof value==='object'&&!Array.isArray(value
  * Build the indexing lane's injectable ports from one explicit operator configuration.
  * This constructor does not read environment variables, open listeners, or broadcast.
  */
-export function createIndexingAdapters({config,graphToken,fetch,signer,store}={}){
+export function createIndexingAdapters({config,graphToken,fetch,signer,store,provider}={}){
  if(!allowed(config,['deployment','graph','publication','approvedLiveRead','approvedLiveWrite']))throw failure('INVALID_INDEXING_CONFIG');
  let deployment;
  try{deployment=validateDeployment(config.deployment);}catch{throw failure('INVALID_INDEXING_CONFIG');}
@@ -23,7 +23,7 @@ export function createIndexingAdapters({config,graphToken,fetch,signer,store}={}
  let client,history,eventSink;
  try{
   client=createGraphClient({endpoint:graph.endpoint,token:graphToken,fetch,allowLocal:deployment.mode==='development',maxBytes:graph.maxBytes});
-  history=createHistory({config:{mode:deployment.mode,chainId:String(deployment.chainId),deployment,deploymentId:graph.deploymentId,maxAgeMs:graph.maxAgeMs,limit:graph.limit,timeoutMs:graph.timeoutMs,trustedVerifiers:graph.trustedVerifiers},client});
+  history=createHistory({config:{mode:deployment.mode,chainId:String(deployment.chainId),deployment,deploymentId:graph.deploymentId,maxAgeMs:graph.maxAgeMs,limit:graph.limit,timeoutMs:graph.timeoutMs,trustedVerifiers:graph.trustedVerifiers},client,provider});
   eventSink=createEventSink({config:{...publication,deployment},signer,store});
  }catch(error){
   if(error?.code==='LIVE_READ_APPROVAL_REQUIRED'||error?.code==='LIVE_WRITE_APPROVAL_REQUIRED')throw error;
