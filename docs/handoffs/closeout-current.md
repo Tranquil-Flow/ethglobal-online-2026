@@ -1,4 +1,27 @@
-# Current local closeout evidence
+# Current external qualification closeout
+
+The authorized Hedera/Blocky402, canonical ENSv2 Sepolia and free hosted Graph
+technical qualification is complete. `external-qualification.md`,
+`hedera-qualification.json`, `ens-qualification.json` and
+`graph-studio-deployment.json` retain public transaction and consumption evidence.
+The exact final candidate, clean-worktree checks, seven command exits and log hashes
+are in `artifacts/closeout/external-final-verification.json`. Reproduce external
+reads and the non-paying loopback quote decision with
+`node scripts/revalidate-testnet.mjs`; this command never loads transaction keys.
+
+The first fresh attempt failed because all three required pinned Docker images
+were absent. Its original receipts/logs are preserved under
+`artifacts/closeout/external-final-attempt-1/`. The registry manifests established
+315,164,663 compressed download bytes; only those exact images were restored.
+The unchanged candidate then passed setup, check:all, separate integration smoke,
+three repeat smokes and external revalidation. No tests were skipped or relaxed,
+and unrelated containers/volumes were not modified.
+
+This proves testnet integrations and deterministic non-inference consumption, not
+public inference hosting, inference correctness, sponsor eligibility or submission.
+No source push, paid hosting, mainnet or Mycelium/Gas Killer operation occurred.
+
+## Historical local-only closeout evidence
 
 Tested code revision: `a4b48df9af9bb291d23a877661499132570293ef`.
 Fresh owned checkout: `ethglobal-online-2026-verify-a4b48df`.
