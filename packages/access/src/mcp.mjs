@@ -143,6 +143,53 @@ export function createAccessMcp({ client, allowDevelopmentPayment = false }) {
       return { events };
     },
   );
+  register(
+    "access_inspect",
+    "Read one retained job; execution, payment and assessment are separate.",
+    { jobId: text },
+    (a) => client.getJob(a.jobId),
+  );
+  register(
+    "access_receipt",
+    "Read signed receipt; retrieval alone does not establish key trust or execution correctness.",
+    { jobId: text },
+    (a) => client.getReceipt(a.jobId),
+  );
+  register(
+    "access_publication",
+    "Read consent and retained publication delivery states; no publishing.",
+    { jobId: text },
+    (a) => client.getPublication(a.jobId),
+  );
+  register(
+    "access_assessments",
+    "Read separate retained assessments.",
+    { jobId: text },
+    (a) => client.listAssessments(a.jobId),
+  );
+  register(
+    "access_assess",
+    "Explicitly request the configured assessor to replay authorized private evidence. May publish the assessment only if the original job consented; does not authorize another payment.",
+    { jobId: text, method: text, idempotencyKey: text },
+    (a) => client.createAssessment(a.jobId, a.method, a.idempotencyKey),
+    false,
+  );
+  register(
+    "access_export",
+    "Explicitly export PRIVATE evidence; requires caller-pinned provider key. Contains original private request/output.",
+    { jobId: text },
+    (a) => client.getEvidence(a.jobId),
+  );
+  register(
+    "access_delete_evidence",
+    "Explicitly delete private evidence. Receipts, downloaded copies and public commitments remain.",
+    { jobId: text, confirm: z.literal(true) },
+    async (a) => {
+      await client.deleteEvidence(a.jobId);
+      return { privateEvidenceDeleted: true, publicCommitmentsErased: false };
+    },
+    false,
+  );
   return server;
 }
 if (

@@ -87,11 +87,7 @@
                 "maxLength": 2048
               }
             },
-            "required": [
-              "role",
-              "digest",
-              "uri"
-            ],
+            "required": ["role", "digest", "uri"],
             "additionalProperties": false
           },
           "maxItems": 128
@@ -207,10 +203,7 @@
           "format": "date-time"
         },
         "mode": {
-          "enum": [
-            "development",
-            "live"
-          ]
+          "enum": ["development", "live"]
         }
       },
       "required": [
@@ -260,10 +253,7 @@
           ]
         },
         "mode": {
-          "enum": [
-            "development",
-            "live"
-          ]
+          "enum": ["development", "live"]
         },
         "transactionRef": {
           "type": "string",
@@ -303,18 +293,10 @@
           "maxItems": 4096
         },
         "finishReason": {
-          "enum": [
-            "stop",
-            "length",
-            "cancelled"
-          ]
+          "enum": ["stop", "length", "cancelled"]
         }
       },
-      "required": [
-        "text",
-        "tokenIds",
-        "finishReason"
-      ],
+      "required": ["text", "tokenIds", "finishReason"],
       "additionalProperties": false
     },
     "ReceiptPayload": {
@@ -356,10 +338,7 @@
           "maxLength": 256
         },
         "mode": {
-          "enum": [
-            "development",
-            "live"
-          ]
+          "enum": ["development", "live"]
         },
         "issuedAt": {
           "type": "string",
@@ -401,12 +380,7 @@
           "pattern": "^[A-Za-z0-9_-]{86}$"
         }
       },
-      "required": [
-        "payload",
-        "keyId",
-        "algorithm",
-        "signature"
-      ],
+      "required": ["payload", "keyId", "algorithm", "signature"],
       "additionalProperties": false
     },
     "Assessment": {
@@ -448,10 +422,7 @@
           ]
         },
         "mode": {
-          "enum": [
-            "development",
-            "live"
-          ]
+          "enum": ["development", "live"]
         },
         "createdAt": {
           "type": "string",
@@ -496,19 +467,10 @@
           "pattern": "^sha256:[0-9a-f]{64}$"
         },
         "executionStatus": {
-          "enum": [
-            "queued",
-            "running",
-            "succeeded",
-            "failed",
-            "cancelled"
-          ]
+          "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
         },
         "mode": {
-          "enum": [
-            "development",
-            "live"
-          ]
+          "enum": ["development", "live"]
         },
         "payment": {
           "$ref": "#/$defs/Payment"
@@ -600,10 +562,7 @@
           "maxLength": 256
         },
         "mode": {
-          "enum": [
-            "development",
-            "live"
-          ]
+          "enum": ["development", "live"]
         },
         "source": {
           "type": "object",
@@ -680,11 +639,7 @@
           "maxItems": 1000
         },
         "freshness": {
-          "enum": [
-            "fresh",
-            "stale",
-            "unavailable"
-          ]
+          "enum": ["fresh", "stale", "unavailable"]
         },
         "indexedBlock": {
           "type": "integer",
@@ -706,10 +661,7 @@
           "format": "date-time"
         },
         "mode": {
-          "enum": [
-            "development",
-            "live"
-          ]
+          "enum": ["development", "live"]
         }
       },
       "required": [
@@ -730,10 +682,7 @@
           "const": "1"
         },
         "kind": {
-          "enum": [
-            "receipt",
-            "assessment"
-          ]
+          "enum": ["receipt", "assessment"]
         },
         "objectDigest": {
           "type": "string",
@@ -748,10 +697,7 @@
           "pattern": "^sha256:[0-9a-f]{64}$"
         },
         "mode": {
-          "enum": [
-            "development",
-            "live"
-          ]
+          "enum": ["development", "live"]
         },
         "outcome": {
           "enum": [
@@ -770,11 +716,34 @@
           "type": "string",
           "pattern": "^sha256:[0-9a-f]{64}$"
         },
-        "assessment": {"$ref": "#/$defs/Assessment"}
+        "assessment": {
+          "$ref": "#/$defs/Assessment"
+        }
       },
-      "if": {"properties": {"kind": {"const": "assessment"}}},
-      "then": {"properties": {"assessment": {}, "outcome": {}, "verifierKey": {}, "methodKey": {}}, "required": ["assessment", "outcome", "verifierKey", "methodKey"]},
-      "else": {"properties": {"assessment": false, "outcome": false, "verifierKey": false, "methodKey": false}},
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "assessment"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "assessment": {},
+          "outcome": {},
+          "verifierKey": {},
+          "methodKey": {}
+        },
+        "required": ["assessment", "outcome", "verifierKey", "methodKey"]
+      },
+      "else": {
+        "properties": {
+          "assessment": false,
+          "outcome": false,
+          "verifierKey": false,
+          "methodKey": false
+        }
+      },
       "required": [
         "version",
         "kind",
@@ -805,17 +774,55 @@
               "type": "boolean"
             }
           },
-          "required": [
-            "code",
-            "message",
-            "retryable"
-          ],
+          "required": ["code", "message", "retryable"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "error"
-      ],
+      "required": ["error"],
+      "additionalProperties": false
+    },
+    "PublicationState": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "1"
+        },
+        "jobId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "consent": {
+          "type": "boolean"
+        },
+        "events": {
+          "type": "array",
+          "maxItems": 1025,
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "enum": ["receipt", "assessment"]
+              },
+              "objectDigest": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              "status": {
+                "enum": ["pending", "confirmed", "unavailable"]
+              },
+              "transactionRef": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            },
+            "required": ["kind", "objectDigest", "status"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["version", "jobId", "consent", "events"],
       "additionalProperties": false
     }
   }

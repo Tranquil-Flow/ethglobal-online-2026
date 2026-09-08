@@ -35,6 +35,7 @@ Capabilities travel in headers, not URL/query strings; browser SSE uses fetch st
 | DELETE /v1/jobs/:id/evidence | authorized | 204; assessments must report unavailable when required bundle gone |
 | POST /v1/jobs/:id/assessments | {method:string}, Idempotency-Key | 202 Assessment |
 | GET /v1/jobs/:id/assessments | authorized | 200 {assessments:Assessment[]} |
+| GET /v1/jobs/:id/publication | authorized | 200 PublicationState v1: consent plus outbox delivery states and optional transactionRef; no private evidence |
 | GET /v1/providers/:providerId/history | URL-encoded provider ID | 200 History; unavailable expressed truthfully |
 | GET /v1/keys/:keyId | no private key | 200 {keyId,algorithm:'Ed25519',publicKeyJwk:object} |
 
@@ -53,7 +54,7 @@ implicitly cancel a paid job. Cancellation is explicit. Include final job state 
 Evidence export = {version:'1',mode,receipt:SignedReceipt,request:Request,profile:Profile,
 output:Output,assessments:Assessment[]}. Verify all hashes/associations before export/import;
 private endpoint only. Extra executor-specific replay files are deferred to future adapters;
-this export does not claim actual independent replay support yet. No archive extraction needed.
+the simulator replays this export through a separately invoked reexecutor. Real-runtime replay mapping remains unqualified. No archive extraction needed.
 Public-key retrieval establishes availability, not trust; client pins the expected provider/key.
 Core owns a configured immutable profile catalog and checks digestOf(Profile) == requested profileId;
 it does not download model artifacts. Unknown/unsupported profiles fail before quote/payment.

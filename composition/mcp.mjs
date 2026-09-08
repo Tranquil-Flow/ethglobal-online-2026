@@ -27,7 +27,11 @@ try {
   const baseUrl = safeBaseUrl(session.baseUrl);
   if (!session.capability || Date.parse(session.expiresAt) <= Date.now())
     throw Error();
-  const client = createClient({ baseUrl, capability: session.capability });
+  const client = createClient({
+    baseUrl,
+    capability: session.capability,
+    pins: session.pins,
+  });
   const server = createAccessMcp({ client });
   await server.connect(new StdioServerTransport());
 } catch {

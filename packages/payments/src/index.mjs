@@ -191,6 +191,15 @@ function configuration(input) {
   c.mirrorUrl = endpoint(c.mirrorUrl, c.mode, PROTOCOL.mirrorUrl + "/");
   const u = new URL(c.resourceUrl);
   if (
+    c.allowDevelopmentTls !== undefined &&
+    (typeof c.allowDevelopmentTls !== "boolean" || c.mode !== "development")
+  )
+    fail("INVALID_CONFIG");
+  const localTls =
+    c.allowDevelopmentTls === true &&
+    u.protocol === "https:" &&
+    ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname);
+  if (
     u.username ||
     u.password ||
     u.search ||
@@ -198,6 +207,7 @@ function configuration(input) {
     u.href.length > 1800 ||
     (c.mode === "live" && u.protocol !== "https:") ||
     (c.mode === "development" &&
+      !localTls &&
       (u.protocol !== "http:" || u.hostname !== "127.0.0.1"))
   )
     fail("INVALID_CONFIG");

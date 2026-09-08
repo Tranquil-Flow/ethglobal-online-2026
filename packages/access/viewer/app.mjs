@@ -3,9 +3,11 @@ import {
   createRequest,
   developmentAuthorizer,
   AccessError,
+  verifyReceiptIntegrity,
 } from "../src/index.mjs";
 const $ = (id) => document.getElementById(id),
   text = (id, v) => ($(id).textContent = v);
+let jobClient, jobPins;
 let client,
   config,
   provider,
@@ -28,7 +30,14 @@ function invalidate() {
   $("consent").checked = false;
   text("quote", "Quote invalidated — obtain a fresh quote");
 }
-for (const id of ["provider", "profile", "prompt", "tokens"])
+for (const id of [
+  "provider",
+  "profile",
+  "prompt",
+  "tokens",
+  "publish-consent",
+  "budget",
+])
   $(id).addEventListener("input", invalidate);
 async function action(fn) {
   text("error", "");
@@ -44,6 +53,34 @@ async function action(fn) {
     status("Error — explicit retry required");
   }
 }
+const pinFor = (id) =>
+  config.providers?.find((p) => p.providerId === id)?.pins ?? config.pins;
+function clientFor(id, capability) {
+  return createClient({
+    baseUrl: config.apiUrl,
+    capability,
+    pins: pinFor(id),
+    paymentAuthorizer: config.fixture
+      ? developmentAuthorizer
+      : async (context) => {
+          if (!userPaymentAuthorizer)
+            throw new AccessError("WALLET_AUTHORIZER_UNAVAILABLE");
+          return userPaymentAuthorizer(context);
+        },
+  });
+}
+async function publication() {
+  if (!job || config.fixture) return;
+  const p = await (jobClient ?? client).getPublication(job.jobId);
+  text(
+    "publication-state",
+    p.consent
+      ? p.events.length
+        ? p.events.map((e) => e.kind + ": " + e.status).join(" · ")
+        : "Consent given; no publishable result yet"
+      : "Not published — consent off",
+  );
+}
 const need = () => {
   if (!client?.capability) throw new AccessError("Connect explicitly first");
 };
@@ -51,17 +88,7 @@ $("connect").onclick = () =>
   action(async () => {
     status("Connecting…");
     if (!config) config = await fetch("/config.json").then((r) => r.json());
-    client = createClient({
-      baseUrl: config.apiUrl,
-      pins: config.pins,
-      paymentAuthorizer: config.fixture
-        ? developmentAuthorizer
-        : async (context) => {
-            if (!userPaymentAuthorizer)
-              throw new AccessError("WALLET_AUTHORIZER_UNAVAILABLE");
-            return userPaymentAuthorizer(context);
-          },
-    });
+    client = clientFor($("provider").value);
     const health = await client.health();
     text(
       "mode",
@@ -85,6 +112,7 @@ $("revoke").onclick = () =>
 $("find").onclick = () =>
   action(async () => {
     need();
+    if (busy) throw new AccessError("JOB_IN_PROGRESS");
     status("Finding provider…");
     provider = undefined;
     const list = await client.listProviders([$("provider").value]);
@@ -94,6 +122,7 @@ $("find").onclick = () =>
       throw new AccessError("Profile unavailable");
     const profile = await client.getProfile($("profile").value);
     provider = p;
+    client = clientFor(p.providerId, client.capability);
     text("provider-state", p.name);
     text("profile-info", profile.model + " · " + p.mode);
     const h = await client.getHistory(p.providerId);
@@ -113,6 +142,7 @@ $("quote-button").onclick = () =>
     need();
     if (!provider || provider.providerId !== $("provider").value)
       throw new AccessError("Find provider first");
+    if (busy) throw new AccessError("JOB_IN_PROGRESS");
     status("Loading quote…");
     request = await createRequest({
       providerId: provider.providerId,
@@ -120,6 +150,7 @@ $("quote-button").onclick = () =>
       prompt: $("prompt").value,
       maxOutputTokens: Number($("tokens").value),
       seed: 0,
+      publishConsent: $("publish-consent")?.checked === true,
     });
     quote = await client.createQuote(request);
     if (quote.mode !== provider.mode) throw new AccessError("MODE_MISMATCH");
@@ -152,21 +183,30 @@ $("submit").onclick = () =>
     $("submit").disabled = true;
     try {
       status("Submitting…");
-      const r = await client.submitJob({
+      const submittingClient = client,
+        submittedRequest = request;
+      const budget = $("budget")?.value ?? "10";
+      if (!/^[1-9][0-9]{0,4}$/.test(budget) || BigInt(budget) > 10000n)
+        throw new AccessError("BUDGET_LIMIT");
+      const r = await submittingClient.submitJob({
         request,
         quoteId: quote.quoteId,
         idempotencyKey: crypto.randomUUID(),
         authorization: {
-          maxAmountBaseUnits: "10",
+          maxAmountBaseUnits: budget,
           asset: quote.asset,
           network: quote.network,
         },
       });
       job = r.job;
+      jobClient = submittingClient;
+      jobPins = pinFor(submittedRequest.providerId);
+      text("receipt-state", "Not checked");
+      text("assessment-state", "Separate — not requested");
       renderJob(job);
       text("answer", "");
       streamController = new AbortController();
-      for await (const e of client.streamJob(job.jobId, {
+      for await (const e of jobClient.streamJob(job.jobId, {
         signal: streamController.signal,
       })) {
         if (e.event === "delta")
@@ -176,6 +216,7 @@ $("submit").onclick = () =>
           renderJob(job);
         }
       }
+      await publication();
       status("Stream finished");
     } finally {
       busy = false;
@@ -196,7 +237,7 @@ $("cancel").onclick = () =>
       text("job-state", "Nothing to cancel");
       return;
     }
-    job = await client.cancelJob(job.jobId);
+    job = await (jobClient ?? client).cancelJob(job.jobId);
     renderJob(job);
     streamController?.abort();
     status("Cancellation requested explicitly");
@@ -205,19 +246,24 @@ $("assess").onclick = () =>
   action(async () => {
     need();
     if (!job) throw new AccessError("No job");
-    const a = await client.createAssessment(
+    const a = await (jobClient ?? client).createAssessment(
       job.jobId,
-      "independent-replay",
+      config.replayMethod || "independent-replay",
       crypto.randomUUID(),
     );
     text("assessment-state", "Separate — " + a.outcome + " (" + a.method + ")");
+    await publication();
   });
 $("download").onclick = () =>
   action(async () => {
     need();
     if (!job) throw new AccessError("No job");
     status("Validating private evidence…");
-    const evidence = await client.getEvidence(job.jobId);
+    const evidence = await (jobClient ?? client).getEvidence(job.jobId);
+    text(
+      "receipt-state",
+      "Integrity verified against configured pin — not inference verification",
+    );
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(evidence, null, 2)], {
         type: "application/json",
@@ -236,9 +282,69 @@ $("delete-evidence").onclick = () =>
   action(async () => {
     need();
     if (!job) throw new AccessError("No job");
-    await client.deleteEvidence(job.jobId);
+    await (jobClient ?? client).deleteEvidence(job.jobId);
     text("answer", "");
-    status("Private evidence deleted from server; receipts and downloaded copies remain");
+    status(
+      "Private evidence deleted from server; receipts and downloaded copies remain",
+    );
+  });
+$("refresh-publication").onclick = () =>
+  action(async () => {
+    need();
+    await publication();
+  });
+$("check-receipt").onclick = () =>
+  action(async () => {
+    need();
+    if (!job) throw new AccessError("No job");
+    const receipt = await (jobClient ?? client).getReceipt(job.jobId);
+    if (
+      !jobPins?.publicKeyJwk ||
+      receipt.keyId !== jobPins.keyId ||
+      receipt.payload.providerId !== jobPins.providerId
+    )
+      throw new AccessError("KEY_PIN_REQUIRED");
+    const result = await verifyReceiptIntegrity(receipt, jobPins.publicKeyJwk);
+    if (!result.integrity) throw new AccessError("INVALID_SIGNATURE");
+    text(
+      "receipt-state",
+      "Integrity verified against configured pin — not inference verification",
+    );
+  });
+$("resume").onclick = () =>
+  action(async () => {
+    need();
+    if (!job) throw new AccessError("No job");
+    if (busy) throw new AccessError("JOB_IN_PROGRESS");
+    busy = true;
+    try {
+      streamController = new AbortController();
+      text("answer", "");
+      for await (const e of (jobClient ?? client).streamJob(job.jobId, {
+        signal: streamController.signal,
+      })) {
+        if (e.event === "delta")
+          $("answer").append(document.createTextNode(e.data.text));
+        if (e.event === "job") {
+          job = e.data;
+          renderJob(job);
+        }
+      }
+      job = await (jobClient ?? client).getJob(job.jobId);
+      renderJob(job);
+      if (job.executionStatus === "succeeded") {
+        const evidence = await (jobClient ?? client).getEvidence(job.jobId);
+        text("answer", evidence.output.text);
+        text(
+          "receipt-state",
+          "Integrity verified against configured pin — not inference verification",
+        );
+      }
+      await publication();
+      status("Retained job refreshed — no new payment");
+    } finally {
+      busy = false;
+    }
   });
 fetch("/config.json")
   .then((r) => r.json())

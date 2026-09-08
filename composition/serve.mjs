@@ -1,9 +1,17 @@
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+import { readFileSync, statSync } from "node:fs";
+import { startWorkbench } from "./workbench.mjs";
 import { startDevelopment } from "./index.mjs";
 const args = process.argv.slice(2),
   options = {};
-let useLocalServices = false;
+let useLocalServices = false,
+  configPath,
+  bindingsPath;
 for (let i = 0; i < args.length; i++) {
-  if (args[i] === "--local-services") useLocalServices = true;
+  if (args[i] === "--config") configPath = args[++i];
+  else if (args[i] === "--bindings") bindingsPath = args[++i];
+  else if (args[i] === "--local-services") useLocalServices = true;
   else if (args[i] === "--development") options.development = true;
   else if (args[i] === "--data-dir") options.dataDir = args[++i];
   else if (args[i] === "--port") options.port = Number(args[++i]);
@@ -11,27 +19,82 @@ for (let i = 0; i < args.length; i++) {
   else throw Error("UNKNOWN_OPTION");
 }
 let app, rehearsal;
-async function close(){try{await app?.close();}finally{await rehearsal?.close();}}
-try {
-  if(useLocalServices){
-    if(options.development!==true)throw Error("DEVELOPMENT_REQUIRED");
-    const {startRehearsalInfrastructure}=await import("./local-rehearsal.mjs");
-    rehearsal=await startRehearsalInfrastructure();
-    options.localInfrastructure=rehearsal.descriptor;options.providerId="worker.example.eth";
+async function close() {
+  try {
+    await app?.close();
+  } finally {
+    await rehearsal?.close();
   }
-  app = await startDevelopment(options);
+}
+try {
+  if (configPath) {
+    if (
+      useLocalServices ||
+      Object.keys(options).length ||
+      statSync(configPath).size > 65536
+    )
+      throw Error("INVALID_WORKBENCH_CONFIG");
+    const config = JSON.parse(readFileSync(configPath, "utf8"));
+    let bindings = {};
+    if (bindingsPath) {
+      if (config.mode !== "live")
+        throw Error("LIVE_BINDINGS_FORBIDDEN_IN_SIMULATION");
+      const module = await import(pathToFileURL(resolve(bindingsPath)).href);
+      if (typeof module.createBindings !== "function")
+        throw Error("LIVE_RUNTIME_REQUIRED");
+      bindings = await module.createBindings({ config });
+      if (
+        !bindings ||
+        Object.keys(bindings).some(
+          (k) => !["runtime", "receiptSigner", "publicationSigner"].includes(k),
+        )
+      )
+        throw Error("LIVE_RUNTIME_REQUIRED");
+    }
+    app = await startWorkbench({ config, ...bindings });
+  } else {
+    if (bindingsPath) throw Error("INVALID_WORKBENCH_CONFIG");
+    if (useLocalServices) {
+      if (options.development !== true) throw Error("DEVELOPMENT_REQUIRED");
+      const { startRehearsalInfrastructure } = await import(
+        "./local-rehearsal.mjs"
+      );
+      rehearsal = await startRehearsalInfrastructure();
+      options.localInfrastructure = rehearsal.descriptor;
+      options.providerId = "worker.example.eth";
+    }
+    app = await startDevelopment(options);
+  }
   console.log(
     JSON.stringify({
       url: app.url,
       providerId: app.providerId,
       profileId: app.profileId,
       pins: app.pins,
-      mode: "development",
-      execution: "synthetic-not-inference",
-      assessment: "unavailable",
-      payment: "offline-synthetic-no-funds",
-      history: useLocalServices ? "local-Graph-Node-not-public-provider" : "synthetic-Graph-shaped-not-deployed",
-      discovery: useLocalServices ? "local-ENSv2-contracts" : "synthetic-records-not-ENS",
+      mode: app.mode ?? "development",
+      execution:
+        app.mode === "live"
+          ? "declared-live-runtime-not-qualified"
+          : configPath
+            ? "staged-simulator-not-inference"
+            : "synthetic-not-inference",
+      assessment: app.replayMethod ?? "unavailable",
+      payment:
+        app.mode === "live"
+          ? "configured-Blocky402-testnet"
+          : "offline-synthetic-no-funds",
+      history:
+        app.mode === "live"
+          ? "configured-pinned-Graph-not-qualified"
+          : useLocalServices || configPath
+            ? "local-Graph-Node-not-public-provider"
+            : "synthetic-Graph-shaped-not-deployed",
+      discovery:
+        app.mode === "live"
+          ? "configured-canonical-ENSv2-not-qualified"
+          : useLocalServices || configPath
+            ? "local-ENSv2-contracts"
+            : "synthetic-records-not-ENS",
     }),
   );
   for (const sig of ["SIGINT", "SIGTERM"])
@@ -45,6 +108,9 @@ try {
   await close();
   console.error(
     [
+      "LIVE_RUNTIME_REQUIRED",
+      "INVALID_WORKBENCH_CONFIG",
+      "INVALID_PROVIDER_CATALOG",
       "DEVELOPMENT_REQUIRED",
       "PRIVATE_DIRECTORY_REQUIRED",
       "INVALID_LOCAL_CONFIG",

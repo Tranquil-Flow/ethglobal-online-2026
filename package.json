@@ -12,6 +12,8 @@
     "setup": "node scripts/setup.mjs",
     "start": "node composition/serve.mjs",
     "mcp": "node composition/mcp.mjs",
+    "start:workbench": "node composition/serve.mjs --config composition/workbench.example.json",
+    "replay": "node composition/replay.mjs",
     "test": "npm --prefix packages/contracts test",
     "check": "npm --prefix packages/contracts run check && node scripts/check-layout.mjs && node --test scripts/test-gates.test.mjs scripts/test-handoff.test.mjs scripts/test-runtime.test.mjs",
     "check:lane": "node scripts/check-lane.mjs",

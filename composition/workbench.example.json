@@ -1,0 +1,12 @@
+{
+  "version": "1",
+  "mode": "simulation",
+  "dataDir": ".local/workbench",
+  "port": 4350,
+  "providers": [
+    { "providerId": "alpha.example.eth", "amountBaseUnits": "2" },
+    { "providerId": "beta.example.eth", "amountBaseUnits": "3" }
+  ],
+  "faults": {},
+  "delayMs": 20
+}

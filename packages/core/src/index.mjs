@@ -520,6 +520,11 @@ export function createApp({
     for (const item of store
       .list("outbox")
       .filter((x) => x.status !== "confirmed" && x.nextAt <= Date.now())
+      .sort(
+        (a, b) =>
+          (a.event.kind === "receipt" ? 0 : 1) -
+          (b.event.kind === "receipt" ? 0 : 1),
+      )
       .slice(0, 8)) {
       try {
         const result = await bounded((signal) =>
@@ -1251,6 +1256,28 @@ export function createApp({
       const action = parts[3];
       if (method === "GET" && !action) return send(res, 200, rec.job);
       if (method === "GET" && action === "events") return sse(req, res, id);
+      if (method === "GET" && action === "publication") {
+        const value = {
+          version: "1",
+          jobId: id,
+          consent: rec.publishConsent,
+          events: store
+            .list("outbox")
+            .filter((row) => row.jobId === id)
+            .map((row) => ({
+              kind: row.event.kind,
+              objectDigest: row.event.objectDigest,
+              status: row.status,
+              ...(typeof row.transactionRef === "string" &&
+              row.transactionRef.length &&
+              row.transactionRef.length <= 256
+                ? { transactionRef: row.transactionRef }
+                : {}),
+            })),
+        };
+        checked("PublicationState", value);
+        return send(res, 200, value);
+      }
       if (method === "POST" && action === "cancel") {
         exact(await body(req), []);
         if (!terminal(rec.job)) {

@@ -12,7 +12,7 @@ store/signer internals are core-owned. Local factory defaults must fail unavaila
 explicit development configuration; never instantiate live adapters/credentials automatically.
 HTTP contract is docs/HTTP.md. Core owns persistence, auth, SSE and composition of this API.
 
-## ExecutionPort (future; core owns development test implementation only)
+## ExecutionPort (v1; staged simulator implemented, Mycelium mapping unqualified)
 execute({jobId,request,profile,signal}) -> AsyncIterable<
  {type:'delta', text:string, tokenIds:number[]} |
  {type:'completed', output:Output, profileId:string, evidenceDigest?:string} >.
@@ -20,7 +20,7 @@ Exactly one completed event on success. Accumulated text/token IDs match complet
 core enforces limits, verifies the selected profileId and handles abort/error. Failed/cancelled
 executions do not receive success receipts. No cross-runtime exact-replay assumption.
 
-## AssessmentPort (future; core owns unavailable implementation only)
+## AssessmentPort (v1; authorized simulator replay implemented, Mycelium mapping unqualified)
 assess({receipt:SignedReceipt, profile:Profile, evidenceRef:string, signal}) -> Assessment.
 Private evidenceRef is an access-controlled local reference, never an arbitrary URL to fetch.
 Receipt digest/profile must match. Assessor identity/trust is configured, not accepted from a user.

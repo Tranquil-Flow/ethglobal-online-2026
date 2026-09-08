@@ -204,6 +204,14 @@ export async function runCli(argv) {
     return { events: count };
   }
   if (command === "inspect") return client.getJob(arg);
+  if (command === "publication") return client.getPublication(arg);
+  if (command === "assessments") return client.listAssessments(arg);
+  if (command === "delete-evidence") {
+    if (options.confirm !== "delete-private-evidence")
+      throw new AccessError("EXPLICIT_DELETION_REQUIRED");
+    await client.deleteEvidence(arg);
+    return { privateEvidenceDeleted: true, publicCommitmentsErased: false };
+  }
   if (command === "cancel") return client.cancelJob(arg);
   if (command === "receipt") {
     const receipt = await client.getReceipt(arg);

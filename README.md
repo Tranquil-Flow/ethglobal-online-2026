@@ -1,64 +1,41 @@
-# ETHOnline — combined local application
+# ETHOnline workbench
 
-Five independently implemented packages are now composed through their actual ports:
-core HTTP/SQLite/receipts, x402 payments, discovery, indexing History/EventSink, and
-access SDK/CLI/MCP/browser. Lane histories and human authorship are preserved.
+A composed service for named provider discovery, bounded quotes, explicit payment authorization, streamed jobs, signed private receipts, evidence replay, consented publication and history-informed provider selection. HTTP, SDK, CLI, MCP and browser use the same retained jobs.
 
-**Local development only.** Execution is synthetic echo, not inference. Payment uses real
-x402/Hedera codec and signature validation with an **offline simulated ledger**, never funds.
-Provider records and Graph-shaped HTTP responses are explicitly synthetic. Assessment is
-unavailable. Publication is disabled. Integrity is not execution verification.
-Mycelium and Gas Killer remain excluded. Nothing has been deployed or published.
+**Execution is an explicit deterministic staged simulator, not inference.** It computes and streams real lightweight results. It does not contact Mycelium, Gas Killer, models or a fleet. Simulation uses synthetic payments without funds and real **local** ENS/EVM/Graph infrastructure; simulated assessments do not enter the public qualification dataset.
 
-## Reproducible setup
+## Run the complete local workbench
 
-The combined application's tested runtime is **Node 20.19.5 / npm 10.8.2**, pinned in
-`.nvmrc` and enforced by setup/start/full verification. Select it with your existing version
-manager (`nvm install && nvm use` if using nvm); do not change global tooling implicitly.
-Node 20 is a legacy local compatibility pin, **not a current production-security endorsement**.
-A supported-upstream runtime migration needs a separately verified candidate before public use.
+Use repository-pinned **Node 22.22.2 / npm 10.9.7** (`.nvmrc`, runtime guard). Docker must be running for local ENS/Graph. Install and run using the same Node/native ABI.
 
 ```sh
 npm run setup
-npm run check:all
-npm run smoke:integration
-npm start -- --development --data-dir "$HOME/.ethonline-development" --port 4310
+npm run start:workbench
 ```
 
-Open `http://127.0.0.1:4310`. Use only synthetic inputs. The profile and provider are prefilled.
-Connect → Find provider → Get quote → explicitly consent → Submit and stream → Request
-assessment (unavailable) → Download private evidence (integrity-validated with local pins).
-Stop with Ctrl-C. Restart using the **same data directory and port**.
+Open the printed URL. The example config is `composition/workbench.example.json`: two explicitly named providers, private persistent state, bounded prices and no injected faults. Connect, discover, quote, authorize, submit, stream, verify receipt integrity, replay and inspect publication. Stop with Ctrl-C. Reuse the same config/data directory to resume retained jobs.
 
-Setup installs each package's existing lockfile, exercises the native SQLite/fs-ext addons,
-installs Playwright Chromium and builds the viewer. Use the same Node for install and run;
-rerun setup after an ABI change. A C/C++/Python build toolchain is required when native
-prebuilds are unavailable (macOS Command Line Tools). No root workspace/lockfile is introduced.
-`check:all` includes every lane's full checks/smokes, handoff gates, root gates and combined
-browser/process tests; it is not just a contract check. See [local operations](docs/LOCAL.md).
+[Configuration, client commands, privacy, TLS, backup and live binding contract](docs/WORKBENCH.md).
 
-## What is verified versus external
+## Verify
 
-The integration suite exercises actual SDK → HTTP → quote/challenge/payment → durable job →
-SSE → signed receipt/export/assessment. It checks the same job through Chromium, SDK, CLI
-and MCP stdio, retained data across process restart, abrupt-crash failure recovery, cancellation,
-settlement uncertainty, price/resource binding, host/origin isolation, private access and outbox
-failure. Empty history is unknown; stale/unavailable history changes the advisory decision.
+```sh
+npm run check:all
+npm run smoke:integration
+```
 
-This does **not** qualify live paid service consumption, ENS writes, deployed Graph history,
-independent replay, physical inference, sponsor eligibility or publication rights.
-[Exact integration evidence](docs/handoffs/integration.md) and
-[remaining gates / adapter onboarding](docs/EXTERNAL-GATES.md) define the limits.
+Canonical integration includes the actual local Graph feedback loop: a deliberately divergent provider receives a mismatching replay assessment; that consented indexed evidence changes the next provider decision. Tests also cover cancellation, uncertainty/deduplication, private deletion, restart, CLI/MCP/Chromium consumption, encrypted backup and certificate-pinned local TLS.
 
-## Client entrypoints
+[Current implementation checklist](docs/WORKBENCH-IMPLEMENTATION.md) distinguishes implemented functionality from final candidate verification. Historical failures and earlier exact-candidate receipts remain under `docs/handoffs/` and local `artifacts/closeout/`.
 
-- SDK: `packages/access/src/index.mjs`; use `composition/authorizer.mjs` only for this offline simulator.
-- CLI: `node packages/access/src/cli.mjs`; retain its private session/quote files, never paste capabilities in URLs.
-- MCP: `npm run mcp -- /absolute/private/session.json` attaches the same authorized session,
-  with paid writes disabled by host policy. For fresh MCP-only sessions use the access MCP entrypoint.
-- Browser: same-origin loopback gateway; CSP, Host/Origin checks, public signer pins, no persistent browser bearer.
+## Boundaries
 
-No live credentials are loaded. `.env.example` documents this intentionally empty boundary.
-Historical lane readiness packets are preserved; the integration receipt supersedes their combined-app
-blocker only for the local synthetic composition. [Provenance](docs/PROVENANCE.md), per-lane
-reuse records and [release policy](docs/RELEASE.md) remain authoritative. License/visibility are unchanged.
+- Receipt integrity, execution, payment, replay assessment and publication are separate states. A simulator match is not proof of inference correctness or physical distribution.
+- Replay requires authorized private evidence and explicit key pins. Same-owner reexecution is not independently operated verification. Publication requires request-bound consent; deletion cannot erase public commitments.
+- Dedicated testnet payment/ENS/registry/hosted-Graph qualification already exists separately; read-only revalidation reuses it. Local simulation neither replaces that evidence nor qualifies a real runtime.
+- Live startup requires explicitly injected runtime, exact profiles and signing authorities, and fails closed if missing. [Mycelium mapping and physical qualification](docs/MYCELIUM-ADAPTER.md) remain unverified.
+- No bonds, slashing, bounty markets, random-audit service or Gas Killer integration is offered. Public exposure, source pushes, licensing/visibility changes and submission remain approval-gated.
+
+[Architecture](docs/ARCHITECTURE.md) · [Ports](docs/PORTS.md) · [HTTP](docs/HTTP.md) · [Provenance](docs/PROVENANCE.md) · [Release policy](docs/RELEASE.md)
+
+The earlier thin offline fixture remains available with `npm start -- --development --data-dir PATH --port PORT`; it is not the full simulator/ENS/Graph workbench above.

@@ -30,6 +30,13 @@ test("MCP stdio tools use SDK; reads decide on compatibility, budget and fresh h
   assert.deepEqual(
     names.sort(),
     [
+      "access_assess",
+      "access_assessments",
+      "access_delete_evidence",
+      "access_export",
+      "access_inspect",
+      "access_publication",
+      "access_receipt",
       "access_connect",
       "access_history",
       "access_quote",

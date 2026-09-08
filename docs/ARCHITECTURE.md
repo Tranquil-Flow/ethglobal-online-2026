@@ -10,8 +10,8 @@ the same API. Verification means the named method checked a defined relation, no
 core (HTTP, SQLite, receipts, outbox) depends only on contracts and injected ports.
 payments (Hedera/Blocky402), discovery (ENSv2), indexing (registry/Graph) implement independent ports.
 access uses HTTP only. No core runtime rewrite. No Mycelium/Gas Killer implementation in any lane.
-The optional future ExecutionPort and AssessmentPort deliberately isolate runtime internals.
-Any real integration may require a versioned adapter/profile extension; this scaffold does not
+ExecutionPort and AssessmentPort isolate runtime internals; the staged simulator and authorized replay implement both locally.
+Any real integration may require a versioned adapter/profile extension; this workbench does not
 promise arbitrary model compatibility or bit-exact replay.
 
 ## Shared decisions
@@ -45,4 +45,4 @@ require five heavy test stacks at once. Local EVM/Graph stacks need resource-awa
 Mycelium internals/runtime execution; Gas Killer integration/settlement; actual inference replay;
 slashing, bonds, bounty markets, trust scores, framework orchestration, second language SDK,
 mainnet, deployment/publication without approval. Receipt/evidence export is included, not a claim
-that replay is currently available. License and sponsor pool remain human release decisions.
+of real inference replay. Simulator reexecution and indexed mismatch feedback are implemented; see WORKBENCH.md. License and sponsor pool remain human release decisions.

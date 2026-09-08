@@ -791,6 +791,18 @@ export function createClient({
         true,
       );
     },
+    async getPublication(jobId, options) {
+      const value = dto(
+        "PublicationState",
+        await request("/v1/jobs/" + enc(jobId) + "/publication", {
+          privateRoute: true,
+          options,
+        }),
+        true,
+      );
+      if (value.jobId !== jobId) fail("JOB_MISMATCH");
+      return value;
+    },
     async listAssessments(jobId, options) {
       const d = await request("/v1/jobs/" + enc(jobId) + "/assessments", {
         privateRoute: true,

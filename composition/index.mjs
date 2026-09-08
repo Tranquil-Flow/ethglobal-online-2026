@@ -15,7 +15,11 @@ import {
   createDevelopmentExecutor,
 } from "../packages/core/src/index.mjs";
 import { createPayments } from "../packages/payments/src/index.mjs";
-import { createDiscovery } from "../packages/discovery/src/index.mjs";
+import { createProviderPayments } from "./provider-payments.mjs";
+import {
+  createDiscovery,
+  normalizeName,
+} from "../packages/discovery/src/index.mjs";
 import {
   createHistory,
   createGraphClient,
@@ -30,37 +34,134 @@ import {
   json,
 } from "./synthetic.mjs";
 
-import { acquirePrivateStateLock } from './private-state.mjs';
+import { acquirePrivateStateLock } from "./private-state.mjs";
 
 export async function startDevelopment(options = {}) {
   let release = () => {};
   try {
-    const app = await startDevelopmentUnlocked(options, (dir) => { release = acquirePrivateStateLock(dir); });
-    return { ...app, async close() { try { await app.close(); } finally { release(); } } };
-  } catch (error) { release(); throw error; }
+    const app = await startDevelopmentUnlocked(options, (dir) => {
+      release = acquirePrivateStateLock(dir);
+    });
+    return {
+      ...app,
+      async close() {
+        try {
+          await app.close();
+        } finally {
+          release();
+        }
+      },
+    };
+  } catch (error) {
+    release();
+    throw error;
+  }
 }
 
-async function startDevelopmentUnlocked({
-  development = false,
-  dataDir,
-  port = 4310,
-  delayMs = 5,
-  localInfrastructure,
-  testAssessment,
-  executionPort,
-  providerId = "synthetic.local.eth",
-  ...unknownOptions
-} = {}, onLock) {
+async function startDevelopmentUnlocked(
+  {
+    development = false,
+    dataDir,
+    port = 4310,
+    delayMs = 5,
+    localInfrastructure,
+    testAssessment,
+    executionPort,
+    runtimeDefinition,
+    resourceOrigin,
+    providerCatalog,
+    providerId = "synthetic.local.eth",
+    ...unknownOptions
+  } = {},
+  onLock,
+) {
   if (Object.keys(unknownOptions).length) throw Error("UNKNOWN_LOCAL_OPTION");
   if (development !== true) throw Error("DEVELOPMENT_REQUIRED");
   assertRuntime();
-  if (executionPort !== undefined && (executionPort?.mode !== "development" || typeof executionPort.execute !== "function")) throw Error("DEVELOPMENT_EXECUTION_PORT_REQUIRED");
-  if (testAssessment !== undefined && (testAssessment?.fixture !== true || typeof testAssessment.assess !== "function" || !/^test[-:]/.test(testAssessment.method) || !/^test[-:]/.test(testAssessment.verifierId))) throw Error("EXPLICIT_TEST_ASSESSOR_REQUIRED");
+  if (resourceOrigin !== undefined) {
+    let parsed;
+    try {
+      parsed = new URL(resourceOrigin);
+    } catch {
+      throw Error("INVALID_RESOURCE_ORIGIN");
+    }
+    if (
+      parsed.protocol !== "https:" ||
+      !["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname) ||
+      parsed.origin !== resourceOrigin ||
+      parsed.username ||
+      parsed.password
+    )
+      throw Error("INVALID_RESOURCE_ORIGIN");
+  }
+  if (
+    runtimeDefinition !== undefined &&
+    (runtimeDefinition?.mode !== "development" ||
+      runtimeDefinition?.simulator !== true ||
+      typeof runtimeDefinition.create !== "function" ||
+      !runtimeDefinition.profile ||
+      executionPort ||
+      testAssessment)
+  )
+    throw Error("SIMULATOR_RUNTIME_REQUIRED");
+  const catalog = providerCatalog ?? [{ providerId, amountBaseUnits: "1" }];
+  if (
+    !Array.isArray(catalog) ||
+    !catalog.length ||
+    catalog.length > 8 ||
+    new Set(catalog.map((p) => p?.providerId)).size !== catalog.length ||
+    catalog.some(
+      (p) =>
+        !p ||
+        Object.keys(p).some(
+          (k) => !["providerId", "amountBaseUnits"].includes(k),
+        ) ||
+        typeof p.providerId !== "string" ||
+        normalizeName(p.providerId) !== p.providerId ||
+        !/^([1-9][0-9]{0,3}|10000)$/.test(p.amountBaseUnits),
+    )
+  )
+    throw Error("INVALID_PROVIDER_CATALOG");
+  providerId = catalog[0].providerId;
+  const profile = runtimeDefinition?.profile ?? developmentProfile;
+  if (
+    executionPort !== undefined &&
+    (executionPort?.mode !== "development" ||
+      typeof executionPort.execute !== "function")
+  )
+    throw Error("DEVELOPMENT_EXECUTION_PORT_REQUIRED");
+  if (
+    testAssessment !== undefined &&
+    (testAssessment?.fixture !== true ||
+      typeof testAssessment.assess !== "function" ||
+      !/^test[-:]/.test(testAssessment.method) ||
+      !/^test[-:]/.test(testAssessment.verifierId))
+  )
+    throw Error("EXPLICIT_TEST_ASSESSOR_REQUIRED");
   if (localInfrastructure !== undefined) {
     const local = (value) => {
-      try { const u = new URL(value); return u.protocol === "http:" && ["127.0.0.1", "[::1]"].includes(u.hostname) && !u.username && !u.password && !u.search && !u.hash; } catch { return false; }
+      try {
+        const u = new URL(value);
+        return (
+          u.protocol === "http:" &&
+          ["127.0.0.1", "[::1]"].includes(u.hostname) &&
+          !u.username &&
+          !u.password &&
+          !u.search &&
+          !u.hash
+        );
+      } catch {
+        return false;
+      }
     };
-    if (localInfrastructure?.mode !== "development" || localInfrastructure.chainId !== 31337 || !local(localInfrastructure.rpcUrl) || !local(localInfrastructure.graphEndpoint) || typeof localInfrastructure.create !== "function") throw Error("LOCAL_INFRASTRUCTURE_REQUIRED");
+    if (
+      localInfrastructure?.mode !== "development" ||
+      localInfrastructure.chainId !== 31337 ||
+      !local(localInfrastructure.rpcUrl) ||
+      !local(localInfrastructure.graphEndpoint) ||
+      typeof localInfrastructure.create !== "function"
+    )
+      throw Error("LOCAL_INFRASTRUCTURE_REQUIRED");
   }
   if (
     !dataDir ||
@@ -104,10 +205,14 @@ async function startDevelopmentUnlocked({
       { flag: "wx", mode: 0o600 },
     );
   }
-  const profileId = digestOf(developmentProfile),
+  const profileId = digestOf(profile),
     publicKeyJwk = createPublicKey(privateKey).export({ format: "jwk" }),
     keyId = digestOf(publicKeyJwk),
     pins = { providerId, keyId, publicKeyJwk };
+  const providerPins = Object.fromEntries(
+    catalog.map((p) => [p.providerId, { ...pins, providerId: p.providerId }]),
+  );
+  let runtime;
   let store,
     infrastructure,
     synthetic,
@@ -136,7 +241,11 @@ async function startDevelopmentUnlocked({
       () => synthetic?.close(),
       () => store?.close(),
     ]) {
-      try { await release(); } catch (error) { errors.push(error); }
+      try {
+        await release();
+      } catch (error) {
+        errors.push(error);
+      }
     }
     if (errors.length) throw new AggregateError(errors, "LOCAL_CLEANUP_FAILED");
   };
@@ -197,18 +306,33 @@ async function startDevelopmentUnlocked({
         if (req.method !== "GET") return json(res, {}, 405);
         if (req.url === "/config.json")
           return json(res, {
-            apiUrl: url,
+            apiUrl: resourceOrigin ?? url,
             fixture: false,
             pins,
             providerId,
             profileId,
+            providers: catalog.map((p) => ({
+              ...p,
+              pins: providerPins[p.providerId],
+            })),
+            replayMethod: runtime?.assessor?.method,
             development: true,
             execution: "synthetic-not-inference",
-            assessment: testAssessment ? "test-fixture-not-inference-verification" : "unavailable",
+            assessment: runtime?.assessor
+              ? "simulator-reexecution-not-inference-verification"
+              : testAssessment
+                ? "test-fixture-not-inference-verification"
+                : "unavailable",
             payment: "offline-synthetic-settlement",
-            publication: infrastructure ? "consented-test-events-local-chain-only" : "disabled",
-            discovery: infrastructure ? "local-ENSv2-contracts" : "synthetic-records-not-ENS",
-            history: infrastructure ? "local-Graph-Node-not-public-provider" : "synthetic-Graph-shaped-not-deployed",
+            publication: infrastructure
+              ? "consented-test-events-local-chain-only"
+              : "disabled",
+            discovery: infrastructure
+              ? "local-ENSv2-contracts"
+              : "synthetic-records-not-ENS",
+            history: infrastructure
+              ? "local-Graph-Node-not-public-provider"
+              : "synthetic-Graph-shaped-not-deployed",
           });
         const files = {
           "/": ["../packages/access/dist/index.html", "text/html"],
@@ -234,40 +358,86 @@ async function startDevelopmentUnlocked({
       server.listen(port, "127.0.0.1", r);
     });
     url = `http://127.0.0.1:${server.address().port}`;
-    payments = createPayments({
-      config: {
-        ...terms,
-        mode: "development",
-        providerId,
-        profileIds: [profileId],
-        baseAmountBaseUnits: "1",
-        perOutputTokenBaseUnits: "0",
-        maxAmountBaseUnits: "10",
-        maxTotalAmountBaseUnits: "10000",
-        databasePath: join(dir, "payments.sqlite"),
-        facilitatorUrl: synthetic.url,
-        mirrorUrl: synthetic.url,
-        resourceUrl: url + "/v1/jobs",
+    const paymentPorts = {};
+    payments = {
+      async close() {
+        for (const p of Object.values(paymentPorts)) await p.close();
       },
+    };
+    for (const [index, entry] of catalog.entries())
+      paymentPorts[entry.providerId] = createPayments({
+        config: {
+          ...terms,
+          mode: "development",
+          providerId: entry.providerId,
+          profileIds: [profileId],
+          baseAmountBaseUnits: entry.amountBaseUnits,
+          perOutputTokenBaseUnits: "0",
+          maxAmountBaseUnits: entry.amountBaseUnits,
+          maxTotalAmountBaseUnits: "10000",
+          databasePath: join(
+            dir,
+            index === 0 ? "payments.sqlite" : `payments-${index}.sqlite`,
+          ),
+          facilitatorUrl: synthetic.url,
+          mirrorUrl: synthetic.url,
+          resourceUrl: (resourceOrigin ?? url) + "/v1/jobs",
+          ...(resourceOrigin ? { allowDevelopmentTls: true } : {}),
+        },
+      });
+    payments = createProviderPayments({ providers: paymentPorts, store });
+    runtime = runtimeDefinition?.create({
+      store,
+      pins,
+      providerPins,
+      providerIds: catalog.map((p) => p.providerId),
     });
-    infrastructure = localInfrastructure ? await localInfrastructure.create({url, providerId, profileId, store}) : undefined;
-    if (localInfrastructure && (!infrastructure || typeof infrastructure.resolver?.resolve !== "function" || typeof infrastructure.history?.getHistory !== "function" || typeof infrastructure.eventSink?.publish !== "function" || typeof infrastructure.close !== "function")) throw Error("INCOMPLETE_LOCAL_INFRASTRUCTURE");
-    const history = infrastructure?.history ?? createHistory({
-      config: {
-        mode: "development",
-        chainId: "31337",
-        deployment: synthetic.deployment,
-        deploymentId: synthetic.deploymentId,
-      },
-      client: createGraphClient({
-        endpoint: synthetic.url + "/graph",
-        allowLocal: true,
-      }),
-    });
+    if (
+      runtimeDefinition &&
+      (!runtime ||
+        runtime.executor?.mode !== "development" ||
+        typeof runtime.executor.execute !== "function" ||
+        typeof runtime.assessor?.assess !== "function")
+    )
+      throw Error("INCOMPLETE_SIMULATOR_RUNTIME");
+    infrastructure = localInfrastructure
+      ? await localInfrastructure.create({
+          url: resourceOrigin ?? url,
+          providerId,
+          profileId,
+          store,
+          catalog,
+          assessor: runtime?.assessor,
+        })
+      : undefined;
+    if (
+      localInfrastructure &&
+      (!infrastructure ||
+        typeof infrastructure.resolver?.resolve !== "function" ||
+        typeof infrastructure.history?.getHistory !== "function" ||
+        typeof infrastructure.eventSink?.publish !== "function" ||
+        typeof infrastructure.close !== "function")
+    )
+      throw Error("INCOMPLETE_LOCAL_INFRASTRUCTURE");
+    const history =
+      infrastructure?.history ??
+      createHistory({
+        config: {
+          mode: "development",
+          chainId: "31337",
+          deployment: synthetic.deployment,
+          deploymentId: synthetic.deploymentId,
+        },
+        client: createGraphClient({
+          endpoint: synthetic.url + "/graph",
+          allowLocal: true,
+        }),
+      });
     const resolver = infrastructure?.resolver ?? {
       route: "explicit-synthetic-records",
       async resolve({ name }) {
-        if (name !== providerId) throw Error("UNAVAILABLE");
+        if (!catalog.some((p) => p.providerId === name))
+          throw Error("UNAVAILABLE");
         const now = Date.now();
         return {
           name,
@@ -278,7 +448,7 @@ async function startDevelopmentUnlocked({
           resolvedAt: new Date(now).toISOString(),
           expiresAt: new Date(now + 60000).toISOString(),
           records: {
-            "ethonline.endpoint": url,
+            "ethonline.endpoint": resourceOrigin ?? url,
             "ethonline.profiles": JSON.stringify([profileId]),
             "ethonline.payment.network": terms.network,
             "ethonline.payment.asset": terms.asset,
@@ -289,25 +459,49 @@ async function startDevelopmentUnlocked({
       },
     };
     const discovery = createDiscovery({
-      config: { mode: "development", allowLoopback: true,
-        trustedVerifiers: infrastructure?.discoveryPolicy?.trustedVerifiers ?? [],
-        trustedMethods: infrastructure?.discoveryPolicy?.trustedMethods ?? [] },
+      config: {
+        mode: "development",
+        allowLoopback: true,
+        trustedVerifiers:
+          infrastructure?.discoveryPolicy?.trustedVerifiers ?? [],
+        trustedMethods: infrastructure?.discoveryPolicy?.trustedMethods ?? [],
+      },
       resolver,
       history,
     });
-    eventSink = infrastructure?.eventSink ?? createEventSink({ config: { enabled: false } }); // Validates events; unavailable, never signs/publishes.
+    eventSink =
+      infrastructure?.eventSink ??
+      createEventSink({ config: { enabled: false } }); // Validates events; unavailable, never signs/publishes.
     app = createApp({
       config: {
         mode: "development",
-        profiles: [developmentProfile],
-        providerIds: [providerId],
+        profiles: [profile],
+        providerIds: catalog.map((p) => p.providerId),
         maintenanceMs: 50,
-        ...(testAssessment ? {assessor: {method: testAssessment.method, verifierId: testAssessment.verifierId}} : {}),
+        ...(runtime?.assessor
+          ? {
+              assessor: {
+                method: runtime.assessor.method,
+                verifierId: runtime.assessor.verifierId,
+              },
+            }
+          : {}),
+        ...(testAssessment
+          ? {
+              assessor: {
+                method: testAssessment.method,
+                verifierId: testAssessment.verifierId,
+              },
+            }
+          : {}),
       },
       store,
       signer: createSigner({ privateKey, keyId }),
-      executor: executionPort ?? createDevelopmentExecutor({ delayMs }),
-      assessor: testAssessment,
+      executor:
+        runtime?.executor ??
+        executionPort ??
+        createDevelopmentExecutor({ delayMs }),
+      assessor: runtime?.assessor ?? testAssessment,
       payments,
       discovery,
       history,
@@ -325,16 +519,37 @@ async function startDevelopmentUnlocked({
       providerId,
       profileId,
       pins,
+      providerPins,
+      catalog,
+      replayMethod: runtime?.assessor?.method,
       close,
       // Explicit operator action: recheck retained consented publications using
       // their original idempotency keys. Never creates a payment or new event.
-      async reconcilePublications({limit = 64} = {}) {
-        if (!Number.isSafeInteger(limit) || limit < 1 || limit > 128) throw Error("INVALID_RECONCILIATION_LIMIT");
+      async reconcilePublications({ limit = 64, offset = 0 } = {}) {
+        if (
+          !Number.isSafeInteger(offset) ||
+          offset < 0 ||
+          offset > 100000 ||
+          !Number.isSafeInteger(limit) ||
+          limit < 1 ||
+          limit > 128
+        )
+          throw Error("INVALID_RECONCILIATION_LIMIT");
         const results = [];
-        for (const row of store.list("outbox").slice(0, limit)) {
+        for (const row of store
+          .list("outbox")
+          .sort(
+            (a, b) =>
+              (a.event.kind === "receipt" ? 0 : 1) -
+              (b.event.kind === "receipt" ? 0 : 1),
+          )
+          .slice(offset, offset + limit)) {
           const id = digestOf(row.event);
-          const result = await eventSink.publish({event: row.event, idempotencyKey: id});
-          store.set("outbox", id, {...row, ...result});
+          const result = await eventSink.publish({
+            event: row.event,
+            idempotencyKey: id,
+          });
+          store.set("outbox", id, { ...row, ...result });
           results.push(result);
         }
         return results;

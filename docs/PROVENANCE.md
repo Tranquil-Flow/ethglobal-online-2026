@@ -40,6 +40,15 @@ See docs/handoffs/integration.md for retained failed hypotheses, exact-candidate
 known dependency/security limits and externally unqualified paths. The actual user-visible
 workflow and demo instructions are docs/LOCAL.md; this is a synthetic demo, not real inference.
 
+## Runtime-ready workbench additions
+
+New AI-assisted implementation under Evi's scope includes the deterministic staged simulator,
+authorized evidence replay, multi-provider payment routing, indexed assessment feedback,
+configuration-driven startup, additional SDK/CLI/MCP/browser controls, publication restart
+reconstruction and certificate-pinned local TLS verification. Existing package dependencies
+are reused; no Mycelium implementation, model or fleet evidence was imported. Automated
+checks are not human testing. Same-owner replay is not independent verifier ownership.
+
 ## Closeout additions
 
 New AI-assisted work includes actual local ENS/Graph composition, immutable snapshot
