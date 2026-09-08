@@ -72,3 +72,43 @@ All pinned ENSv2 addresses have code on Sepolia; UniversalResolver ROOT_REGISTRY
 returns the expected pinned root. This does not establish owned-name provisioning.
 Graph wallet connection/project creation, real x402 settlement/consumption and ENS
 name provisioning remain open. No assessment claims have been published.
+
+
+## Completed technical testnet qualification follow-up
+
+The earlier faucet/login/name blockers above are historical, not current blockers.
+
+- `hedera-qualification.json`: two actual Blocky402 testnet settlements (2 tinybars
+  total under a 10-tinybar cap), successful deterministic non-inference application
+  jobs, SDK-verified evidence and same-job replay. Initial pending-confirmation errors
+  were reconciled with original request identities and no second signature/payment.
+- `graph-studio-deployment.json`: free Studio v0.1.0 deployment, consented receipt
+  published by the application's outbox to the existing Sepolia registry, confirmed
+  outbox state, exact hosted event ingestion and fresh 12-confirmation History.
+  Empty assessment history correctly reports HISTORY_UNKNOWN, not verified inference.
+- `ens-qualification.json`: canonical ENSv2 parent registration, owned UserRegistry
+  and PermissionedResolver proxies, bidirectional canonical parent binding, service
+  subname ownership, records and actual DiscoveryPort resolution.
+- `node scripts/revalidate-testnet.mjs` is read-only: it rechecks chain receipts,
+  runtime registry hash/publisher/mode, Hedera transfers, hosted receipt provenance,
+  canonical History and ENS ownership/Discovery without reading keys or rebroadcasting.
+
+ENS deploy artifacts came from the official contracts-v2 revision
+`97a57293f3b4279d94b571e678edb53ce62638f4`. The registration transaction exceeded an RPC
+wait, then mined unchanged; a proposed same-nonce fee replacement was rejected by
+its pre-signing mined-transaction guard. No replacement transaction was created.
+The additional parent-link call corrected an observed NONCANONICAL_NAME failure.
+Registration used only freely minted test USDC and dedicated Sepolia ETH.
+
+The HTTPS `.invalid` resource identity is deliberately not a public service endpoint.
+Qualification HTTP transport remains loopback; the executor counts UTF-8 bytes and
+never runs a model. The payment fixture identity and ENS service name are separate
+qualification identities sharing the receiver/profile/Graph configuration. These
+are technical integration proofs, not a deployed public inference product, production
+readiness, prize eligibility or hackathon submission. No inference assessments were
+invented or published. Mycelium/Gas Killer and device/model operation remain excluded.
+
+Final exact-candidate local gates and read-only external replay are recorded in
+`artifacts/closeout/external-final-verification.json`. The receipt, not this filename,
+is authoritative for final revision, commands, statuses and log hashes. Historical
+`final-verification.json` remains the earlier local-only candidate evidence.

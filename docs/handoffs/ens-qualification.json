@@ -1,0 +1,124 @@
+{
+  "name": "service.ethonline-provider-2026.eth",
+  "owner": "0xb4f0b42fbB0fCAf62703475039A7E26EF6dD5EaE",
+  "chainId": 11155111,
+  "resolver": "0xe99b18227e45c4Ac30bd1D069a30a84a9a87250E",
+  "subregistry": "0xc7c21454819622cf5fBCeb14f9bDD9a8701e69Ad",
+  "transactions": {
+    "resolver-proxy": {
+      "hash": "0x5617ab85b53ca687de1a1dd06d93db29b9652d5af89059ba253be121a920c5d5",
+      "gasLimit": "746638",
+      "gasPrice": "1027146207",
+      "maxCostWei": "766906389702066",
+      "blockNumber": 11660548,
+      "status": 1
+    },
+    "user-registry-proxy": {
+      "hash": "0x9f5b915ae14e4b3ecdc47b41aed9a672bffed9399b35a00dadaad22cb64ab86d",
+      "gasLimit": "227556",
+      "gasPrice": "973793827",
+      "maxCostWei": "221592628096812",
+      "blockNumber": 11660553,
+      "status": 1
+    },
+    "mint-test-usdc": {
+      "hash": "0x1ab84d54ab66854b9ae6860d8173238645fb77c4de4ff402d40a1d05bb52c615",
+      "gasLimit": "72113",
+      "gasPrice": "1073007327",
+      "maxCostWei": "77377777371951",
+      "blockNumber": 11660555,
+      "status": 1
+    },
+    "approve-test-usdc": {
+      "hash": "0xa939288793a8d682a2a868d4e74cd7cf1642d69298a2506fec5ccaf2d2a7ef28",
+      "gasLimit": "66083",
+      "gasPrice": "982497600",
+      "maxCostWei": "64926388900800",
+      "blockNumber": 11660560,
+      "status": 1
+    },
+    "commit": {
+      "hash": "0x8ca7a7dbba028ab3888acd1993ee425b1d159f869cf0c0d6505ff57eb3d5aab4",
+      "gasLimit": "64976",
+      "gasPrice": "1091030238",
+      "maxCostWei": "70890780744288",
+      "blockNumber": 11660562,
+      "status": 1
+    },
+    "register": {
+      "hash": "0x5542e61350da5383f1af6cfbb9e115272a4a83464d890ccc7b49fb05350a8975",
+      "gasLimit": "313514",
+      "gasPrice": "969769986",
+      "maxCostWei": "304036467390804",
+      "blockNumber": 11660583,
+      "status": 1
+    },
+    "link-canonical-parent": {
+      "hash": "0x4c7681959231cd53f2b7c7bf5e4bd063e9951781a000dbced3daa1e191e86374",
+      "gasLimit": "109349",
+      "gasPrice": "1030282373",
+      "maxCostWei": "112660347205177",
+      "blockNumber": 11660586,
+      "status": 1
+    },
+    "register-service-subname": {
+      "hash": "0x94f2a1dcd2a1779cfe4d49eab5af0b40da73d269a2f7299c16ed758b968cf5cf",
+      "gasLimit": "220638",
+      "gasPrice": "1091010783",
+      "maxCostWei": "240718437139554",
+      "blockNumber": 11660588,
+      "status": 1
+    }
+  },
+  "perTransactionLimitWei": "5000000000000000",
+  "registrationPhaseLimitWei": "30000000000000000",
+  "parentName": "ethonline-provider-2026.eth",
+  "resolution": {
+    "raw": {
+      "name": "service.ethonline-provider-2026.eth",
+      "mode": "live",
+      "records": {
+        "ethonline.endpoint": "https://qualification.example.invalid",
+        "ethonline.profiles": "[\"sha256:826c57252bad9c4eadc6462f63b15a2d8ddec7bc1ce49dc5ec6a3949a86323a6\"]",
+        "ethonline.payment.network": "hedera:testnet",
+        "ethonline.payment.asset": "0.0.0",
+        "ethonline.payment.receiver": "0.0.10419316",
+        "ethonline.history": "https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.1.0"
+      },
+      "chainId": "11155111",
+      "blockNumber": 11660592,
+      "blockHash": "0x7f2e5240b7477dde7aefa4598872d92bcf58756f8bc731f9d2061db8c1bcbf6d",
+      "resolvedAt": "2026-09-08T10:45:44.482Z",
+      "expiresAt": "2026-09-08T10:46:14.482Z"
+    },
+    "listed": {
+      "providers": [
+        {
+          "version": "1",
+          "providerId": "service.ethonline-provider-2026.eth",
+          "name": "service.ethonline-provider-2026.eth",
+          "endpoint": "https://qualification.example.invalid",
+          "profileIds": [
+            "sha256:826c57252bad9c4eadc6462f63b15a2d8ddec7bc1ce49dc5ec6a3949a86323a6"
+          ],
+          "paymentNetwork": "hedera:testnet",
+          "paymentAsset": "0.0.0",
+          "paymentReceiver": "0.0.10419316",
+          "mode": "live",
+          "source": {
+            "chainId": "11155111",
+            "blockNumber": 11660593,
+            "blockHash": "0x8e3406c8146c72e087e6a100a166c2ddcb513a1aa104d13de632848204fdee38",
+            "resolvedAt": "2026-09-08T10:45:48.986Z",
+            "expiresAt": "2026-09-08T10:46:18.986Z"
+          },
+          "historyEndpoint": "https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.1.0"
+        }
+      ],
+      "errors": []
+    }
+  },
+  "sourceRevision": "97a57293f3b4279d94b571e678edb53ce62638f4",
+  "testOnlyEndpoint": "The .invalid HTTPS identity is deliberately not a publicly reachable inference service; qualification HTTP runs only on loopback.",
+  "registrationRecovery": "Original register transaction exceeded its RPC wait timeout. A proposed fee replacement was rejected before signing because the original had mined. No replacement was created. Canonical reverse parent link was then set before subname resolution."
+}

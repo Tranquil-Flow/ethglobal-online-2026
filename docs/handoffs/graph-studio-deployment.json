@@ -24,5 +24,38 @@
   },
   "deploymentExitCode": 0,
   "initialPythonQuery": "HTTP 403; subsequent Node fetch HTTP 200",
-  "qualification": "Hosted deployment and metadata query verified; event ingestion and application consumption not yet qualified"
+  "qualification": "Hosted deployment, consented live non-inference receipt ingestion through application outbox, and RPC-backed 12-confirmation History consumption verified. No inference assessments: HISTORY_UNKNOWN is correct.",
+  "receiptPublication": {
+    "event": {
+      "version": "1",
+      "kind": "receipt",
+      "objectDigest": "sha256:3b205094f9aeffbe1a73e4177d1a0d8404717be6814b9a7561327eb5d52a0729",
+      "receiptDigest": "sha256:3b205094f9aeffbe1a73e4177d1a0d8404717be6814b9a7561327eb5d52a0729",
+      "providerKey": "sha256:2c5cf5e7b7be10896424f57583b3bad9f057fe09db493de8aad1a208c14cd027",
+      "mode": "live"
+    },
+    "transactionRef": "0x1a580a3b83a6f56311755a200c92298f62e960b0402b8c915cf57235fc3844e5",
+    "coreOutboxStatus": "confirmed",
+    "blockNumber": 11660509,
+    "confirmationsObserved": 17
+  },
+  "historyRead": {
+    "history": {
+      "version": "1",
+      "providerId": "qualification.operator.eth",
+      "observations": [],
+      "freshness": "fresh",
+      "chainId": "11155111",
+      "observedAt": "2026-09-08T10:45:29.759Z",
+      "mode": "live",
+      "indexedBlock": 11660579,
+      "indexedBlockHash": "0x1652c71979b04c6d2d26c61064b0fdd4fcaad9207aa344a2721c5d9c8cc6c3ea"
+    },
+    "reasons": [
+      "HISTORY_UNKNOWN"
+    ],
+    "counts": {},
+    "provenance": [],
+    "truncated": false
+  }
 }

@@ -43,3 +43,11 @@ Live Hedera settlement, ENSv2 Sepolia writes, public registry/Graph deployment a
 credential/funding authority; hosted CI after approved push; human eligibility/license/
 visibility decisions; human-narrated recording and submission; actual Mycelium and
 Gas Killer adapters/runtime qualification. None is claimed complete or authorized here.
+
+## External qualification follow-up
+
+See `handoffs/external-qualification.md` and its three public testnet receipts for
+actual Hedera consumption, hosted Graph indexing/History and canonical ENSv2 resolution.
+Final candidate verification is `artifacts/closeout/external-final-verification.json`;
+the prior local-only receipt remains historical. No public inference endpoint, real
+model assessment, production release or sponsor/submission eligibility is claimed.

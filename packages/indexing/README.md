@@ -104,3 +104,12 @@ Graph Node performs transactional store rollback on reorg; entity IDs namespace 
 ## Remaining risks / release authority
 
 See `docs/handoffs/indexing.md` and `indexing-provenance.md` for exact evidence/revision, retained failures and dependency audit findings. Development tooling has remaining transitive advisories (including bundled Ganache dependencies); no claim of an audit-clean public deployment is made. The core runtime factory imports ethers and shared contracts, not Ganache/Graph CLI. Do not expose local dev RPC, Graph admin, PostgreSQL or IPFS to public users. Human license/sponsor decisions, funded testnet approval, live deployed index/query credentials and combined application qualification remain external gates. No inference, Mycelium or Gas Killer implementation is included.
+
+## Hosted historical block metadata
+
+Some hosted Graph nodes return null hash/timestamp for `_meta(block: {number: ...})`.
+Inject an explicit read-only `provider` into `createIndexingAdapters`, `createHistory`,
+or `queryProviderHistory` (ethers `JsonRpcProvider` implements the contract). The
+adapter checks chain ID and canonical current/stable blocks, then queries Graph by
+block hash. It preserves configured confirmation depth and rejects mismatches.
+Without this provider, missing historical provenance remains unavailable, not fresh.

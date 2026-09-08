@@ -71,8 +71,12 @@ ethonline.payment.receiver, ethonline.history. Provider identity uses canonical 
 Record set block provenance is mandatory. Live mode only from actual supported ENSv2 route.
 
 ## HistoryPort / EventSink (indexing lane)
-createHistory({config,client}) -> { getHistory({providerId:string,signal}): Promise<History> }.
+createHistory({config,client,provider?}) -> { getHistory({providerId:string,signal}): Promise<History> }.
 client is Graph HTTP transport; no raw private Graph credentials in response.
+For hosted historical queries, inject an explicit read-only provider implementing
+send("eth_chainId",[]) and getBlock(number). Its chain, current index head and stable
+block hash/timestamp are checked against deployment pins; Graph is queried by that
+canonical hash without reducing confirmations. Absent/mismatched provenance fails closed.
 createEventSink({config,signer,store}) -> { publish({event:PublicEvent,idempotencyKey:string,signal}):
  Promise<{status:'pending'|'confirmed'|'unavailable',transactionRef?:string}>, close():Promise<void> }.
 Core has an outbox and invokes publisher only after explicit per-request publishConsent.

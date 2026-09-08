@@ -1,0 +1,64 @@
+// Read-only qualification replay. Never loads signing keys or broadcasts.
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { createEnsV2Discovery } from '../packages/discovery/src/index.mjs';
+import { createGraphClient, createHistory, queryProviderHistory } from '../packages/indexing/src/index.mjs';
+const require = createRequire(new URL('../packages/indexing/package.json', import.meta.url));
+const { JsonRpcProvider, Contract, keccak256 } = require('ethers');
+const load = name => JSON.parse(fs.readFileSync(new URL('../docs/handoffs/' + name, import.meta.url)));
+const hedera = load('hedera-qualification.json'), graph = load('graph-studio-deployment.json'), ens = load('ens-qualification.json');
+const provider = new JsonRpcProvider('https://ethereum-sepolia-rpc.publicnode.com');
+const result = { revision: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: new URL('..', import.meta.url), encoding: 'utf8' }).trim(), scope: 'read-only-testnet-qualification', inferenceVerified: false, transactions: [], hedera: [] };
+try {
+  assert.equal(BigInt(await provider.send('eth_chainId', [])), 11155111n);
+  assert.equal(keccak256(await provider.getCode(graph.deployment.address)), graph.deployment.codeHash);
+  const registry = new Contract(graph.deployment.address, ['function publisher() view returns(address)', 'function deploymentMode() view returns(uint8)'], provider);
+  assert.equal((await registry.publisher()).toLowerCase(), graph.deployment.publisher.toLowerCase());
+  assert.equal(await registry.deploymentMode(), 1n);
+  const hashes = [...new Set([graph.receiptPublication.transactionRef, ...Object.values(ens.transactions).map(t => t.hash)])];
+  for (const hash of hashes) {
+    const receipt = await provider.getTransactionReceipt(hash);
+    assert.ok(receipt); assert.equal(receipt.status, 1); assert.equal(receipt.from.toLowerCase(), ens.owner.toLowerCase());
+    const block = await provider.getBlock(receipt.blockNumber); assert.equal(block.hash, receipt.blockHash);
+    result.transactions.push({ hash, blockNumber: receipt.blockNumber, blockHash: receipt.blockHash, status: receipt.status, feeWei: String(receipt.fee) });
+  }
+  for (const run of hedera.runs) {
+    const [account, timestamp] = run.transactionId.split('@');
+    const id = account + '-' + timestamp.replace('.', '-');
+    const response = await fetch('https://testnet.mirrornode.hedera.com/api/v1/transactions/' + id, { signal: AbortSignal.timeout(15000) });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    const tx = body.transactions.find(t => t.transaction_id === id && t.nonce === 0);
+    assert.ok(tx); assert.equal(tx.result, 'SUCCESS');
+    const net = accountId => tx.transfers.filter(t => t.account === accountId).reduce((sum, t) => sum + BigInt(t.amount), 0n);
+    assert.equal(net(hedera.payer), -BigInt(run.amountTinybars)); assert.equal(net(hedera.receiver), BigInt(run.amountTinybars));
+    result.hedera.push({ transactionId: run.transactionId, result: tx.result, consensusTimestamp: tx.consensus_timestamp, amountTinybars: run.amountTinybars });
+  }
+  assert.ok(hedera.runs.reduce((sum, r) => sum + BigInt(r.amountTinybars), 0n) <= BigInt(hedera.totalLimitTinybars));
+  const client = createGraphClient({ endpoint: graph.queryUrl });
+  const config = { mode: 'live', chainId: '11155111', deployment: graph.deployment, deploymentId: graph.deploymentId, timeoutMs: 20000 };
+  const history = createHistory({ config, client, provider });
+  result.history = await queryProviderHistory({ config, client, provider, providerId: 'qualification.operator.eth' });
+  assert.equal(result.history.history.freshness, 'fresh'); assert.deepEqual(result.history.reasons, ['HISTORY_UNKNOWN']);
+  const data = await client.query({ query: 'query Receipt($receipt: Bytes!, $block: Bytes!) { receiptClaims(first: 2, where: {objectDigest: $receipt}, block: {hash: $block}) { objectDigest providerKey transactionHash blockNumber mode } }', variables: { receipt: '0x' + graph.receiptPublication.event.receiptDigest.slice(7), block: result.history.history.indexedBlockHash } });
+  assert.equal(data.receiptClaims.length, 1);
+  const claim = data.receiptClaims[0];
+  assert.equal(claim.transactionHash, graph.receiptPublication.transactionRef); assert.equal(claim.mode, 1);
+  assert.equal(claim.providerKey, '0x' + graph.receiptPublication.event.providerKey.slice(7)); result.indexedReceipt = claim;
+  const discovery = createEnsV2Discovery({ inputs: { mode: 'live', rpcUrl: 'https://ethereum-sepolia-rpc.publicnode.com', names: [ens.name], timeoutMs: 30000 }, history });
+  result.discovery = await discovery.list({ names: [ens.name] });
+  assert.equal(result.discovery.errors.length, 0); assert.equal(result.discovery.providers.length, 1);
+  const found = result.discovery.providers[0]; assert.equal(found.name, ens.name); assert.equal(found.paymentReceiver, hedera.receiver); assert.equal(found.historyEndpoint, graph.queryUrl);
+  const { artifact } = await import('../packages/discovery/src/artifacts.mjs');
+  const { packetToBytes } = createRequire(new URL('../packages/discovery/package.json', import.meta.url))('viem/ens');
+  const universal = artifact('UniversalResolverV2');
+  const owner = await new Contract(universal.address, universal.abi, provider).findOwner('0x' + Buffer.from(packetToBytes(ens.name)).toString('hex'));
+  assert.equal(owner.toLowerCase(), ens.owner.toLowerCase()); result.ensOwner = owner;
+  result.totalSepoliaFeesWei = String(result.transactions.reduce((sum, t) => sum + BigInt(t.feeWei), 0n));
+  result.status = 'passed'; result.completedAt = new Date().toISOString();
+  fs.mkdirSync(new URL('../artifacts/closeout/', import.meta.url), { recursive: true });
+  fs.writeFileSync(new URL('../artifacts/closeout/external-revalidation.json', import.meta.url), JSON.stringify(result, null, 2) + '\n');
+  console.log(JSON.stringify(result, null, 2));
+} finally { provider.destroy(); }
