@@ -148,3 +148,16 @@ Reviewed validator passed: 6 required acceptance IDs; 6 required external gates.
 Safe log: `artifacts/indexing/closure-reviewed-gate.log`. Both commands are successful command records in indexing.json. Presence/coverage validation does not establish external claims; the local receipt and explicitly blocked live gates above state the actual assurance boundary.
 
 Independent Docker inspect checks confirmed the three named final-ingestion containers and network no longer exist (`closure-cleanup.log`). No unrelated resources were removed. The handoff documentation commit is intentionally later than codeRevision; the source comparison remains empty. No independently actionable local work remains under this lane's scope; only the listed external authority/integration gates remain.
+
+## Hosted qualification follow-up
+
+The live deployment/credential blockers above are historical. See
+`graph-studio-deployment.json` for the actual free hosted deployment, confirmed
+application outbox publication and matching indexed receipt. At c59a715,
+`npm --prefix packages/indexing run check` and `npm --prefix packages/indexing run smoke`
+both exited 0; retained logs are `artifacts/closeout/final-indexing-check.log` and
+`artifacts/closeout/final-indexing-smoke.log`. `node scripts/revalidate-testnet.mjs`
+also exited 0 after exercising live History and an actual quote/ENS/Graph selection.
+The canonical RPC-backed block-hash path retains 12 confirmations and reports
+HISTORY_UNKNOWN when no inference assessments exist. The final exact-candidate
+whole-repository receipt is `artifacts/closeout/external-final-verification.json`.

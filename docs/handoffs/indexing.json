@@ -8,14 +8,14 @@
       "id": "indexing-check",
       "command": "npm --prefix packages/indexing run check",
       "exitCode": 0,
-      "evidence": "artifacts/closeout/final-indexing-check.log",
+      "evidence": "docs/handoffs/indexing.md",
       "localLog": "artifacts/closeout/fresh-a4b48df-indexing-check.log"
     },
     {
       "id": "indexing-smoke",
       "command": "npm --prefix packages/indexing run smoke",
       "exitCode": 0,
-      "evidence": "artifacts/closeout/final-indexing-smoke.log",
+      "evidence": "docs/handoffs/indexing.md",
       "localLog": "artifacts/closeout/fresh-a4b48df-indexing-smoke.log"
     },
     {
