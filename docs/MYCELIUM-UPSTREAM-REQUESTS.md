@@ -1,9 +1,9 @@
 # Goal C: source-bound upstream contract requests
 
-Status: addressed to the Mycelium integration owner through the workbench owner's
-local handoff. No message/issue was posted to an upstream service; delivery beyond
-this owner handoff and acceptance are NOT confirmed. Nothing is implemented upstream
-or physically qualified. No Mycelium code is copied or changed.
+Status: historical source-bound request with an owner-authorized C-UC1 candidate
+continuation now implemented and locally exercised in isolated worktrees. See
+`c-uc1-consumer.md`. No shared integration, physical qualification, public message,
+or upstream-source copying into the workbench is claimed. C-UC2 remains gated.
 Inspection anchor: `abe291c3ae856bef60394f528f1f86bddf78b2ad` in
 `/Users/evinova-self/Documents/playground/mycelium-wave8-integration`.
 Workbench starting candidate: `9148125009f78d145c1670b9542ef7a6dcaf2bb7`.
@@ -31,7 +31,7 @@ the two interfaces or treat canary operation as authorized here.
 
 Requested owner: Mycelium request-gateway maintainer, coordinated by its integration
 owner. Workbench integration owner supplies executable local consumer conformance tests.
-Acceptance status: awaiting upstream contract decision and implementation authority.
+Acceptance status: C-UC1 candidate wire accepted and implemented in isolated upstream/consumer worktrees under the owner-authorized continuation. See `c-uc1-consumer.md` for v3 rather than the historical proposal below. Local compatibility is not C-UC2 or physical qualification.
 
 Choose a separately versioned contract, without weakening existing v1/v2 validation:
 

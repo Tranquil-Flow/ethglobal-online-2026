@@ -37,6 +37,7 @@ export function createNativeExecutionAdapter({
   openSession,
   timeoutMs = 30000,
   maxOutputBytes = 1048576,
+  allowDecoderFlush = false,
 } = {}) {
   validate("Profile", profile);
   if (
@@ -220,6 +221,12 @@ export function createNativeExecutionAdapter({
                 tokenIds.length !== request.maxOutputTokens)
             )
               fail("NATIVE_COMPLETION_MISMATCH");
+            if (allowDecoderFlush) {
+              if (typeof e.finalText !== "string" || !e.finalText.isWellFormed()) fail("INVALID_DECODER_FLUSH");
+              text += e.finalText;
+              if (Buffer.byteLength(text) > maxOutputBytes) fail("NATIVE_OUTPUT_LIMIT");
+              if (e.finalText) yield { type: "delta", text: e.finalText, tokenIds: [] };
+            }
             completed = {
               text,
               tokenIds: [...tokenIds],

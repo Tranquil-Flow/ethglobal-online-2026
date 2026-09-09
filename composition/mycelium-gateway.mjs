@@ -171,7 +171,11 @@ export function createGatewayTransport({
   timeoutMs = 30000,
   fetchImpl = fetch,
   nativeProposal = false,
+  eventParser = parseGatewayEvents,
+  qualificationPath = "/v1/qualification/current",
+  allowPendingCancel = false,
 } = {}) {
+  if (!["/v1/qualification/current", "/v3/qualification/current"].includes(qualificationPath) || typeof eventParser !== "function") fail("INVALID_GATEWAY_OPTIONS");
   let url;
   try {
     url = new URL(baseUrl);
@@ -255,7 +259,7 @@ export function createGatewayTransport({
   return Object.freeze({
     async qualification({ signal } = {}) {
       return json(
-        await request("GET", "/v1/qualification/current", { signal }),
+        await request("GET", qualificationPath, { signal }),
       );
     },
     async submit(body, { signal } = {}) {
@@ -292,7 +296,7 @@ export function createGatewayTransport({
           const result = await json(response);
           if (
             result.request_id !== id ||
-            !["cancelling", "terminal"].includes(result.status)
+            !(allowPendingCancel ? ["pending", "cancelling", "terminal"] : ["cancelling", "terminal"]).includes(result.status)
           )
             fail("INVALID_CANCEL_RESPONSE");
           // 'cancelling' is only an acknowledgement; it is NOT proven cleanup.
@@ -311,7 +315,7 @@ export function createGatewayTransport({
             await response.body?.cancel();
             fail("INVALID_CONTENT_TYPE");
           }
-          yield* parseGatewayEvents(response.body, {
+          yield* eventParser(response.body, {
             requestId: id,
             nativeProposal,
           });
