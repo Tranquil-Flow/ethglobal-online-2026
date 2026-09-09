@@ -42,6 +42,29 @@ evidence means unqualified. Prior package or targeted successes do not substitut
 fresh-checkout aggregate gates.
 No public source/service exposure or real Mycelium qualification is claimed.
 
+## Goal C — active extension
+
+Owner authority: Goal C in `MYCELIUM_WAVE8_RETURNS_AND_ETHONLINE_GOALS.md`.
+Read-only source anchor: `abe291c3ae856bef60394f528f1f86bddf78b2ad`.
+The 9148125 completed milestone and its exact evidence are preserved, not requalified
+as live inference. All Mycelium execution/modification and private artifacts are excluded.
+
+- [x] Source-bound producer/consumer compatibility map and addressed owner requests.
+- [x] Bounded authenticated adapter and actual transport/parser/cleanup tests.
+- [x] Immutable profile machinery and pre-payment request validation (real metadata still owner-gated).
+- [x] Authorized separate reexecutor/assessment, no paid-path replay.
+- [x] Same-application HTTP/SDK/CLI/MCP/browser conformance-peer journey.
+- Final committed fresh-checkout status: **receipt-gated**, resolved only by
+  `artifacts/closeout/goal-c-final-verification.json` with matching HEAD and `status: passed`.
+  Missing/mismatched/failed receipts mean unqualified, not completion.
+- [x] Minimal source-bound real-route request: `MYCELIUM-REAL-ROUTE-REQUEST.md`.
+
+Goal C local evidence/handoff: `MYCELIUM-GOAL-C-HANDOFF.md`. Real model/profile,
+upstream acceptance and physical execution remain blocked, not included in checked items.
+
+No dependency on A6/A9/A14/A10/A11 or A5 scored replication is introduced.
+An upstream proposal exercised locally is not an implemented Mycelium interface.
+
 ## Ownership
 Integration owner: shared contracts, composition, startup, multi-provider payments, client coordination,
 canonical gates and final evidence. Isolated runtime worker owns new runtime module/tests. Isolated

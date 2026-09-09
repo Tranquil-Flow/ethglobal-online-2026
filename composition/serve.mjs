@@ -75,9 +75,11 @@ try {
       execution:
         app.mode === "live"
           ? "declared-live-runtime-not-qualified"
-          : configPath
-            ? "staged-simulator-not-inference"
-            : "synthetic-not-inference",
+          : app.mode === "conformance"
+            ? "native-gateway-conformance-not-inference"
+            : configPath
+              ? "staged-simulator-not-inference"
+              : "synthetic-not-inference",
       assessment: app.replayMethod ?? "unavailable",
       payment:
         app.mode === "live"

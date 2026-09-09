@@ -15,7 +15,7 @@ export function validateWorkbenchConfig(input) {
     !input ||
     Object.keys(input).some((k) => !allowed.includes(k)) ||
     input.version !== "1" ||
-    input.mode !== "simulation" ||
+    !["simulation", "conformance"].includes(input.mode) ||
     typeof input.dataDir !== "string" ||
     !input.dataDir ||
     !Number.isInteger(input.port) ||
@@ -83,8 +83,19 @@ export async function startWorkbench({
     throw Error("LIVE_BINDINGS_FORBIDDEN_IN_SIMULATION");
   const c = validateWorkbenchConfig(config);
   const { createSimulatorBinding } = await import("./runtime-binding.mjs");
-  const runtimeDefinition = createSimulatorBinding(c);
-  const infrastructure = await startRehearsalInfrastructure();
+  const runtimeDefinition =
+    c.mode === "conformance"
+      ? await (
+          await import("./conformance-binding.mjs")
+        ).createConformanceBinding(c)
+      : createSimulatorBinding(c);
+  let infrastructure;
+  try {
+    infrastructure = await startRehearsalInfrastructure();
+  } catch (error) {
+    await runtimeDefinition.close?.();
+    throw error;
+  }
   let app,
     heartbeat,
     pending = Promise.resolve(),
@@ -98,6 +109,7 @@ export async function startWorkbench({
       () => pending,
       () => app?.close(),
       () => infrastructure.close(),
+      () => runtimeDefinition.close?.(),
     ])
       try {
         await f();
@@ -141,7 +153,7 @@ export async function startWorkbench({
       offset += 64
     )
       await app.reconcilePublications({ offset, limit: 64 });
-    return { ...app, mode: "simulation", infrastructure, close };
+    return { ...app, mode: c.mode, infrastructure, close };
   } catch (e) {
     await close();
     throw e;

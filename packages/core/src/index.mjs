@@ -256,6 +256,17 @@ export function createApp({
     const r = checked("Request", value);
     if (!profiles.has(r.profileId) || !providers.has(r.providerId))
       fail(400, "UNSUPPORTED_PROFILE_OR_PROVIDER");
+    if (typeof executor.validateRequest === "function") {
+      try {
+        const result = executor.validateRequest(structuredClone(r));
+        if (result && typeof result.then === "function") {
+          Promise.resolve(result).catch(() => {});
+          throw Error("ASYNC_REQUEST_POLICY");
+        }
+      } catch {
+        fail(400, "UNSUPPORTED_EXECUTION_REQUEST");
+      }
+    }
     return r;
   }
   function quoteFor(id, s, r) {

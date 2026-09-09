@@ -1,0 +1,11 @@
+{
+  "version": "1",
+  "mode": "conformance",
+  "dataDir": ".local-workbench-conformance",
+  "port": 8787,
+  "providers": [
+    { "providerId": "alpha.example.eth", "amountBaseUnits": "2" },
+    { "providerId": "beta.example.eth", "amountBaseUnits": "3" }
+  ],
+  "faults": { "alpha.example.eth": "divergence" }
+}

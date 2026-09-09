@@ -227,16 +227,17 @@ function normalizeConfig(input) {
   }
   return structuredClone(input);
 }
-function validateRuntime(runtime, config) {
+function validateRuntime(runtime, config, allowFactory = true) {
   if (
     !object(runtime) ||
     runtime.kind !== "mycelium" ||
     runtime.mode !== "live" ||
     !Array.isArray(runtime.profiles) ||
-    runtime.executor?.mode !== "live" ||
-    typeof runtime.executor.execute !== "function" ||
-    runtime.assessor?.mode !== "live" ||
-    typeof runtime.assessor.assess !== "function" ||
+    (!(allowFactory && typeof runtime.create === "function") &&
+      (runtime.executor?.mode !== "live" ||
+        typeof runtime.executor.execute !== "function" ||
+        runtime.assessor?.mode !== "live" ||
+        typeof runtime.assessor.assess !== "function")) ||
     !safeText(runtime.method) ||
     !safeText(runtime.verifierId)
   )
@@ -348,6 +349,23 @@ export async function startLiveWorkbench({
 
   try {
     store = createStore({ path: join(dir, "core.sqlite") });
+    if (typeof runtime.create === "function") {
+      const ports = runtime.create({
+        store,
+        providerPins: Object.fromEntries(
+          config.providers.map(({ providerId }) => [
+            providerId,
+            { providerId, ...pins },
+          ]),
+        ),
+      });
+      runtime = {
+        ...runtime,
+        executor: ports?.executor,
+        assessor: ports?.assessor,
+      };
+      validateRuntime(runtime, config, false);
+    }
     payments = createPayments({
       config: { ...config.payment, databasePath: join(dir, "payments.sqlite") },
     });

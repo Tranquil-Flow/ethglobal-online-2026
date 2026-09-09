@@ -7,6 +7,16 @@ No inference-model downloads/runs; no production infrastructure changes. Public 
 may be inspected; preserve license provenance. The older Desktop Mycelium plan is historical,
 not an active specification. This repository's docs define this authorized scope.
 
+## Goal C scope amendment (owner launched)
+Workbench-side Mycelium adapter/profile/assessment implementation is authorized, along
+with read-only SOURCE/contracts/license inspection of
+`/Users/evinova-self/Documents/playground/mycelium-wave8-integration`.
+No Mycelium modification/import/execution, credentials/private-run-artifact access,
+fleet/model operation, new spending, public exposure, source copying or publication.
+Use a clean protocol adapter; missing upstream contracts remain explicit owner requests.
+Preserve the non-Mycelium 9148125 verification packet. The active Goal C checklist is
+appended to docs/WORKBENCH-IMPLEMENTATION.md; all other constraints above remain.
+
 ## Mandatory entry
 Read docs/ARCHITECTURE.md, PORTS.md, HTTP.md, your docs/lanes/<lane>.md and docs/RELEASE.md.
 Verify cwd, git branch/status/worktree and your lane's allowed paths in docs/lanes.json.

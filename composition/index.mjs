@@ -251,6 +251,25 @@ async function startDevelopmentUnlocked(
   };
   try {
     store = createStore({ path: join(dir, "core.sqlite") });
+    const runtimeIdentity = {
+      version: "1",
+      profileId,
+      kind: runtimeDefinition?.conformance
+        ? "native-conformance"
+        : runtimeDefinition
+          ? "staged-simulator"
+          : "legacy-development",
+    };
+    const previousRuntime = store.get("composition-runtime", "identity");
+    if (
+      (previousRuntime &&
+        digestOf(previousRuntime) !== digestOf(runtimeIdentity)) ||
+      (!previousRuntime &&
+        runtimeDefinition?.conformance &&
+        store.list("jobs").length)
+    )
+      throw Error("DATASET_RUNTIME_MISMATCH");
+    store.set("composition-runtime", "identity", runtimeIdentity);
     synthetic = await createSyntheticTransport({ store });
     server = createServer(async (req, res) => {
       try {
@@ -317,9 +336,13 @@ async function startDevelopmentUnlocked(
             })),
             replayMethod: runtime?.assessor?.method,
             development: true,
-            execution: "synthetic-not-inference",
+            execution: runtimeDefinition?.conformance
+              ? "native-gateway-conformance-not-inference"
+              : "synthetic-not-inference",
             assessment: runtime?.assessor
-              ? "simulator-reexecution-not-inference-verification"
+              ? runtimeDefinition?.conformance
+                ? "native-conformance-reexecution-not-model-proof"
+                : "simulator-reexecution-not-inference-verification"
               : testAssessment
                 ? "test-fixture-not-inference-verification"
                 : "unavailable",

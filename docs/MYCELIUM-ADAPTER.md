@@ -2,7 +2,7 @@
 
 ## Status and claim boundary
 
-This is the integration contract for a future adapter. The repository does **not** contain, inspect, run, or qualify Mycelium, Gas Killer, a model, or a fleet. `conformance/executor-port.mjs` uses an offline deterministic non-inference fixture against the real core job/HTTP/receipt path. Passing it establishes only local port compatibility with the checked-out core.
+Goal C implements the clean-room workbench transport, native execution boundary, immutable profile builder and separate replay assessor in `composition/mycelium-*.mjs`. Read-only Mycelium source inspection is pinned to `abe291c3ae856bef60394f528f1f86bddf78b2ad`; no source was copied, imported or executed. The inspected gateway is **not compatible** with the required native evidence: missing token IDs/config acknowledgement/completion semantics fail closed. The extended wire protocol is an explicitly **unaccepted workbench proposal**, exercised only by the labelled local HTTP conformance peer. See `MYCELIUM-UPSTREAM-REQUESTS.md` and `MYCELIUM-PROFILE.md`. No real model profile or route is qualified.
 
 ## Adapter surface
 
@@ -90,4 +90,14 @@ owns job persistence/reconnect; the adapter owns upstream cancellation and clean
 
 ## Still required for actual compatibility
 
-Before any live claim: inspect the authorized Mycelium API/version and license; implement exact profile mapping and tokenizer/template semantics; test real cancellation and backpressure; define evidence retention/export; run this conformance with a local adapter fixture; then run a separately approved bounded real execution. Upstream API and runtime compatibility are currently unknown.
+The source inspection and local adapter machinery exist; the remaining gate is upstream acceptance/implementation of the native evidence contract plus one actual sanitized deployment metadata packet and separately authorized real qualification. `createMyceliumRuntimeBinding({mode:'live',profileMetadata,providers,replayGateway,timeoutMs})` performs authenticated qualification reads during explicit startup, never model submission. Pass its returned definition as `runtime` to `startLiveWorkbench`/`startWorkbench`; the host injects its own private evidence store and provider signing pins through `runtime.create`. Unsupported legacy readiness rejects before a payable provider is advertised. Execution rechecks readiness before dispatch and after stream EOF.
+
+`profilePolicy` injection is development-only; live construction requires `profileMetadata` and forbids ambiguous dual configuration. No CLI credential-file discovery is implemented: an authorized operator supplies in-memory transport and signer configuration. No real metadata values are bundled.
+
+Run the labelled local peer through the normal client application with:
+
+```sh
+node composition/serve.mjs --config composition/workbench.conformance.json
+```
+
+This launches local rehearsal infrastructure, not Mycelium. Runtime mode and retained dataset identity are separate from simulation and cannot be silently switched. Public payment/publication remains forbidden for this conformance mode. Local `passed` means same-profile repeatability, not independent verification, useful model output or cryptographic inference proof.
