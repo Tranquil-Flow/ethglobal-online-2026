@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "revision": "5697576298491efbd1a2285def50d49baad27ebd",
+  "scope": "Frozen local code gates; conformance not real model execution. Final clean-checkout status is separate.",
+  "commands": [
+    {
+      "command": "npm --prefix packages/core run check",
+      "exitCode": 0,
+      "log": "artifacts/closeout/goal-c-core-check.log",
+      "sha256": "44906dac293ae7e9fc6cd3bd9e73bfd7b00280b28e8d0879758a4204c400752c",
+      "lastTapSummary": {
+        "tests": 34,
+        "pass": 34,
+        "fail": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "command": "npm --prefix packages/core run smoke",
+      "exitCode": 0,
+      "log": "artifacts/closeout/goal-c-core-smoke.log",
+      "sha256": "88cc2c7bcc366ef8650887037a5b0f114e4128ecc80ec818c3587c86042edffb",
+      "lastTapSummary": {}
+    },
+    {
+      "command": "npm run smoke:integration",
+      "exitCode": 0,
+      "log": "artifacts/closeout/goal-c-integration-frozen.log",
+      "sha256": "eef98e90154c47d632a5fc473d9f2365e1f2b17154b772f80cbf97902c1d0b59",
+      "lastTapSummary": {
+        "tests": 71,
+        "pass": 71,
+        "fail": 0,
+        "skipped": 0
+      }
+    }
+  ]
+}

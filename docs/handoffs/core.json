@@ -1,29 +1,29 @@
 {
   "lane": "core",
   "status": "local_ready",
-  "codeRevision": "5c76af329661fab1a2e237c2b9b328db49c4b131",
+  "codeRevision": "5697576298491efbd1a2285def50d49baad27ebd",
   "reviewContract": "handoff-review-v1",
   "commands": [
     {
       "id": "core-check",
       "command": "npm --prefix packages/core run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/workbench-code-verification.json",
-      "localLog": "artifacts/closeout/workbench-code-core-check.log"
+      "evidence": "docs/handoffs/goal-c-code-verification.json",
+      "localLog": "artifacts/closeout/goal-c-core-check.log"
     },
     {
       "id": "core-smoke",
       "command": "npm --prefix packages/core run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/workbench-code-verification.json",
-      "localLog": "artifacts/closeout/workbench-code-core-smoke.log"
+      "evidence": "docs/handoffs/goal-c-code-verification.json",
+      "localLog": "artifacts/closeout/goal-c-core-smoke.log"
     },
     {
       "id": "composition",
       "command": "npm run smoke:integration",
       "exitCode": 0,
-      "evidence": "docs/handoffs/workbench-code-verification.json",
-      "localLog": "artifacts/closeout/workbench-code-final-integration.log"
+      "evidence": "docs/handoffs/goal-c-code-verification.json",
+      "localLog": "artifacts/closeout/goal-c-integration-frozen.log"
     }
   ],
   "acceptanceCases": [
@@ -92,14 +92,14 @@
     {
       "id": "combined-app",
       "status": "qualified",
-      "reason": "Actual combined local application verified at af665e0cf18889a2445c388e9d54d7548939eea6; this gate is local composition, not live sponsor or inference qualification.",
-      "evidence": "docs/handoffs/verified-code.json"
+      "reason": "Frozen local composition at 5697576298491efbd1a2285def50d49baad27ebd passed 71 tests including the native conformance gateway; not real inference or public qualification.",
+      "evidence": "docs/handoffs/goal-c-code-verification.json"
     },
     {
       "id": "mycelium-execution",
-      "status": "inapplicable",
-      "reason": "Explicitly excluded future scope. Only labelled synthetic development execution is implemented.",
-      "evidence": "docs/handoffs/core.md"
+      "status": "blocked",
+      "reason": "Goal C implements local clean-room adapter/profile/replay machinery. Current upstream native token/config/completion contract and real metadata/route authority remain required; no physical model execution.",
+      "evidence": "docs/MYCELIUM-GOAL-C-HANDOFF.md"
     },
     {
       "id": "gaskiller-integration",
