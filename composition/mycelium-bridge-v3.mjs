@@ -3,6 +3,11 @@ import {REQUEST_GATEWAY_PROTOCOL_V3, validateRuntimeProfileV1} from "./mycelium-
 const fail = (code) => { const e = Error(code); e.code = code; throw e; };
 const sha = (x) => typeof x === "string" && /^sha256:[a-f0-9]{64}$/.test(x);
 
+export function gatewayV3Submission({request, qualification, runtimeProfileId, configDigest}) {
+  return {protocol: REQUEST_GATEWAY_PROTOCOL_V3, prompt: request.prompt, max_new_tokens: request.maxOutputTokens,
+    qualification, profile_id: runtimeProfileId, generation_config_digest: configDigest, nonce: request.nonce};
+}
+
 /** Trusted constructor pins are separate from client request claims. */
 export function createGatewayV3SessionFactory({transport, workbenchProfileId, runtimeProfile,
   qualification, maxQualificationAgeMs = 30000, now = Date.now, expectedEvidenceClass} = {}) {
@@ -38,8 +43,7 @@ export function createGatewayV3SessionFactory({transport, workbenchProfileId, ru
         request.seed !== 0 || request.sampling !== "greedy" || request.maxOutputTokens > profile.max_new_tokens_limit ||
         configDigest !== digestOf({max_new_tokens: request.maxOutputTokens, sampling_seed: 0})) fail("UNSUPPORTED_EXECUTION_REQUEST");
     await readiness(signal);
-    const body = {protocol: REQUEST_GATEWAY_PROTOCOL_V3, prompt: request.prompt, max_new_tokens: request.maxOutputTokens,
-      qualification: pinned, profile_id: runtimeProfileId, generation_config_digest: configDigest, nonce: request.nonce};
+    const body = gatewayV3Submission({request, qualification: pinned, runtimeProfileId, configDigest});
     const expected = {profile_id: runtimeProfileId, request_digest: digestOf(body), generation_config_digest: configDigest, qualification_digest: pinned.qualification_digest};
     const expectedDigest = digestOf(expected);
     if (signal?.aborted) fail("ABORTED");

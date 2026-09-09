@@ -254,6 +254,7 @@ async function startDevelopmentUnlocked(
     const runtimeIdentity = {
       version: "1",
       profileId,
+      ...(runtimeDefinition?.protocol === "mycelium.request_gateway.v3" ? {protocol:runtimeDefinition.protocol} : {}),
       kind: runtimeDefinition?.conformance
         ? "native-conformance"
         : runtimeDefinition

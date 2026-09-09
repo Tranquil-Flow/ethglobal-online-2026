@@ -33,11 +33,21 @@ export function createNativeReplayAssessor({
   method = "native-replay-v1",
   verifierId = "workbench-native-verifier-v1",
   timeoutMs = 30000,
+  evidenceDigestFor = ({ profileId, request, output }) =>
+    nativeEvidenceDigest({
+      profileId,
+      requestHash: digestOf(request),
+      configDigest: nativeConfigDigest(request),
+      output,
+    }),
+  replayEvidenceDigestFor = evidenceDigestFor,
 } = {}) {
   validate("Profile", profile);
   const profileId = digestOf(profile);
   if (
     typeof loadEvidence !== "function" ||
+    typeof evidenceDigestFor !== "function" ||
+    typeof replayEvidenceDigestFor !== "function" ||
     !pins?.providerId ||
     !pins.keyId ||
     !pins.publicKeyJwk ||
@@ -94,10 +104,9 @@ export function createNativeReplayAssessor({
           trustedKeys: { [pins.keyId]: pins.publicKeyJwk },
           maxBytes: 2097152,
         });
-        const original = nativeEvidenceDigest({
+        const original = evidenceDigestFor({
           profileId,
-          requestHash: digestOf(bundle.request),
-          configDigest: nativeConfigDigest(bundle.request),
+          request: bundle.request,
           output: bundle.output,
         });
         if (original !== receipt.payload.evidenceDigest)
@@ -185,10 +194,9 @@ export function createNativeReplayAssessor({
         if (!ended || !completed)
           return result("unavailable", "INCOMPLETE_REPLAY");
         validate("Output", completed.output);
-        const actual = nativeEvidenceDigest({
+        const actual = replayEvidenceDigestFor({
           profileId,
-          requestHash: digestOf(bundle.request),
-          configDigest: nativeConfigDigest(bundle.request),
+          request: bundle.request,
           output: completed.output,
         });
         if (
@@ -199,8 +207,7 @@ export function createNativeReplayAssessor({
         )
           return result("unavailable", "INVALID_REPLAY_BINDING");
         const matches =
-          digestOf(completed.output) === receipt.payload.outputHash &&
-          actual === receipt.payload.evidenceDigest;
+          digestOf(completed.output) === receipt.payload.outputHash;
         return result(
           matches ? "passed" : "mismatch",
           matches ? "NATIVE_REPLAY_MATCH" : "REPLAY_DIVERGENCE",

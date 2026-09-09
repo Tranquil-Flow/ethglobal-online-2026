@@ -37,7 +37,7 @@ try {
     const config = JSON.parse(readFileSync(configPath, "utf8"));
     let bindings = {};
     if (bindingsPath) {
-      if (config.mode !== "live")
+      if (!["live", "mycelium-v3-conformance"].includes(config.mode))
         throw Error("LIVE_BINDINGS_FORBIDDEN_IN_SIMULATION");
       const module = await import(pathToFileURL(resolve(bindingsPath)).href);
       if (typeof module.createBindings !== "function")
@@ -75,7 +75,7 @@ try {
       execution:
         app.mode === "live"
           ? "declared-live-runtime-not-qualified"
-          : app.mode === "conformance"
+          : ["conformance", "mycelium-v3-conformance"].includes(app.mode)
             ? "native-gateway-conformance-not-inference"
             : configPath
               ? "staged-simulator-not-inference"

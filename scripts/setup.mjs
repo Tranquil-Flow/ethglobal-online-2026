@@ -41,6 +41,9 @@ run("npm", [
   "chromium",
 ]);
 run("npm", ["--prefix", "packages/access", "run", "build:viewer"]);
+// A fresh normal startup deploys the local subgraph; generated imports are
+// prerequisites, not a side effect users should have to obtain from check:all.
+run("npm", ["--prefix", "packages/indexing", "run", "codegen"]);
 console.log(
   `Setup verified: Node ${process.version}, ABI ${process.versions.modules}, SQLite and fs-ext loaded. Only local application; no live qualification.`,
 );

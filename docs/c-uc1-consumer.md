@@ -1,6 +1,6 @@
 # C-UC1 v3 workbench consumer
 
-Status: isolated clean-room consumer rebind. This document describes local protocol compatibility only. It makes no physical execution, model, fleet, qualification, integration, or publication claim and does not copy Mycelium implementation code.
+Status: isolated clean-room consumer rebind. This document describes the original local protocol compatibility acceptance. The separately authorized [application continuation](c-uc1-application.md) integrates v3 into normal workbench startup and local application gates. Neither establishes physical/model/fleet qualification or public publication; no Mycelium implementation code is copied into JavaScript.
 
 Authoritative wire contract: `mycelium.request_gateway.v3` / `mycelium.request_event.v3` as negotiated in the separately owned C-UC1 contract document. The historical `workbench.mycelium_gateway_candidate.v1` implementation remains explicitly opt-in and is not promoted or retagged as v3.
 

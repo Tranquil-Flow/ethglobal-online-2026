@@ -1,5 +1,24 @@
 # Runtime-ready workbench technical acceptance
 
+## Active isolated v3 continuation
+
+The latest owner instruction authorizes independent A9/C-UC1 adjudication and
+locally executable v3 application integration. [C-UC1 application](c-uc1-application.md)
+defines the precise source bindings, normal startup, trust boundaries, reproduction
+and remaining real-route inputs. This overrides the older prohibition on **isolated
+local** Mycelium execution below; shared Mycelium/main-workbench refs, model/fleet
+operations, physical preparation, fan-in, spending and public exposure remain forbidden.
+
+- [x] V3 factory and startup mode; no legacy protocol or simulator fallback.
+- [x] Actual gateway-backed core jobs, receipts, native Unicode IDs and separate replay.
+- [x] Normal serve process with local ENS/Graph and HTTP/SDK/CLI/MCP/Chromium.
+- [x] Real host evidence-store binding, substitution/expiry/deletion, cancellation and restart.
+- Final committed-byte check:all/integration status: external sealed review packet,
+  not these checkboxes. Earlier logs remain historical; new source needs fresh gates.
+- Real-route/model qualification remains blocked on exact owner inputs in the new doc.
+
+## Prior milestone authority (retained history)
+
 Authority: current owner goal expands the previous narrow milestone. Baseline a142695.
 This is the single active checklist; original Desktop plan is historical context.
 No Mycelium/Gas Killer/model/fleet operation, bonds, slashing, bounty market or publication.

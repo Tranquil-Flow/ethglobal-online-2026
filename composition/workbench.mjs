@@ -15,7 +15,7 @@ export function validateWorkbenchConfig(input) {
     !input ||
     Object.keys(input).some((k) => !allowed.includes(k)) ||
     input.version !== "1" ||
-    !["simulation", "conformance"].includes(input.mode) ||
+    !["simulation", "conformance", "mycelium-v3-conformance"].includes(input.mode) ||
     typeof input.dataDir !== "string" ||
     !input.dataDir ||
     !Number.isInteger(input.port) ||
@@ -59,6 +59,7 @@ export function validateWorkbenchConfig(input) {
       input.delayMs > 1000)
   )
     throw Error("INVALID_SIMULATOR_DELAY");
+  if (input.mode === "mycelium-v3-conformance" && (input.faults !== undefined || input.delayMs !== undefined)) throw Error("V3_GATEWAY_OWNS_RUNTIME_INPUTS");
   return structuredClone(input);
 }
 
@@ -79,12 +80,14 @@ export async function startWorkbench({
       publicationSigner,
     });
   }
-  if (runtime || receiptSigner || publicationSigner)
+  const v3 = config?.mode === "mycelium-v3-conformance";
+  if (v3 && (!runtime || runtime.kind !== "mycelium-v3-conformance" || runtime.protocol !== "mycelium.request_gateway.v3" || runtime.mode !== "development" || runtime.conformance !== true || receiptSigner || publicationSigner)) throw Error("V3_CONFORMANCE_RUNTIME_REQUIRED");
+  if (!v3 && (runtime || receiptSigner || publicationSigner))
     throw Error("LIVE_BINDINGS_FORBIDDEN_IN_SIMULATION");
   const c = validateWorkbenchConfig(config);
   const { createSimulatorBinding } = await import("./runtime-binding.mjs");
   const runtimeDefinition =
-    c.mode === "conformance"
+    v3 ? runtime : c.mode === "conformance"
       ? await (
           await import("./conformance-binding.mjs")
         ).createConformanceBinding(c)
