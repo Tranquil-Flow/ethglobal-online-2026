@@ -10,12 +10,15 @@ export function validateWorkbenchConfig(input) {
     "providers",
     "faults",
     "delayMs",
+    "accessPolicy",
   ];
   if (
     !input ||
     Object.keys(input).some((k) => !allowed.includes(k)) ||
     input.version !== "1" ||
-    !["simulation", "conformance", "mycelium-v3-conformance"].includes(input.mode) ||
+    !["simulation", "conformance", "mycelium-v3-conformance"].includes(
+      input.mode,
+    ) ||
     typeof input.dataDir !== "string" ||
     !input.dataDir ||
     !Number.isInteger(input.port) ||
@@ -23,6 +26,14 @@ export function validateWorkbenchConfig(input) {
     input.port > 65535
   )
     throw Error("INVALID_WORKBENCH_CONFIG");
+  const sponsored = input.accessPolicy === "sponsored-local";
+  if (
+    input.accessPolicy !== undefined &&
+    (!sponsored ||
+      input.mode !== "mycelium-v3-conformance" ||
+      input.providers?.length !== 1)
+  )
+    throw Error("INVALID_ACCESS_POLICY");
   if (
     !Array.isArray(input.providers) ||
     !input.providers.length ||
@@ -36,7 +47,9 @@ export function validateWorkbenchConfig(input) {
           (k) => !["providerId", "amountBaseUnits"].includes(k),
         ) ||
         !/^[a-z0-9-]+\.example\.eth$/.test(p.providerId) ||
-        !/^([1-9][0-9]{0,3}|10000)$/.test(p.amountBaseUnits),
+        !(sponsored
+          ? p.amountBaseUnits === "0"
+          : /^([1-9][0-9]{0,3}|10000)$/.test(p.amountBaseUnits)),
     )
   )
     throw Error("INVALID_PROVIDER_CATALOG");
@@ -59,7 +72,11 @@ export function validateWorkbenchConfig(input) {
       input.delayMs > 1000)
   )
     throw Error("INVALID_SIMULATOR_DELAY");
-  if (input.mode === "mycelium-v3-conformance" && (input.faults !== undefined || input.delayMs !== undefined)) throw Error("V3_GATEWAY_OWNS_RUNTIME_INPUTS");
+  if (
+    input.mode === "mycelium-v3-conformance" &&
+    (input.faults !== undefined || input.delayMs !== undefined)
+  )
+    throw Error("V3_GATEWAY_OWNS_RUNTIME_INPUTS");
   return structuredClone(input);
 }
 
@@ -81,17 +98,44 @@ export async function startWorkbench({
     });
   }
   const v3 = config?.mode === "mycelium-v3-conformance";
-  if (v3 && (!runtime || runtime.kind !== "mycelium-v3-conformance" || runtime.protocol !== "mycelium.request_gateway.v3" || runtime.mode !== "development" || runtime.conformance !== true || receiptSigner || publicationSigner)) throw Error("V3_CONFORMANCE_RUNTIME_REQUIRED");
+  if (
+    v3 &&
+    (!runtime ||
+      runtime.kind !== "mycelium-v3-conformance" ||
+      runtime.protocol !== "mycelium.request_gateway.v3" ||
+      runtime.mode !== "development" ||
+      runtime.conformance !== true ||
+      receiptSigner ||
+      publicationSigner)
+  )
+    throw Error("V3_CONFORMANCE_RUNTIME_REQUIRED");
   if (!v3 && (runtime || receiptSigner || publicationSigner))
     throw Error("LIVE_BINDINGS_FORBIDDEN_IN_SIMULATION");
   const c = validateWorkbenchConfig(config);
   const { createSimulatorBinding } = await import("./runtime-binding.mjs");
-  const runtimeDefinition =
-    v3 ? runtime : c.mode === "conformance"
+  const runtimeDefinition = v3
+    ? runtime
+    : c.mode === "conformance"
       ? await (
           await import("./conformance-binding.mjs")
         ).createConformanceBinding(c)
       : createSimulatorBinding(c);
+  if (c.accessPolicy === "sponsored-local") {
+    if (
+      JSON.stringify(runtimeDefinition.providerIds) !==
+      JSON.stringify(c.providers.map((p) => p.providerId))
+    )
+      throw Error("RUNTIME_PROVIDER_CATALOG_MISMATCH");
+    const app = await startDevelopment({
+      development: true,
+      dataDir: c.dataDir,
+      port: c.port,
+      providerCatalog: c.providers,
+      runtimeDefinition,
+      accessPolicy: c.accessPolicy,
+    });
+    return { ...app, mode: c.mode, accessPolicy: c.accessPolicy };
+  }
   let infrastructure;
   try {
     infrastructure = await startRehearsalInfrastructure();

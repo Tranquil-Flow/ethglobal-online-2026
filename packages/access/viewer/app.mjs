@@ -4,6 +4,7 @@ import {
   developmentAuthorizer,
   AccessError,
   verifyReceiptIntegrity,
+  checkBuyerEvidenceJson,
 } from "../src/index.mjs";
 const $ = (id) => document.getElementById(id),
   text = (id, v) => ($(id).textContent = v);
@@ -186,7 +187,12 @@ $("submit").onclick = () =>
       const submittingClient = client,
         submittedRequest = request;
       const budget = $("budget")?.value ?? "10";
-      if (!/^[1-9][0-9]{0,4}$/.test(budget) || BigInt(budget) > 10000n)
+      if (
+        !(config.accessPolicy === "sponsored-local"
+          ? budget === "0"
+          : /^[1-9][0-9]{0,4}$/.test(budget)) ||
+        BigInt(budget) > 10000n
+      )
         throw new AccessError("BUDGET_LIMIT");
       const r = await submittingClient.submitJob({
         request,
@@ -229,7 +235,12 @@ function renderJob(j) {
     "job-state",
     j.executionStatus === "succeeded" ? "Completed" : j.executionStatus,
   );
-  text("payment-state", (j.payment?.status || "unknown") + " · " + j.mode);
+  text(
+    "payment-state",
+    config.accessPolicy === "sponsored-local"
+      ? "Non-monetary — no settlement or refund claim"
+      : (j.payment?.status || "unknown") + " · " + j.mode,
+  );
 }
 $("cancel").onclick = () =>
   action(async () => {
@@ -259,7 +270,9 @@ $("download").onclick = () =>
     need();
     if (!job) throw new AccessError("No job");
     status("Validating private evidence…");
-    const evidence = await (jobClient ?? client).getEvidence(job.jobId);
+    const evidence = await (jobClient ?? client).getEvidence(job.jobId, {
+      expected: buyerContext().expected,
+    });
     text(
       "receipt-state",
       "Integrity verified against configured pin — not inference verification",
@@ -276,6 +289,51 @@ $("download").onclick = () =>
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     status(
       "Private evidence downloaded — integrity only, not provider trust or execution proof",
+    );
+  });
+function buyerContext() {
+  if (!job) throw new AccessError("BUYER_EXPECTATION_UNAVAILABLE");
+  const expected = (jobClient ?? client).getBuyerExpectation(job.jobId);
+  if (job.output) expected.output = structuredClone(job.output);
+  return { expected, pins: structuredClone(jobPins) };
+}
+$("download-context").onclick = () =>
+  action(async () => {
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(buyerContext(), null, 2)], {
+        type: "application/json",
+      }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "private-buyer-context.json";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    status(
+      "Private buyer context retained — keep independently of provider exports",
+    );
+  });
+$("offline-check").onclick = () =>
+  action(async () => {
+    text("offline-result", "Not checked");
+    const file = (id) => {
+      const f = $(id).files?.[0];
+      if (!f || f.size > 2097152) throw new AccessError("EVIDENCE_SIZE_LIMIT");
+      return f;
+    };
+    const context = JSON.parse(await file("offline-context").text());
+    const result = await checkBuyerEvidenceJson(
+      await file("offline-evidence").text(),
+      context.pins,
+      context.expected,
+    );
+    text(
+      "offline-result",
+      "Original request and receipt integrity checked; " +
+        (result.completeOutputBound
+          ? "complete retained output bound"
+          : "no separately retained output") +
+        " — not computation proof or financial protection",
     );
   });
 $("delete-evidence").onclick = () =>
@@ -333,7 +391,9 @@ $("resume").onclick = () =>
       job = await (jobClient ?? client).getJob(job.jobId);
       renderJob(job);
       if (job.executionStatus === "succeeded") {
-        const evidence = await (jobClient ?? client).getEvidence(job.jobId);
+        const evidence = await (jobClient ?? client).getEvidence(job.jobId, {
+          expected: buyerContext().expected,
+        });
         text("answer", evidence.output.text);
         text(
           "receipt-state",

@@ -307,6 +307,7 @@ export async function startLiveWorkbench({
   receiptSigner,
   publicationSigner,
   paymentAuthorizer,
+  legacyTestnetRehearsal = false,
 } = {}) {
   const config = normalizeConfig(input);
   validateRuntime(runtime, config);
@@ -315,6 +316,10 @@ export async function startLiveWorkbench({
     config,
   );
 
+  // Legacy port tests require explicit host-only opt-in. The application launcher
+  // never forwards this flag; no protected-payment substitute is implemented.
+  if (legacyTestnetRehearsal !== true)
+    throw Error("PROTECTED_PAYMENT_UNAVAILABLE");
   const dir = resolve(config.dataDir);
   mkdirSync(dir, { recursive: true, mode: 0o700 });
   let release = acquirePrivateStateLock(dir);
@@ -404,15 +409,25 @@ export async function startLiveWorkbench({
       eventSink: indexing.eventSink,
     });
     const { url: coreUrl } = await app.listen({ host: "127.0.0.1", port: 0 });
-    viewer = await startLiveViewer({coreUrl, port:config.port, config:{
-      apiUrl:new URL(config.payment.resourceUrl).origin,
-      fixture:false,development:false,pins,
-      providerId:config.providers[0].providerId,
-      profileId:digestOf(runtime.profiles[0]),
-      providers:config.providers.map(p=>({providerId:p.providerId,profileIds:p.profileIds,pins:{providerId:p.providerId,...pins}})),
-      replayMethod:runtime.method,
-    }});
-    const {url}=viewer;
+    viewer = await startLiveViewer({
+      coreUrl,
+      port: config.port,
+      config: {
+        apiUrl: new URL(config.payment.resourceUrl).origin,
+        fixture: false,
+        development: false,
+        pins,
+        providerId: config.providers[0].providerId,
+        profileId: digestOf(runtime.profiles[0]),
+        providers: config.providers.map((p) => ({
+          providerId: p.providerId,
+          profileIds: p.profileIds,
+          pins: { providerId: p.providerId, ...pins },
+        })),
+        replayMethod: runtime.method,
+      },
+    });
+    const { url } = viewer;
     return Object.freeze({
       url,
       mode: "live",
@@ -443,4 +458,4 @@ export async function startLiveWorkbench({
     throw error;
   }
 }
-import { startLiveViewer } from './live-viewer.mjs';
+import { startLiveViewer } from "./live-viewer.mjs";

@@ -1,4 +1,5 @@
 import http from "node:http";
+import { createOpenAIIngress, isOpenAIPath, openAIError } from "./openai.mjs";
 import {
   readHeaderPolicy,
   requestHeaders,
@@ -1007,7 +1008,74 @@ export function createApp({
     });
     return a;
   }
+  async function createQuote(s, r) {
+    if (!payments) fail(503, "PAYMENTS_UNAVAILABLE");
+    if (store.list("quotes").length >= c.maxRecords) fail(429, "QUOTE_LIMIT");
+    const q = adapterChecked(
+      "Quote",
+      await bounded((signal) =>
+        payments.quote({
+          request: structuredClone(r),
+          principalId: s.principalId,
+          signal,
+        }),
+      ),
+    );
+    if (
+      q.mode !== c.mode ||
+      q.requestHash !== requestHash(r) ||
+      q.providerId !== r.providerId ||
+      q.profileId !== r.profileId ||
+      Date.parse(q.expiresAt) <= Date.now() ||
+      Date.parse(q.expiresAt) > Date.now() + 86400000
+    )
+      fail(503, "QUOTE_BINDING_MISMATCH");
+    const old = store.get("quotes", q.quoteId);
+    if (
+      old &&
+      (old.principalId !== s.principalId || digestOf(old.quote) !== digestOf(q))
+    )
+      fail(503, "QUOTE_ID_CONFLICT");
+    if (!old && store.list("quotes").length >= c.maxRecords)
+      fail(429, "QUOTE_LIMIT");
+    store.set("quotes", q.quoteId, {
+      ...old,
+      quote: q,
+      principalId: s.principalId,
+    });
+    return q;
+  }
   const assessmentLocks = new Map();
+  const openai = createOpenAIIngress({
+    profiles,
+    providers,
+    store,
+    config: c,
+    fail,
+    body,
+    request,
+    quote: createQuote,
+    submit,
+    idempotency,
+    scoped,
+    streams,
+    verifyReceipt(rec) {
+      try {
+        const receipt = store.get("receipts", rec.job.jobId)?.receipt;
+        return (
+          !!receipt &&
+          signer.verify(receipt) === true &&
+          digestOf(receipt) === rec.job.receiptDigest &&
+          receipt.payload.outputHash === digestOf(rec.job.output) &&
+          receipt.payload.jobId === rec.job.jobId &&
+          receipt.payload.profileId === rec.profileId &&
+          receipt.payload.requestHash === rec.job.requestHash
+        );
+      } catch {
+        return false;
+      }
+    },
+  });
   async function route(req, res) {
     if (closing) fail(503, "UNAVAILABLE");
     const url = new URL(req.url, "http://localhost");
@@ -1016,6 +1084,29 @@ export function createApp({
       .filter(Boolean)
       .map((x) => decodeURIComponent(x));
     const method = req.method;
+    if (isOpenAIPath(url.pathname)) {
+      const hosts = ["127.0.0.1", "localhost", "[::1]"].map(
+        (host) => `${host}:${server.address().port}`,
+      );
+      const names = req.rawHeaders
+        .filter((_, i) => i % 2 === 0)
+        .map((x) => x.toLowerCase());
+      if (
+        !hosts.includes(req.headers.host) ||
+        new Set(names).size !== names.length ||
+        Object.keys(req.headers).some(
+          (x) => x === "forwarded" || x.startsWith("x-forwarded-"),
+        ) ||
+        (req.headers.origin &&
+          req.headers.origin !== `http://${req.headers.host}`)
+      )
+        fail(403, "ORIGIN_REJECTED");
+      if (url.search) fail(400, "INVALID_QUERY");
+      const s = session(req);
+      rate(s.principalId, c.requestRate);
+      rate("openai-global", c.requestRate);
+      return openai.handle(req, res, url.pathname, s);
+    }
     if ([...url.searchParams.keys()].some((k) => k !== "name"))
       fail(400, "INVALID_QUERY");
     if (method === "GET" && url.pathname === "/healthz")
@@ -1201,43 +1292,7 @@ export function createApp({
       rate(s.principalId, c.requestRate);
       const b = await body(req);
       exact(b, ["request"]);
-      const r = request(b.request);
-      if (!payments) fail(503, "PAYMENTS_UNAVAILABLE");
-      if (store.list("quotes").length >= c.maxRecords) fail(429, "QUOTE_LIMIT");
-      const q = adapterChecked(
-        "Quote",
-        await bounded((signal) =>
-          payments.quote({
-            request: structuredClone(r),
-            principalId: s.principalId,
-            signal,
-          }),
-        ),
-      );
-      if (
-        q.mode !== c.mode ||
-        q.requestHash !== requestHash(r) ||
-        q.providerId !== r.providerId ||
-        q.profileId !== r.profileId ||
-        Date.parse(q.expiresAt) <= Date.now() ||
-        Date.parse(q.expiresAt) > Date.now() + 86400000
-      )
-        fail(503, "QUOTE_BINDING_MISMATCH");
-      const old = store.get("quotes", q.quoteId);
-      if (
-        old &&
-        (old.principalId !== s.principalId ||
-          digestOf(old.quote) !== digestOf(q))
-      )
-        fail(503, "QUOTE_ID_CONFLICT");
-      if (!old && store.list("quotes").length >= c.maxRecords)
-        fail(429, "QUOTE_LIMIT");
-      store.set("quotes", q.quoteId, {
-        ...old,
-        quote: q,
-        principalId: s.principalId,
-      });
-      return send(res, 201, q);
+      return send(res, 201, await createQuote(s, request(b.request)));
     }
     if (method === "POST" && url.pathname === "/v1/jobs") {
       const s = session(req);
@@ -1444,7 +1499,9 @@ export function createApp({
           send(
             res,
             status,
-            errorBody(code, status === 503 || status === 429),
+            isOpenAIPath(new URL(req.url, "http://localhost").pathname)
+              ? openAIError(code, status)
+              : errorBody(code, status === 503 || status === 429),
             status === 429 ? { "retry-after": "60" } : {},
           );
         });

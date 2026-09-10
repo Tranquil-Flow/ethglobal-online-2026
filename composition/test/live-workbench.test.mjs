@@ -12,6 +12,25 @@ import { digestOf } from "../../packages/contracts/index.mjs";
 import { sepolia } from "../../packages/discovery/src/artifacts.mjs";
 import { startLiveWorkbench } from "../live-workbench.mjs";
 
+test("foundation refuses unprotected live activation before private state or ports", async () => {
+  const parent = mkdtempSync(join(tmpdir(), "foundation-live-block-"));
+  let app;
+  try {
+    const dataDir = join(parent, "state");
+    await assert.rejects(async () => {
+      app = await startLiveWorkbench({
+        config: config(dataDir),
+        runtime: runtime(),
+        receiptSigner: receiptSigner(),
+        publicationSigner: publicationSigner(),
+      });
+    }, /PROTECTED_PAYMENT_UNAVAILABLE/);
+    assert.equal(existsSync(dataDir), false);
+  } finally {
+    await app?.close();
+    rmSync(parent, { recursive: true, force: true });
+  }
+});
 const profile = Object.freeze({
   ...developmentProfile,
   model: "operator-pinned-test-profile-not-inference",
@@ -275,18 +294,41 @@ test("live normal application serves safe viewer config, not synthetic authoriza
   const parent = mkdtempSync(join(tmpdir(), "live-viewer-"));
   let app;
   try {
-    app = await startLiveWorkbench({config: config(join(parent,"state")), runtime: runtime(), receiptSigner: receiptSigner(), publicationSigner: publicationSigner()});
+    app = await startLiveWorkbench({
+      legacyTestnetRehearsal: true,
+      config: config(join(parent, "state")),
+      runtime: runtime(),
+      receiptSigner: receiptSigner(),
+      publicationSigner: publicationSigner(),
+    });
     assert.equal((await fetch(app.url + "/")).status, 200);
     const viewer = await (await fetch(app.url + "/config.json")).json();
     assert.equal(viewer.development, false);
     assert.equal(viewer.fixture, false);
     assert.equal(viewer.apiUrl, "https://worker.example.com");
     assert.equal(viewer.profileId, digestOf(profile));
-    assert.deepEqual(viewer.providers[0].pins, {providerId:'worker.example.eth',...app.pins});
+    assert.deepEqual(viewer.providers[0].pins, {
+      providerId: "worker.example.eth",
+      ...app.pins,
+    });
     assert.ok(!JSON.stringify(viewer).includes("paymentConfigs"));
-    assert.equal((await fetch(app.url + "/development/authorize", {method:"POST"})).status, 404);
-    assert.equal((await fetch(app.url + "/config.json", {headers:{origin:"https://evil.invalid"}})).status, 403);
-  } finally { await app?.close(); rmSync(parent,{recursive:true,force:true}); }
+    assert.equal(
+      (await fetch(app.url + "/development/authorize", { method: "POST" }))
+        .status,
+      404,
+    );
+    assert.equal(
+      (
+        await fetch(app.url + "/config.json", {
+          headers: { origin: "https://evil.invalid" },
+        })
+      ).status,
+      403,
+    );
+  } finally {
+    await app?.close();
+    rmSync(parent, { recursive: true, force: true });
+  }
 });
 
 test("starts real loopback core with live factories, keeps HTTPS identity, and cleans up", async () => {
@@ -294,6 +336,7 @@ test("starts real loopback core with live factories, keeps HTTPS identity, and c
   const dataDir = join(parent, "state");
   const signer = receiptSigner();
   const app = await startLiveWorkbench({
+    legacyTestnetRehearsal: true,
     config: config(dataDir),
     runtime: runtime(),
     receiptSigner: signer,
@@ -364,6 +407,7 @@ test("starts real loopback core with live factories, keeps HTTPS identity, and c
     },
   });
   const second = await startLiveWorkbench({
+    legacyTestnetRehearsal: true,
     config: config(dataDir),
     runtime: definition,
     receiptSigner: signer,

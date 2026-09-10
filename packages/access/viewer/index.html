@@ -113,6 +113,12 @@
         <button id="refresh-publication">Refresh publication state</button>
         <button id="assess">Request assessment</button>
         <button id="download">Download private evidence</button>
+        <button id="download-context">Download private buyer context</button>
+        <p class="hint">Keep buyer context separately from provider evidence. It contains your original request, received output and pinned public key, not a session credential.</p>
+        <label>Retained buyer context (local JSON)<input type="file" id="offline-context" accept="application/json" /></label>
+        <label>Evidence to check (local JSON)<input type="file" id="offline-evidence" accept="application/json" /></label>
+        <button id="offline-check">Check files offline</button>
+        <p id="offline-result">No offline check performed</p>
         <button id="delete-evidence">
           Delete private evidence from server
         </button>

@@ -85,7 +85,7 @@ export async function verifyReceiptIntegrity(receipt, publicKeyJwk) {
 }
 export async function validateEvidence(
   bundle,
-  { publicKeyJwk, providerId, keyId } = {},
+  { publicKeyJwk, providerId, keyId, expected } = {},
 ) {
   exact(bundle, [
     "version",
@@ -136,7 +136,106 @@ export async function validateEvidence(
   if (!publicKeyJwk) fail("KEY_PIN_REQUIRED");
   if (!(await verifyReceiptIntegrity(bundle.receipt, publicKeyJwk)).integrity)
     fail("INVALID_SIGNATURE");
+  if (expected !== undefined) {
+    if (
+      !expected ||
+      Object.keys(expected).some(
+        (k) =>
+          ![
+            "request",
+            "chat",
+            "providerId",
+            "profileId",
+            "jobId",
+            "quoteId",
+            "paymentId",
+            "output",
+          ].includes(k),
+      ) ||
+      Boolean(expected.request) === Boolean(expected.chat) ||
+      ![expected.jobId, expected.quoteId, expected.paymentId].every(id)
+    )
+      fail("INVALID_BUYER_EXPECTATION");
+    let expectedHash;
+    if (expected.request) {
+      dto("Request", expected.request);
+      expectedHash = await digestOf(expected.request);
+    } else {
+      const chat = expected.chat,
+        message = chat.messages?.[0];
+      if (
+        !id(expected.providerId) ||
+        !id(expected.profileId) ||
+        Object.keys(chat).some(
+          (k) => !["model", "messages", "max_tokens", "stream"].includes(k),
+        ) ||
+        !Array.isArray(chat.messages) ||
+        chat.messages.length !== 1 ||
+        !message ||
+        Object.keys(message).sort().join(",") !== "content,role" ||
+        message.role !== "user" ||
+        typeof message.content !== "string" ||
+        !message.content.isWellFormed() ||
+        (chat.stream !== undefined && typeof chat.stream !== "boolean")
+      )
+        fail("INVALID_BUYER_EXPECTATION");
+      const model =
+        "mycelium-" +
+        (
+          await digestOf({
+            providerId: expected.providerId,
+            profileId: expected.profileId,
+            chat: "single-user-v1",
+          })
+        ).slice(7);
+      if (
+        chat.model !== model ||
+        expected.providerId !== p.providerId ||
+        expected.profileId !== p.profileId ||
+        message.content !== bundle.request.prompt ||
+        chat.max_tokens !== bundle.request.maxOutputTokens ||
+        bundle.request.seed !== 0 ||
+        bundle.request.sampling !== "greedy" ||
+        bundle.request.publishConsent !== false
+      )
+        fail("BUYER_EXPECTATION_MISMATCH");
+      expectedHash = p.requestHash; // Nonce is server-generated; caller binds original chat semantics above.
+    }
+    if (expected.output !== undefined) dto("Output", expected.output);
+    if (
+      expectedHash !== p.requestHash ||
+      expected.jobId !== p.jobId ||
+      expected.quoteId !== p.quoteId ||
+      expected.paymentId !== p.paymentId ||
+      (expected.output !== undefined &&
+        (await digestOf(expected.output)) !== p.outputHash)
+    )
+      fail("BUYER_EXPECTATION_MISMATCH");
+  }
   return bundle;
+}
+/** Offline JSON only: no archive extraction, URL fetch or inference claim. */
+export async function checkBuyerEvidenceJson(text, pins, expected) {
+  if (
+    typeof text !== "string" ||
+    new TextEncoder().encode(text).length > 2097152
+  )
+    fail("EVIDENCE_SIZE_LIMIT");
+  if (!expected) fail("INVALID_BUYER_EXPECTATION");
+  let bundle;
+  try {
+    bundle = JSON.parse(text);
+  } catch {
+    fail("INVALID_EVIDENCE_JSON");
+  }
+  await validateEvidence(bundle, { ...pins, expected });
+  return {
+    integrity: true,
+    originalRequestBound: true,
+    completeOutputBound: expected.output !== undefined,
+    executionVerified: false,
+    financialProtection: false,
+  };
 }
 // Only an explicit loopback DEVELOPMENT test adapter. Encoded with pinned x402 SDK.
 export async function developmentAuthorizer(context) {
@@ -201,6 +300,24 @@ export function createClient({
   const quotes = new Map(),
     knownJobs = new Map(),
     attempts = new Map();
+  async function retainBuyerOutput(known, job) {
+    const expected = known?.expected;
+    if (!expected) return;
+    if (
+      job.payment &&
+      (job.payment.quoteId !== expected.quoteId ||
+        job.payment.paymentId !== expected.paymentId)
+    )
+      fail("JOB_MISMATCH");
+    if (job.output) {
+      if (
+        expected.output &&
+        (await digestOf(expected.output)) !== (await digestOf(job.output))
+      )
+        fail("BUYER_EXPECTATION_MISMATCH");
+      expected.output ??= jsonClone(job.output);
+    }
+  }
   function auth() {
     if (!id(capability)) fail("AUTH_REQUIRED");
     return { authorization: `Bearer ${capability}` };
@@ -685,6 +802,12 @@ export function createClient({
         knownJobs.set(d.job.jobId, {
           requestHash: q.requestHash,
           mode: q.mode,
+          expected: {
+            request: jsonClone(input),
+            jobId: d.job.jobId,
+            quoteId: q.quoteId,
+            paymentId: d.job.payment.paymentId,
+          },
         });
         return d;
       } catch (e) {
@@ -715,6 +838,7 @@ export function createClient({
         (d.payment.mode !== d.mode || d.payment.requestHash !== d.requestHash)
       )
         fail("JOB_MISMATCH");
+      await retainBuyerOutput(expected, d);
       return d;
     },
     async cancelJob(jobId, options) {
@@ -757,6 +881,11 @@ export function createClient({
         fail("INVALID_PUBLIC_KEY");
       return d;
     },
+    getBuyerExpectation(jobId) {
+      const e = knownJobs.get(jobId)?.expected;
+      if (!e) fail("BUYER_EXPECTATION_UNAVAILABLE");
+      return jsonClone(e);
+    },
     async getEvidence(jobId, options) {
       const b = await request("/v1/jobs/" + enc(jobId) + "/evidence", {
         privateRoute: true,
@@ -765,7 +894,10 @@ export function createClient({
       if (b.receipt?.payload?.jobId !== jobId) fail("EVIDENCE_MISMATCH");
       if (!pins?.publicKeyJwk || !pins.providerId || !pins.keyId)
         fail("KEY_PIN_REQUIRED");
-      return validateEvidence(b, pins);
+      return validateEvidence(b, {
+        ...pins,
+        expected: options?.expected ?? knownJobs.get(jobId)?.expected,
+      });
     },
     async deleteEvidence(jobId, options) {
       return request("/v1/jobs/" + enc(jobId) + "/evidence", {
@@ -928,6 +1060,7 @@ export function createClient({
                       d.payment.requestHash !== d.requestHash)
                   )
                     fail("JOB_MISMATCH");
+                  await retainBuyerOutput(expected, d);
                   finalJob = ["succeeded", "failed", "cancelled"].includes(
                     d.executionStatus,
                   );

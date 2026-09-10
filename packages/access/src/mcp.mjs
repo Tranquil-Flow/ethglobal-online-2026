@@ -7,6 +7,7 @@ import {
   createClient,
   createRequest,
   developmentAuthorizer,
+  checkBuyerEvidenceJson,
   AccessError,
 } from "./index.mjs";
 import { decideProvider } from "./decision.mjs";
@@ -173,6 +174,22 @@ export function createAccessMcp({ client, allowDevelopmentPayment = false }) {
     { jobId: text, method: text, idempotencyKey: text },
     (a) => client.createAssessment(a.jobId, a.method, a.idempotencyKey),
     false,
+  );
+  register(
+    "access_buyer_context",
+    "Retain PRIVATE original buyer expectation for this client-owned job. No bearer included.",
+    { jobId: text },
+    (a) => client.getBuyerExpectation(a.jobId),
+  );
+  register(
+    "access_evidence_check",
+    "Offline original-expectation and receipt integrity only; not computation proof or financial protection. No URLs fetched.",
+    {
+      evidenceJson: z.string().max(2097152),
+      pins: z.record(z.unknown()),
+      expected: z.record(z.unknown()),
+    },
+    (a) => checkBuyerEvidenceJson(a.evidenceJson, a.pins, a.expected),
   );
   register(
     "access_export",

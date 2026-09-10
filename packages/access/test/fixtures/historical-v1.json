@@ -1,0 +1,72 @@
+{
+  "sourceCommit": "05d37ad1f6e77b63bfedbe989e72a2566db2229c",
+  "scope": "public-synthetic-test-vector-not-inference",
+  "pins": {
+    "providerId": "golden.example.eth",
+    "keyId": "golden-test-only",
+    "publicKeyJwk": {
+      "crv": "Ed25519",
+      "x": "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo",
+      "kty": "OKP"
+    }
+  },
+  "bundle": {
+    "version": "1",
+    "mode": "development",
+    "receipt": {
+      "payload": {
+        "issuedAt": "2026-09-07T00:00:00Z",
+        "jobId": "golden-job",
+        "mode": "development",
+        "outputHash": "sha256:e61b674649f2aa85dbfba775691a8b26150e9405194c676706057dab5bb2f7b3",
+        "paymentId": "golden-payment",
+        "profileId": "sha256:66911436e2cec4d3e4ba69df9b33944f6ade0e568da17538e5fe415e34412300",
+        "providerId": "golden.example.eth",
+        "quoteId": "golden-quote",
+        "requestHash": "sha256:9cd5f16d2e2dfd08348935a9a4d9e163237afe0ab7c61a8cec5bdff8c41227b0",
+        "version": "1"
+      },
+      "keyId": "golden-test-only",
+      "algorithm": "Ed25519",
+      "signature": "x6YmclyKwf1yg9m8zFuP-wGWHtZSq4n9QwkqCJ9Si6EH-kpUF5LA8YV2gfT9svK6VD5tX9NixeGvCojxdlHiDw"
+    },
+    "request": {
+      "version": "1",
+      "nonce": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "providerId": "golden.example.eth",
+      "profileId": "sha256:66911436e2cec4d3e4ba69df9b33944f6ade0e568da17538e5fe415e34412300",
+      "prompt": "Public synthetic golden café 🌙",
+      "maxOutputTokens": 3,
+      "seed": 0,
+      "sampling": "greedy",
+      "publishConsent": false
+    },
+    "profile": {
+      "version": "1",
+      "model": "development-synthetic-echo-not-inference",
+      "artifacts": [],
+      "runtimeRevision": "core-development-v1",
+      "tokenizerDigest": "sha256:8e461c13232994c04d3d836c5511fbcdd447c2ae6dd70c53227d7d31b8acdf51",
+      "templateDigest": "sha256:6ce9996ec2eb179b13464e2357581e9df4a6dfa0ab110422b9f347c13fe43b22",
+      "numerics": {
+        "dtype": "not-applicable",
+        "quantization": "none",
+        "backend": "synthetic-javascript",
+        "hardwareClass": "not-model-execution",
+        "determinism": "Unicode codepoints are synthetic fixture token IDs, not model tokens"
+      }
+    },
+    "output": {
+      "text": "é🌙",
+      "tokenIds": [
+        101,
+        102,
+        103
+      ],
+      "finishReason": "length"
+    },
+    "assessments": []
+  },
+  "payloadHex": "7b226973737565644174223a22323032362d30392d30375430303a30303a30305a222c226a6f624964223a22676f6c64656e2d6a6f62222c226d6f6465223a22646576656c6f706d656e74222c226f757470757448617368223a227368613235363a65363162363734363439663261613835646266626137373536393161386232363135306539343035313934633637363730363035376461623562623266376233222c227061796d656e744964223a22676f6c64656e2d7061796d656e74222c2270726f66696c654964223a227368613235363a36363931313433366532636563346433653462613639646639623333393434663661646530653536386461313735333865356665343135653334343132333030222c2270726f76696465724964223a22676f6c64656e2e6578616d706c652e657468222c2271756f74654964223a22676f6c64656e2d71756f7465222c227265717565737448617368223a227368613235363a39636435663136643265326466643038333438393335613961346439653136333233376166653061623763363161386365633562646666386334313232376230222c2276657273696f6e223a2231227d",
+  "receiptDigest": "sha256:1144f32c762804098c51ea90c64bd717de2351c0ac82866da8fc39fe1f11175a"
+}

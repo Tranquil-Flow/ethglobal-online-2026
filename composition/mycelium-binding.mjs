@@ -191,6 +191,7 @@ export async function createMyceliumRuntimeBinding({
           : "mycelium-conformance",
     ...(v3 && mode === "development" ? { conformance: true } : {}),
     profiles: [profile],
+    providerIds: providers.map((p) => p.providerId),
     method: "native-replay-v1",
     verifierId: "workbench-native-verifier-v1",
     mode,

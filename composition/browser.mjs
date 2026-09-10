@@ -16,7 +16,13 @@ const banner = document.createElement("p");
 banner.textContent = `SYNTHETIC LOCAL APPLICATION — ${config.payment}; ${config.discovery}; ${config.history}. Execution: ${config.execution}. Assessment: ${config.assessment}. No real funds or inference verification. Publication: ${config.publication}.`;
 banner.setAttribute("role", "note");
 document.body.prepend(banner);
+if (config.accessPolicy === "sponsored-local") {
+  document.getElementById("publish-consent").disabled = true;
+  document.getElementById("budget").value = "0";
+}
 setPaymentAuthorizer(async ({ body, quote }) => {
+  if (config.accessPolicy === "sponsored-local")
+    throw Error("NON_MONETARY_ROUTE_HAS_NO_PAYMENT_AUTHORIZER");
   if (quote.mode !== "development") throw Error("DEVELOPMENT_ONLY");
   const r = await fetch("/development/authorize", {
     method: "POST",

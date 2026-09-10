@@ -13,6 +13,7 @@ import {
   createSigner,
   developmentProfile,
   createDevelopmentExecutor,
+  createDevelopmentPayments,
 } from "../packages/core/src/index.mjs";
 import { createPayments } from "../packages/payments/src/index.mjs";
 import { createProviderPayments } from "./provider-payments.mjs";
@@ -70,6 +71,7 @@ async function startDevelopmentUnlocked(
     runtimeDefinition,
     resourceOrigin,
     providerCatalog,
+    accessPolicy,
     providerId = "synthetic.local.eth",
     ...unknownOptions
   } = {},
@@ -104,6 +106,16 @@ async function startDevelopmentUnlocked(
       testAssessment)
   )
     throw Error("SIMULATOR_RUNTIME_REQUIRED");
+  const sponsored = accessPolicy === "sponsored-local";
+  if (
+    accessPolicy !== undefined &&
+    (!sponsored ||
+      !runtimeDefinition?.conformance ||
+      runtimeDefinition.protocol !== "mycelium.request_gateway.v3" ||
+      localInfrastructure ||
+      resourceOrigin)
+  )
+    throw Error("INVALID_ACCESS_POLICY");
   const catalog = providerCatalog ?? [{ providerId, amountBaseUnits: "1" }];
   if (
     !Array.isArray(catalog) ||
@@ -118,7 +130,9 @@ async function startDevelopmentUnlocked(
         ) ||
         typeof p.providerId !== "string" ||
         normalizeName(p.providerId) !== p.providerId ||
-        !/^([1-9][0-9]{0,3}|10000)$/.test(p.amountBaseUnits),
+        !(sponsored
+          ? p.amountBaseUnits === "0"
+          : /^([1-9][0-9]{0,3}|10000)$/.test(p.amountBaseUnits)),
     )
   )
     throw Error("INVALID_PROVIDER_CATALOG");
@@ -253,8 +267,11 @@ async function startDevelopmentUnlocked(
     store = createStore({ path: join(dir, "core.sqlite") });
     const runtimeIdentity = {
       version: "1",
+      ...(sponsored ? { accessPolicy, providers: catalog } : {}),
       profileId,
-      ...(runtimeDefinition?.protocol === "mycelium.request_gateway.v3" ? {protocol:runtimeDefinition.protocol} : {}),
+      ...(runtimeDefinition?.protocol === "mycelium.request_gateway.v3"
+        ? { protocol: runtimeDefinition.protocol }
+        : {}),
       kind: runtimeDefinition?.conformance
         ? "native-conformance"
         : runtimeDefinition
@@ -288,6 +305,7 @@ async function startDevelopmentUnlocked(
         res.setHeader("referrer-policy", "no-referrer");
         res.setHeader("cache-control", "no-store");
         if (req.url === "/development/authorize") {
+          if (sponsored) return json(res, { code: "NON_MONETARY_ACCESS" }, 404);
           if (
             req.method !== "POST" ||
             req.headers.authorization ||
@@ -301,7 +319,9 @@ async function startDevelopmentUnlocked(
           // Fixed destination; raw headers preserve duplicate-proof rejection in core.
           const headers = [];
           for (let i = 0; i < req.rawHeaders.length; i += 2) {
-            if (req.rawHeaders[i].toLowerCase() !== "host")
+            if (req.rawHeaders[i].toLowerCase() === "origin")
+              headers.push(req.rawHeaders[i], new URL(coreUrl).origin);
+            else if (req.rawHeaders[i].toLowerCase() !== "host")
               headers.push(req.rawHeaders[i], req.rawHeaders[i + 1]);
           }
           headers.push("host", new URL(coreUrl).host);
@@ -347,7 +367,10 @@ async function startDevelopmentUnlocked(
               : testAssessment
                 ? "test-fixture-not-inference-verification"
                 : "unavailable",
-            payment: "offline-synthetic-settlement",
+            ...(sponsored ? { accessPolicy } : {}),
+            payment: sponsored
+              ? "non-monetary-no-settlement"
+              : "offline-synthetic-settlement",
             publication: infrastructure
               ? "consented-test-events-local-chain-only"
               : "disabled",
@@ -388,28 +411,31 @@ async function startDevelopmentUnlocked(
         for (const p of Object.values(paymentPorts)) await p.close();
       },
     };
-    for (const [index, entry] of catalog.entries())
-      paymentPorts[entry.providerId] = createPayments({
-        config: {
-          ...terms,
-          mode: "development",
-          providerId: entry.providerId,
-          profileIds: [profileId],
-          baseAmountBaseUnits: entry.amountBaseUnits,
-          perOutputTokenBaseUnits: "0",
-          maxAmountBaseUnits: entry.amountBaseUnits,
-          maxTotalAmountBaseUnits: "10000",
-          databasePath: join(
-            dir,
-            index === 0 ? "payments.sqlite" : `payments-${index}.sqlite`,
-          ),
-          facilitatorUrl: synthetic.url,
-          mirrorUrl: synthetic.url,
-          resourceUrl: (resourceOrigin ?? url) + "/v1/jobs",
-          ...(resourceOrigin ? { allowDevelopmentTls: true } : {}),
-        },
-      });
-    payments = createProviderPayments({ providers: paymentPorts, store });
+    if (!sponsored)
+      for (const [index, entry] of catalog.entries())
+        paymentPorts[entry.providerId] = createPayments({
+          config: {
+            ...terms,
+            mode: "development",
+            providerId: entry.providerId,
+            profileIds: [profileId],
+            baseAmountBaseUnits: entry.amountBaseUnits,
+            perOutputTokenBaseUnits: "0",
+            maxAmountBaseUnits: entry.amountBaseUnits,
+            maxTotalAmountBaseUnits: "10000",
+            databasePath: join(
+              dir,
+              index === 0 ? "payments.sqlite" : `payments-${index}.sqlite`,
+            ),
+            facilitatorUrl: synthetic.url,
+            mirrorUrl: synthetic.url,
+            resourceUrl: (resourceOrigin ?? url) + "/v1/jobs",
+            ...(resourceOrigin ? { allowDevelopmentTls: true } : {}),
+          },
+        });
+    payments = sponsored
+      ? createDevelopmentPayments({ store, sponsored: true })
+      : createProviderPayments({ providers: paymentPorts, store });
     runtime = runtimeDefinition?.create({
       store,
       pins,
@@ -474,9 +500,15 @@ async function startDevelopmentUnlocked(
           records: {
             "ethonline.endpoint": resourceOrigin ?? url,
             "ethonline.profiles": JSON.stringify([profileId]),
-            "ethonline.payment.network": terms.network,
-            "ethonline.payment.asset": terms.asset,
-            "ethonline.payment.receiver": terms.receiver,
+            "ethonline.payment.network": sponsored
+              ? "development-local"
+              : terms.network,
+            "ethonline.payment.asset": sponsored
+              ? "development-none"
+              : terms.asset,
+            "ethonline.payment.receiver": sponsored
+              ? "development.invalid"
+              : terms.receiver,
             "ethonline.history": synthetic.url + "/graph",
           },
         };

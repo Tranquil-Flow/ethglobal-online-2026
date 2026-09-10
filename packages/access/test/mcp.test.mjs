@@ -31,6 +31,8 @@ test("MCP stdio tools use SDK; reads decide on compatibility, budget and fresh h
     names.sort(),
     [
       "access_assess",
+      "access_buyer_context",
+      "access_evidence_check",
       "access_assessments",
       "access_delete_evidence",
       "access_export",
@@ -46,6 +48,29 @@ test("MCP stdio tools use SDK; reads decide on compatibility, budget and fresh h
     ].sort(),
   );
   await client.callTool({ name: "access_connect", arguments: {} });
+  const { readFile } = await import("node:fs/promises");
+  const golden = JSON.parse(
+    await readFile(
+      new URL("./fixtures/historical-v1.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  const { bundle, pins } = golden;
+  const expected = {
+    request: bundle.request,
+    jobId: bundle.receipt.payload.jobId,
+    quoteId: bundle.receipt.payload.quoteId,
+    paymentId: bundle.receipt.payload.paymentId,
+    output: bundle.output,
+  };
+  const checked = parse(
+    await client.callTool({
+      name: "access_evidence_check",
+      arguments: { evidenceJson: JSON.stringify(bundle), pins, expected },
+    }),
+  );
+  assert.equal(checked.originalRequestBound, true);
+  assert.equal(checked.executionVerified, false);
   const quote = parse(
     await client.callTool({
       name: "access_quote",

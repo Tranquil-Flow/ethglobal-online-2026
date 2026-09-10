@@ -50,7 +50,7 @@ export function createDevelopmentExecutor({ delayMs = 5 } = {}) {
   };
 }
 /** Explicit free DEVELOPMENT port. Not x402, settlement, or a live payment demonstration. */
-export function createDevelopmentPayments({ store } = {}) {
+export function createDevelopmentPayments({ store, sponsored = false } = {}) {
   const cache = (namespace) => {
     const memory = new Map();
     return {
@@ -141,7 +141,8 @@ export function createDevelopmentPayments({ store } = {}) {
       if (!p) throw Error("Development payment unavailable");
       const payment = {
         ...p,
-        status: outcome === "succeeded" ? p.status : "paid_but_failed",
+        status:
+          sponsored || outcome === "succeeded" ? p.status : "paid_but_failed",
       };
       payments.set(paymentId, payment);
       return payment;

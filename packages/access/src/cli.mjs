@@ -16,6 +16,7 @@ import {
   createRequest,
   developmentAuthorizer,
   verifyReceiptIntegrity,
+  checkBuyerEvidenceJson,
   safeBaseUrl,
   AccessError,
 } from "./index.mjs";
@@ -64,6 +65,20 @@ export async function runCli(argv) {
     } else pos.push(a);
   }
   const [command, arg] = pos;
+  if (command === "evidence-check") {
+    if (
+      !options["evidence-file"] ||
+      !options["pins-file"] ||
+      !options["expectation-file"]
+    )
+      throw new AccessError("EVIDENCE_PINS_AND_EXPECTATION_REQUIRED");
+    const b = await privateRead(options["evidence-file"]);
+    return checkBuyerEvidenceJson(
+      JSON.stringify(b),
+      await privateRead(options["pins-file"]),
+      await privateRead(options["expectation-file"]),
+    );
+  }
   if (command === "signature-check") {
     if (!options["key-file"] || !options["receipt-file"])
       throw new AccessError("KEY_AND_RECEIPT_FILES_REQUIRED");
@@ -171,7 +186,7 @@ export async function runCli(argv) {
       asset: options.asset,
     });
   if (command === "submit") {
-    if (!options["max-amount"] || !paymentAuthorizer)
+    if (!options["max-amount"])
       throw new AccessError(
         "Require explicit --max-amount and --development-payment or --payment-authorizer",
       );
@@ -193,7 +208,12 @@ export async function runCli(argv) {
       result = { ...result, job: await client.getJob(result.job.jobId) };
     }
     // The session already authorizes the job; never emit child bearer to stdout.
-    return { job: result.job };
+    const expected = client.getBuyerExpectation(result.job.jobId);
+    if (result.job.output) expected.output = result.job.output;
+    return {
+      job: result.job,
+      expectationFile: await save("buyer-expectation", expected),
+    };
   }
   if (command === "stream") {
     let count = 0;
@@ -245,7 +265,11 @@ export async function runCli(argv) {
     return {
       privateEvidenceFile: await save(
         "evidence",
-        await client.getEvidence(arg),
+        await client.getEvidence(arg, {
+          expected: options["expectation-file"]
+            ? await privateRead(options["expectation-file"])
+            : undefined,
+        }),
       ),
       claim: "hashes and receipt integrity, not trusted execution",
     };
