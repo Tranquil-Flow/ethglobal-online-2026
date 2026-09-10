@@ -10,7 +10,8 @@ and every final gate. Missing or mismatched evidence is not a release claim.
 - Current workbench base: `a0365534bb961802a4f4ea2f662deffe9b56bd4c`.
 - Returned consumer: `a91f922cdfeaa188c5d3ba0007a1ca529c84a99e` (descendant of base).
 - Returned Mycelium C-UC1: `824ffc6e2020cbc75bd00fdfb4232316745ea679`.
-- Mycelium continuation: `eaa7be41175d77f3bf5c584854cb9a71e4e2bf36`.
+- Initial Mycelium continuation: `eaa7be41175d77f3bf5c584854cb9a71e4e2bf36`.
+  The final external verification packet pins its cancellation-fixture successor.
 - A9 `ba6abbe3a953a755c493f5c56025adeb1f91a35e` is parked, not merged or required.
 
 The original Goal C requirements and prior milestones remain historical evidence.
@@ -95,6 +96,23 @@ consent. SQLite adversaries separately cover substitution, expiry and foreign re
 Sanitized receipt and screenshot: `artifacts/closeout/v3-application-journey.json`
 and `v3-application-browser.png`. The external sealed packet supplies source hashes,
 final gate exit codes and retained failures; these artifacts alone are not acceptance.
+
+## Cancellation acceptance correction
+
+The retained first repeat failed waiting for an upstream `cancelled` terminal.
+The core's cancellation response aborts its local consumer; the adapter's upstream
+DELETE proceeds asynchronously. Releasing a held native worker immediately after
+that core response lets native completion win before the upstream stop latch.
+The controlled regression reproduces this ordering over real core/gateway HTTP:
+local cancellation and no receipt coexist with an upstream completed terminal.
+That is not proof of remote cancellation and must not satisfy the journey.
+
+The test now waits for the exact held request's upstream stop latch, then releases
+the worker and separately requires its cancelled terminal, confirmed cleanup and
+zero active work. It does not extend timeouts or change product cancellation.
+`mycelium-v3-cancellation.test.mjs` holds cancellation delivery to deterministically
+test both orderings. The fixture exposes only sanitized lifecycle observations;
+the full journey still owns normal application startup, browser access and restart.
 
 ## Remaining real-route inputs (not manufactured here)
 

@@ -44,11 +44,16 @@ export async function startGatewayFixture() {
     const descriptor = await next();
     if (descriptor.protocol !== "c-uc1.application-fixture.v1")
       throw Error("GATEWAY_FIXTURE_INVALID");
+    let pending = Promise.resolve();
     return {
       descriptor,
-      async command(c) {
-        child.stdin.write(JSON.stringify(c) + "\n");
-        return next();
+      command(c) {
+        const result = pending.then(() => {
+          child.stdin.write(JSON.stringify(c) + "\n");
+          return next();
+        });
+        pending = result.catch(() => {});
+        return result;
       },
       async close() {
         const exited = once(child, "exit");

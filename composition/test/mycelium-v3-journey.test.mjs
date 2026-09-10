@@ -14,6 +14,10 @@ import { verifyEvidence } from "../../packages/core/src/receipts.mjs";
 import authorizeDevelopment from "../authorizer.mjs";
 import { startAppChild, childJson } from "./fixtures/v3-app-child.mjs";
 import { startGatewayFixture } from "./fixtures/v3-gateway.mjs";
+import {
+  observe,
+  finishHeldCancellation,
+} from "./fixtures/v3-cancellation.mjs";
 const require = createRequire(
   new URL("../../packages/access/package.json", import.meta.url),
 );
@@ -280,13 +284,16 @@ test(
           quoteId: cq.quoteId,
           idempotencyKey: "cancel-native-v3",
         });
-      await until(async () => (await fixture.command("stats")).entered);
+      const held = await observe(
+        fixture,
+        "native-worker-held",
+        (s) => s,
+        (s) => s.workerHeld,
+      );
       await c.cancelJob(cancelled.job.jobId);
-      await fixture.command("release");
-      await until(async () =>
-        (await fixture.command("stats")).peers[0].terminal.includes(
-          "cancelled",
-        ),
+      const nativeCancellation = await finishHeldCancellation(
+        fixture,
+        held.heldRequestId,
       );
       await until(
         async () =>
@@ -339,7 +346,8 @@ test(
             nativeIds: [101, 102, 103],
             surfaces: ["startup", "HTTP", "SDK", "CLI", "MCP", "Chromium"],
             replay: "passed",
-            cancellationTerminal: "cancelled",
+            cancellationTerminal: nativeCancellation.terminal,
+            nativeCancellation,
             cleanup: "confirmed",
             restartNoResubmit: true,
             deletedEvidence: "unavailable",
