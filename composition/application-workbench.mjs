@@ -25,11 +25,52 @@ const same = (a, b) =>
   a.length === b.length &&
   new Set(a).size === a.length &&
   a.every((x) => b.includes(x));
+const code = (x) => typeof x === "string" && /^[A-Z0-9_]{1,128}$/.test(x);
+const nonEmpty = (x) =>
+  typeof x === "string" && x.length >= 1 && x.length <= 256;
+function validateHistoryPolicy(value) {
+  if (value === undefined)
+    return { trustedVerifiers: [], trustedMethods: [], maxAgeMs: 300000 };
+  exact(
+    value,
+    ["trustedVerifiers", "trustedMethods", "maxAgeMs"],
+    ["trustedVerifiers", "trustedMethods"],
+  );
+  if (
+    !Array.isArray(value.trustedVerifiers) ||
+    !Array.isArray(value.trustedMethods) ||
+    value.trustedVerifiers.length > 16 ||
+    value.trustedMethods.length > 16 ||
+    value.trustedVerifiers.some((x) => !nonEmpty(x)) ||
+    value.trustedMethods.some((x) => !nonEmpty(x)) ||
+    new Set(value.trustedVerifiers).size !== value.trustedVerifiers.length ||
+    new Set(value.trustedMethods).size !== value.trustedMethods.length ||
+    (value.maxAgeMs !== undefined &&
+      (!Number.isSafeInteger(value.maxAgeMs) ||
+        value.maxAgeMs < 1 ||
+        value.maxAgeMs > 3600000))
+  )
+    fail("INVALID_HISTORY_POLICY");
+  return {
+    trustedVerifiers: [...value.trustedVerifiers],
+    trustedMethods: [...value.trustedMethods],
+    maxAgeMs: value.maxAgeMs ?? 300000,
+  };
+}
 /** Application v2 is additive. Legacy paid/configuration semantics are unchanged. */
 export function validateApplicationConfig(input) {
   exact(
     input,
-    ["version", "mode", "accessPolicy", "dataDir", "port", "providers", "core"],
+    [
+      "version",
+      "mode",
+      "accessPolicy",
+      "dataDir",
+      "port",
+      "providers",
+      "core",
+      "history",
+    ],
     ["version", "mode", "accessPolicy", "dataDir", "port", "providers"],
   );
   if (input.accessPolicy !== "non-economic")
@@ -124,6 +165,7 @@ export function validateApplicationConfig(input) {
     )
       fail("INVALID_CORE_LIMIT");
   }
+  if (input.history !== undefined) validateHistoryPolicy(input.history);
   return structuredClone(input);
 }
 
@@ -189,11 +231,20 @@ export function preflightApplication({ config: input, bindings }) {
       pins: { providerId: p.providerId, ...pins },
     };
   });
+  if (
+    bindings.history !== undefined &&
+    typeof bindings.history?.getHistory !== "function"
+  )
+    fail("INVALID_HISTORY_BINDING");
   return { config, entries };
 }
 
 export async function startApplicationWorkbench({ config: input, bindings }) {
   const { config, entries } = preflightApplication({ config: input, bindings });
+  const historyPolicy = validateHistoryPolicy(config.history);
+  const sourceIssuedMs = Date.now();
+  const sourceIssuedAt = new Date(sourceIssuedMs).toISOString();
+  const sourceExpiresAt = new Date(sourceIssuedMs + 60000).toISOString();
   const dir = resolve(config.dataDir);
   mkdirSync(dir, { recursive: true, mode: 0o700 });
   const release = acquirePrivateStateLock(dir);
@@ -359,6 +410,167 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
         ),
       ).values(),
     ];
+    const providerRecord = (entry) => {
+      if (!viewer) fail("STARTING");
+      const record = {
+        version: "1",
+        providerId: entry.config.providerId,
+        name: entry.config.providerId,
+        endpoint: viewer.url,
+        profileIds: entry.config.profileIds,
+        paymentNetwork: "non-economic",
+        paymentAsset: "none",
+        paymentReceiver: entry.config.providerId,
+        mode: config.mode,
+        source: {
+          chainId: "application-direct",
+          blockNumber: 0,
+          blockHash: "0x" + "0".repeat(64),
+          resolvedAt: sourceIssuedAt,
+          expiresAt: sourceExpiresAt,
+        },
+        historyEndpoint:
+          viewer.url +
+          "/v1/providers/" +
+          encodeURIComponent(entry.config.providerId) +
+          "/history",
+      };
+      validate("Provider", record);
+      return record;
+    };
+    const directDiscovery = {
+      async list({ names }) {
+        if (!Array.isArray(names) || names.length > 32) fail("INVALID_INPUT");
+        const providers = [],
+          errors = [];
+        for (const name of names) {
+          const entry = byProvider.get(name);
+          if (!entry) errors.push({ name, code: "PROVIDER_UNAVAILABLE" });
+          else providers.push(providerRecord(entry));
+        }
+        return { providers, errors };
+      },
+      async select({
+        providers,
+        quotes,
+        profileId,
+        maxAmountBaseUnits,
+        network,
+        asset,
+        signal,
+      }) {
+        const reasons = [],
+          eligible = [];
+        for (const p of providers) {
+          const reject = [],
+            codes = [];
+          const entry = byProvider.get(p.providerId);
+          try {
+            if (!entry || digestOf(p) !== digestOf(providerRecord(entry)))
+              fail("PROVIDER_CHANGED");
+            if (!entry.config.profileIds.includes(profileId))
+              reject.push("PROFILE_UNSUPPORTED");
+            if (network !== "non-economic") reject.push("NETWORK_MISMATCH");
+            if (asset !== "none") reject.push("ASSET_MISMATCH");
+            const matching = quotes.filter(
+                (q) => q.providerId === p.providerId,
+              ),
+              valid = [];
+            if (!matching.length) reject.push("QUOTE_REQUIRED");
+            for (const q of matching) {
+              try {
+                validate("Quote", q);
+              } catch {
+                codes.push("INVALID_QUOTE");
+                continue;
+              }
+              if (
+                q.profileId !== profileId ||
+                q.network !== "non-economic" ||
+                q.asset !== "none" ||
+                q.receiver !== p.providerId ||
+                q.mode !== config.mode
+              ) {
+                codes.push("QUOTE_BINDING_MISMATCH");
+                continue;
+              }
+              if (Date.parse(q.expiresAt) <= Date.now()) {
+                codes.push("QUOTE_EXPIRED");
+                continue;
+              }
+              if (BigInt(q.amountBaseUnits) > BigInt(maxAmountBaseUnits)) {
+                codes.push("OVER_BUDGET");
+                continue;
+              }
+              valid.push(q);
+            }
+            if (matching.length && !valid.length)
+              reject.push("NO_ELIGIBLE_QUOTE");
+            let historyCode = "HISTORY_UNKNOWN";
+            if (
+              bindings.history &&
+              historyPolicy.trustedVerifiers.length &&
+              historyPolicy.trustedMethods.length
+            ) {
+              try {
+                const h = await bindings.history.getHistory({
+                  providerId: p.providerId,
+                  signal,
+                });
+                validate("History", h);
+                const observedAt = Date.parse(h.observedAt);
+                const fresh =
+                  h.providerId === p.providerId &&
+                  h.mode === config.mode &&
+                  h.freshness === "fresh" &&
+                  Number.isFinite(observedAt) &&
+                  Date.now() - observedAt >= 0 &&
+                  Date.now() - observedAt <= historyPolicy.maxAgeMs;
+                if (!fresh)
+                  historyCode =
+                    h.freshness === "stale"
+                      ? "HISTORY_STALE"
+                      : "HISTORY_UNKNOWN";
+                else {
+                  const observations = h.observations.filter(
+                    (o) =>
+                      o.profileId === profileId &&
+                      o.mode === config.mode &&
+                      historyPolicy.trustedVerifiers.includes(o.verifierId) &&
+                      historyPolicy.trustedMethods.includes(o.method),
+                  );
+                  if (observations.some((o) => o.outcome === "mismatch")) {
+                    historyCode = "OBSERVED_MISMATCH";
+                    reject.push(historyCode);
+                  } else if (observations.some((o) => o.outcome === "passed"))
+                    historyCode = "OBSERVED_PASS_NOT_PROOF";
+                }
+              } catch (e) {
+                if (e?.name === "AbortError") throw e;
+                historyCode = "HISTORY_UNKNOWN";
+              }
+            }
+            codes.push(historyCode, ...reject);
+            if (!reject.length) {
+              codes.push("ELIGIBLE");
+              eligible.push({ provider: p, price: 0n });
+            }
+          } catch {
+            reject.push("INVALID_PROVIDER");
+            codes.push(...reject);
+          }
+          reasons.push({
+            providerId: nonEmpty(p?.providerId) ? p.providerId : "(invalid)",
+            eligible: !reject.length,
+            codes: [...new Set(codes.filter(code))],
+          });
+        }
+        eligible.sort((a, b) =>
+          a.provider.providerId.localeCompare(b.provider.providerId),
+        );
+        return { selected: eligible[0]?.provider ?? null, reasons };
+      },
+    };
     app = createApp({
       config: {
         ...config.core,
@@ -373,6 +585,8 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       signer,
       executor,
       payments,
+      discovery: directDiscovery,
+      history: bindings.history,
       offers: {
         async list() {
           if (!viewer) fail("STARTING");
@@ -407,8 +621,10 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       payment: "non-monetary-no-settlement",
       assessment: "unavailable",
       publication: "disabled",
-      discovery: "configured-direct-offers-not-ENS",
-      history: "unavailable",
+      discovery: "direct-stable-offers-not-ENS",
+      history: bindings.history
+        ? "configured-open-attributed-not-proof"
+        : "unavailable",
       execution:
         config.mode === "development"
           ? "synthetic-not-inference"

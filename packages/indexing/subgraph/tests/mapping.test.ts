@@ -1,7 +1,9 @@
 import {test,assert,newMockEvent,clearStore,dataSourceMock,beforeEach} from 'matchstick-as/assembly/index';
 import {ethereum,Bytes,BigInt,DataSourceContext} from '@graphprotocol/graph-ts';
 import {ReceiptPublished,AssessmentPublished} from '../generated/Registry/Registry';
+import {OpenAssessmentPublished} from '../generated/RegistryV2/RegistryV2';
 import {handleReceipt,handleAssessment} from '../src/mapping';
+import {handleOpenAssessment} from '../src/mapping-v2';
 const R='0x'+'11'.repeat(32),P='0x'+'22'.repeat(32);
 const ADDRESS='0xa16081f360e3847006db660bae1c6d1b2e17ec2a';
 function setup(): void {clearStore();let c=new DataSourceContext();c.setString('chainId','31337');c.setI32('mode',0);c.setBytes('publisher',Bytes.fromHexString(ADDRESS));dataSourceMock.setAddressAndContext(ADDRESS,c);}
@@ -32,11 +34,17 @@ test('receipt mapping writes provenance and duplicate-safe provider count',()=>{
 import {sha256} from '../src/sha256';
 import {validMetadata,quoted} from '../src/metadata';
 const METADATA="{\"assessmentId\":\"synthetic-assemblyscript\",\"createdAt\":\"2026-01-01T00:00:00.000Z\",\"method\":\"method-☾\",\"mode\":\"development\",\"outcome\":\"passed\",\"profileId\":\"sha256:3333333333333333333333333333333333333333333333333333333333333333\",\"receiptDigest\":\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"verifierId\":\"unknown-verifier\",\"version\":\"1\"}";
-const A='0x1d99fb75cb5601a825f84d0f9362facadb60b52be085596376cf58775eb0c750',V='0xa30eabc7b8ea58f91010622cd8e5189aef2a1be7f754831826a481c7236c5f36',M='0x83f9b4c58cbb9727d18c034f23194b4d1252a725883bf6ba340dff9b3ad57356';
+const A='0x1d99fb75cb5601a825f84d0f9362facadb60b52be085596376cf58775eb0c750',V='0xa30eabc7b8ea58f91010622cd8e5189aef2a1be7f754831826a481c7236c5f36',M='0x83f9b4c58cbb9727d18c034f23194b4d1252a725883bf6ba340dff9b3ad57356',S='0x'+'44'.repeat(32);
+const AUTHOR='0x'+'33'.repeat(20),RELAYER='0x'+'44'.repeat(20);
 function assessmentEvent(metadata:string=METADATA):AssessmentPublished {
  let e=changetype<AssessmentPublished>(newMockEvent());
  e.logIndex=BigInt.fromI32(1);
  e.parameters=[new ethereum.EventParam('assessmentDigest',ethereum.Value.fromFixedBytes(Bytes.fromHexString(A))),new ethereum.EventParam('receiptDigest',ethereum.Value.fromFixedBytes(Bytes.fromHexString(R))),new ethereum.EventParam('providerKey',ethereum.Value.fromFixedBytes(Bytes.fromHexString(P))),new ethereum.EventParam('verifierKey',ethereum.Value.fromFixedBytes(Bytes.fromHexString(V))),new ethereum.EventParam('methodKey',ethereum.Value.fromFixedBytes(Bytes.fromHexString(M))),new ethereum.EventParam('outcome',ethereum.Value.fromI32(1)),new ethereum.EventParam('mode',ethereum.Value.fromI32(0)),new ethereum.EventParam('publicMetadata',ethereum.Value.fromString(metadata))];return e;
+}
+function openAssessmentEvent(metadata:string=METADATA,linked:bool=false):OpenAssessmentPublished {
+ let e=changetype<OpenAssessmentPublished>(newMockEvent());
+ e.logIndex=BigInt.fromI32(2);
+ e.parameters=[new ethereum.EventParam('statementDigest',ethereum.Value.fromFixedBytes(Bytes.fromHexString(S))),new ethereum.EventParam('receiptDigest',ethereum.Value.fromFixedBytes(Bytes.fromHexString(R))),new ethereum.EventParam('providerKey',ethereum.Value.fromFixedBytes(Bytes.fromHexString(P))),new ethereum.EventParam('author',ethereum.Value.fromAddress(Address.fromString(AUTHOR))),new ethereum.EventParam('relayer',ethereum.Value.fromAddress(Address.fromString(RELAYER))),new ethereum.EventParam('verifierKey',ethereum.Value.fromFixedBytes(Bytes.fromHexString(V))),new ethereum.EventParam('methodKey',ethereum.Value.fromFixedBytes(Bytes.fromHexString(M))),new ethereum.EventParam('outcome',ethereum.Value.fromI32(1)),new ethereum.EventParam('mode',ethereum.Value.fromI32(0)),new ethereum.EventParam('linked',ethereum.Value.fromBoolean(linked)),new ethereum.EventParam('publicMetadata',ethereum.Value.fromString(metadata))];return e;
 }
 test('SHA256 NIST and independent Node-compatible UTF8/multiblock vectors',()=>{
  assert.stringEquals(sha256(""),"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
@@ -77,6 +85,26 @@ test('metadata rejects hash, verifier, method, receipt, mode/outcome mismatches'
 test('reorg semantics: host store rollback then replay replaces orphan provenance',()=>{
  let old=receipt();handleReceipt(old);clearStore();let canonical=receipt();canonical.block.hash=Bytes.fromHexString('0x'+'ff'.repeat(32));handleReceipt(canonical);
  assert.entityCount('ReceiptClaim',1);assert.fieldEquals('ReceiptClaim','31337:'+ADDRESS+':receipt:'+R,'blockHash','0x'+'ff'.repeat(32));
+});
+test('open checker-signed mapping writes attributed observation without v1 receipt requirement',()=>{
+ let e=openAssessmentEvent();handleOpenAssessment(e);handleOpenAssessment(e);
+ let id='31337:'+ADDRESS+':open-assessment:'+S;
+ assert.entityCount('OpenAssessmentClaim',1);
+ assert.fieldEquals('OpenAssessmentClaim',id,'valid','true');
+ assert.fieldEquals('OpenAssessmentClaim',id,'linked','false');
+ assert.fieldEquals('OpenAssessmentClaim',id,'objectDigest',A);
+ assert.fieldEquals('OpenAssessmentClaim',id,'publicMetadata',METADATA);
+ assert.fieldEquals('OpenAssessmentClaim',id,'author',AUTHOR);
+ assert.fieldEquals('OpenAssessmentClaim',id,'relayer',RELAYER);
+ assert.fieldEquals('ProviderCount','31337:'+ADDRESS+':'+P,'assessmentCount','1');
+ assert.fieldEquals('VerifierOutcomeCount','31337:'+ADDRESS+':'+P+':'+V+':1','count','1');
+});
+test('open mapping redacts malformed private or linked projections as unavailable',()=>{
+ handleOpenAssessment(openAssessmentEvent('{"prompt":"synthetic-private-canary"}'));
+ let id='31337:'+ADDRESS+':open-assessment:'+S;
+ assert.fieldEquals('OpenAssessmentClaim',id,'valid','false');assert.fieldEquals('OpenAssessmentClaim',id,'outcome','4');assert.fieldEquals('OpenAssessmentClaim',id,'publicMetadata','');
+ clearStore();setup();handleOpenAssessment(openAssessmentEvent(METADATA,true));
+ assert.fieldEquals('OpenAssessmentClaim',id,'valid','false');assert.fieldEquals('OpenAssessmentClaim',id,'linked','true');assert.fieldEquals('ProviderCount','31337:'+ADDRESS+':'+P,'invalidCount','1');
 });
 
 import {readFile} from 'matchstick-as/assembly/index';

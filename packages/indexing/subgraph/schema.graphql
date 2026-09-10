@@ -14,6 +14,7 @@ type ReceiptClaim @entity(immutable: true) {
 type AssessmentClaim @entity(immutable: true) {
   id: ID!
   objectDigest: Bytes!
+  receiptDigest: Bytes!
   providerKey: Bytes!
   mode: Int!
   chainId: String!
@@ -23,23 +24,44 @@ type AssessmentClaim @entity(immutable: true) {
   blockNumber: BigInt!
   blockHash: Bytes!
   logIndex: BigInt!
-  receiptDigest: Bytes!
   verifierKey: Bytes!
   methodKey: Bytes!
   outcome: Int!
   publicMetadata: String!
   valid: Boolean!
 }
+type OpenAssessmentClaim @entity(immutable: true) {
+  id: ID!
+  statementDigest: Bytes!
+  objectDigest: Bytes!
+  receiptDigest: Bytes!
+  providerKey: Bytes!
+  mode: Int!
+  chainId: String!
+  contractAddress: Bytes!
+  author: Bytes!
+  relayer: Bytes!
+  transactionHash: Bytes!
+  blockNumber: BigInt!
+  blockHash: Bytes!
+  logIndex: BigInt!
+  verifierKey: Bytes!
+  methodKey: Bytes!
+  outcome: Int!
+  linked: Boolean!
+  publicMetadata: String!
+  valid: Boolean!
+}
 type ProviderCount @entity(immutable: false) {
- id: ID!
- receiptCount: BigInt!
- assessmentCount: BigInt!
- invalidCount: BigInt!
+  id: ID!
+  receiptCount: BigInt!
+  assessmentCount: BigInt!
+  invalidCount: BigInt!
 }
 type VerifierOutcomeCount @entity(immutable: false) {
- id: ID!
- providerKey: Bytes!
- verifierKey: Bytes!
- outcome: Int!
- count: BigInt!
+  id: ID!
+  providerKey: Bytes!
+  verifierKey: Bytes!
+  outcome: Int!
+  count: BigInt!
 }
