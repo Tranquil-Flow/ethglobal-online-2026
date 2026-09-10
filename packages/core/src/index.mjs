@@ -79,6 +79,7 @@ export function createApp({
   history,
   eventSink,
   assessor,
+  offers,
 } = {}) {
   if (!store) throw new Error("Explicit durable store required");
   if (!["development", "live"].includes(config.mode))
@@ -1162,6 +1163,10 @@ export function createApp({
       } catch {
         fail(404, "NOT_FOUND");
       }
+    }
+    if (method === "GET" && url.pathname === "/v2/offers") {
+      if (!offers) fail(503, "OFFERS_UNAVAILABLE");
+      return send(res, 200, await bounded((signal) => offers.list({ signal })));
     }
     if (method === "GET" && url.pathname === "/v1/providers") {
       const names = url.searchParams.getAll("name");

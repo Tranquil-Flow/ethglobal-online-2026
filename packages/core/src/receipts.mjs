@@ -1,3 +1,4 @@
+import { offerSigningText } from "../../contracts/offers.mjs";
 import {
   KeyObject,
   createPrivateKey,
@@ -111,6 +112,12 @@ function verifyReceipt(receipt, keyring) {
   return true;
 }
 
+/** Public-only verifier; shares the frozen v1 signature implementation. */
+export function createReceiptVerifier({ trustedKeys }) {
+  const ring = keyringFrom(trustedKeys);
+  return (receipt) => verifyReceipt(receipt, ring);
+}
+
 /** Create an explicit, synchronous Ed25519 receipt signer/verifier. */
 export function createSigner({ privateKey, keyId, trustedKeys = {} } = {}) {
   assertKeyId(keyId);
@@ -121,6 +128,17 @@ export function createSigner({ privateKey, keyId, trustedKeys = {} } = {}) {
   keyring.set(keyId, ownPublic);
 
   return Object.freeze({
+    signOffer(payload) {
+      const text = offerSigningText(payload);
+      return {
+        payload: structuredClone(payload),
+        keyId,
+        algorithm: ALGORITHM,
+        signature: cryptoSign(null, Buffer.from(text), privateObject).toString(
+          "base64url",
+        ),
+      };
+    },
     sign(payload) {
       validate("ReceiptPayload", payload);
       // Detach the signed value from caller mutation while retaining the restricted JSON subset.

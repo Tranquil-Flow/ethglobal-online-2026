@@ -1,4 +1,8 @@
 import { validate, digestOf, canonicalBytes } from "./contracts.mjs";
+import {
+  validateSignedOffer,
+  offerSigningText,
+} from "../../contracts/offers.mjs";
 import { AccessError, fail, checked, exact, id } from "./errors.mjs";
 import {
   decodePaymentRequiredHeader,
@@ -559,6 +563,58 @@ export function createClient({
       );
       if ((await digestOf(d)) !== profileId) fail("PROFILE_MISMATCH");
       return d;
+    },
+    async listOffers(options) {
+      if (!pins?.providerId || !pins.keyId || !pins.publicKeyJwk)
+        fail("KEY_PIN_REQUIRED");
+      const d = await request("/v2/offers", { options });
+      exact(d, ["version", "offers"]);
+      if (d.version !== "2" || !Array.isArray(d.offers) || d.offers.length > 8)
+        fail("INVALID_RESPONSE");
+      const matching = [];
+      for (const o of d.offers) {
+        try {
+          validateSignedOffer(o);
+        } catch {
+          fail("INVALID_SIGNED_OFFER");
+        }
+        if (o.payload.providerId !== pins.providerId) continue;
+        if (
+          o.keyId !== pins.keyId ||
+          o.payload.endpoint !== base ||
+          Date.parse(o.payload.expiresAt) <= Date.now() ||
+          Date.parse(o.payload.issuedAt) > Date.now() + 5000
+        )
+          fail("OFFER_PIN_OR_EXPIRY_MISMATCH");
+        try {
+          if (pins.publicKeyJwk.d) throw Error();
+          const key = await crypto.subtle.importKey(
+            "jwk",
+            pins.publicKeyJwk,
+            "Ed25519",
+            false,
+            ["verify"],
+          );
+          const sig = Uint8Array.from(
+            atob(o.signature.replace(/-/g, "+").replace(/_/g, "/") + "=="),
+            (c) => c.charCodeAt(0),
+          );
+          if (
+            !(await crypto.subtle.verify(
+              "Ed25519",
+              key,
+              sig,
+              new TextEncoder().encode(offerSigningText(o.payload)),
+            ))
+          )
+            throw Error();
+        } catch {
+          fail("INVALID_OFFER_SIGNATURE");
+        }
+        matching.push(jsonClone(o));
+      }
+      if (matching.length !== 1) fail("PROVIDER_OFFER_UNAVAILABLE");
+      return { version: "2", offers: matching };
     },
     async listProviders(names, options) {
       if (

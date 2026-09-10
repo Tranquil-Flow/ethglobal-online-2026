@@ -39,6 +39,11 @@ export function createOpenAIIngress({
   const models = new Map();
   for (const providerId of providers)
     for (const [profileId] of profiles) {
+      if (
+        config.providerProfiles &&
+        !config.providerProfiles[providerId]?.includes(profileId)
+      )
+        continue;
       const id =
         "mycelium-" +
         digestOf({ providerId, profileId, chat: "single-user-v1" }).slice(7);

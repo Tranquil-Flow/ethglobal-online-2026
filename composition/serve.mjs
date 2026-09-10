@@ -1,4 +1,6 @@
 import { resolve } from "node:path";
+import { readPrivateFile } from "../operations/src/private-files.mjs";
+import { validateApplicationConfig } from "./application-workbench.mjs";
 import { pathToFileURL } from "node:url";
 import { readFileSync, statSync } from "node:fs";
 import { startWorkbench } from "./workbench.mjs";
@@ -42,48 +44,65 @@ try {
       throw Error("INVALID_WORKBENCH_CONFIG");
     const config = JSON.parse(readFileSync(configPath, "utf8"));
     accessPolicy = config.accessPolicy;
-    if (operatorInputsPath && (config.mode !== "live" || !bindingsPath))
-      throw Error("INVALID_OPERATOR_INPUTS");
-    const operatorInputs = operatorInputsPath
-      ? loadOperatorInputs(operatorInputsPath)
-      : undefined;
-    let bindings = {};
-    if (bindingsPath) {
-      if (!["live", "mycelium-v3-conformance"].includes(config.mode))
-        throw Error("LIVE_BINDINGS_FORBIDDEN_IN_SIMULATION");
-      const module = await import(pathToFileURL(resolve(bindingsPath)).href);
-      if (typeof module.createBindings !== "function")
-        throw Error("LIVE_RUNTIME_REQUIRED");
-      bindings = await module.createBindings({ config });
-      if (
-        !bindings ||
-        Object.keys(bindings).some(
-          (k) =>
-            ![
-              "runtime",
-              "receiptSigner",
-              "publicationSigner",
-              ...(operatorInputs
-                ? ["authorizeRuntimeAccess", "credentialFor"]
-                : []),
-            ].includes(k),
-        )
-      )
-        throw Error("LIVE_RUNTIME_REQUIRED");
-    }
-    if (operatorInputs) {
-      if (bindings.runtime) throw Error("AMBIGUOUS_OPERATOR_RUNTIME");
-      const runtime = await createOperatorRuntimeBinding(
-        operatorInputs,
-        bindings,
+    if (config.version === "2") {
+      if (operatorInputsPath || !bindingsPath)
+        throw Error("APPLICATION_BINDINGS_REQUIRED");
+      const safe = JSON.parse(
+        readPrivateFile(configPath, {
+          maxBytes: 65536,
+          code: "PRIVATE_CONFIG_REQUIRED",
+        }).data.toString("utf8"),
       );
-      bindings = {
-        runtime,
-        receiptSigner: bindings.receiptSigner,
-        publicationSigner: bindings.publicationSigner,
-      };
+      validateApplicationConfig(safe);
+      const module = await import(pathToFileURL(resolve(bindingsPath)).href);
+      if (typeof module.createApplicationBindings !== "function")
+        throw Error("APPLICATION_BINDINGS_REQUIRED");
+      const bindings = await module.createApplicationBindings({ config: safe });
+      app = await startWorkbench({ config: safe, bindings });
+    } else {
+      if (operatorInputsPath && (config.mode !== "live" || !bindingsPath))
+        throw Error("INVALID_OPERATOR_INPUTS");
+      const operatorInputs = operatorInputsPath
+        ? loadOperatorInputs(operatorInputsPath)
+        : undefined;
+      let bindings = {};
+      if (bindingsPath) {
+        if (!["live", "mycelium-v3-conformance"].includes(config.mode))
+          throw Error("LIVE_BINDINGS_FORBIDDEN_IN_SIMULATION");
+        const module = await import(pathToFileURL(resolve(bindingsPath)).href);
+        if (typeof module.createBindings !== "function")
+          throw Error("LIVE_RUNTIME_REQUIRED");
+        bindings = await module.createBindings({ config });
+        if (
+          !bindings ||
+          Object.keys(bindings).some(
+            (k) =>
+              ![
+                "runtime",
+                "receiptSigner",
+                "publicationSigner",
+                ...(operatorInputs
+                  ? ["authorizeRuntimeAccess", "credentialFor"]
+                  : []),
+              ].includes(k),
+          )
+        )
+          throw Error("LIVE_RUNTIME_REQUIRED");
+      }
+      if (operatorInputs) {
+        if (bindings.runtime) throw Error("AMBIGUOUS_OPERATOR_RUNTIME");
+        const runtime = await createOperatorRuntimeBinding(
+          operatorInputs,
+          bindings,
+        );
+        bindings = {
+          runtime,
+          receiptSigner: bindings.receiptSigner,
+          publicationSigner: bindings.publicationSigner,
+        };
+      }
+      app = await startWorkbench({ config, ...bindings });
     }
-    app = await startWorkbench({ config, ...bindings });
   } else {
     if (bindingsPath || operatorInputsPath)
       throw Error("INVALID_WORKBENCH_CONFIG");
@@ -114,28 +133,31 @@ try {
               ? "staged-simulator-not-inference"
               : "synthetic-not-inference",
       assessment: app.replayMethod ?? "unavailable",
-      payment:
-        accessPolicy === "sponsored-local"
-          ? "non-monetary-no-settlement"
-          : app.mode === "live"
-            ? "configured-Blocky402-testnet"
-            : "offline-synthetic-no-funds",
+      payment: ["sponsored-local", "non-economic"].includes(accessPolicy)
+        ? "non-monetary-no-settlement"
+        : app.mode === "live"
+          ? "configured-Blocky402-testnet"
+          : "offline-synthetic-no-funds",
       history:
-        accessPolicy === "sponsored-local"
-          ? "synthetic-Graph-shaped-not-deployed"
-          : app.mode === "live"
-            ? "configured-pinned-Graph-not-qualified"
-            : useLocalServices || configPath
-              ? "local-Graph-Node-not-public-provider"
-              : "synthetic-Graph-shaped-not-deployed",
+        accessPolicy === "non-economic"
+          ? "unavailable"
+          : ["sponsored-local", "non-economic"].includes(accessPolicy)
+            ? "synthetic-Graph-shaped-not-deployed"
+            : app.mode === "live"
+              ? "configured-pinned-Graph-not-qualified"
+              : useLocalServices || configPath
+                ? "local-Graph-Node-not-public-provider"
+                : "synthetic-Graph-shaped-not-deployed",
       discovery:
-        accessPolicy === "sponsored-local"
-          ? "explicit-local-offer-not-ENS"
-          : app.mode === "live"
-            ? "configured-canonical-ENSv2-not-qualified"
-            : useLocalServices || configPath
-              ? "local-ENSv2-contracts"
-              : "synthetic-records-not-ENS",
+        accessPolicy === "non-economic"
+          ? "configured-direct-offers-not-ENS"
+          : ["sponsored-local", "non-economic"].includes(accessPolicy)
+            ? "explicit-local-offer-not-ENS"
+            : app.mode === "live"
+              ? "configured-canonical-ENSv2-not-qualified"
+              : useLocalServices || configPath
+                ? "local-ENSv2-contracts"
+                : "synthetic-records-not-ENS",
     }),
   );
   for (const sig of ["SIGINT", "SIGTERM"])

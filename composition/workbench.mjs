@@ -86,7 +86,16 @@ export async function startWorkbench({
   runtime,
   receiptSigner,
   publicationSigner,
+  bindings,
 } = {}) {
+  if (config?.version === "2") {
+    if (runtime || receiptSigner || publicationSigner)
+      throw Error("AMBIGUOUS_APPLICATION_BINDINGS");
+    const { startApplicationWorkbench } = await import(
+      "./application-workbench.mjs"
+    );
+    return startApplicationWorkbench({ config, bindings });
+  }
   if (config?.mode === "live") {
     if (!runtime) throw Error("LIVE_RUNTIME_REQUIRED");
     const { startLiveWorkbench } = await import("./live-workbench.mjs");

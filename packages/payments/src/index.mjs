@@ -1,3 +1,4 @@
+export { createNonEconomicAccess } from "./non-economic.mjs";
 import { randomUUID } from "node:crypto";
 import { validate, requestHash, digestOf } from "../../contracts/index.mjs";
 import { createSqliteStore } from "./store.mjs";

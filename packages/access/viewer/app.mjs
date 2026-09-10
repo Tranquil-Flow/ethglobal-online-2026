@@ -9,6 +9,7 @@ import {
 const $ = (id) => document.getElementById(id),
   text = (id, v) => ($(id).textContent = v);
 let jobClient, jobPins;
+let formRevision = 0;
 let jobCursor = 0,
   connecting = false,
   pendingSubmission = false,
@@ -35,6 +36,7 @@ export function setPaymentAuthorizer(callback) {
 }
 const status = (v) => (document.querySelector("[role=status]").textContent = v);
 function invalidate() {
+  formRevision++;
   quote = undefined;
   request = undefined;
   $("consent").checked = false;
@@ -64,7 +66,8 @@ async function action(fn) {
   }
 }
 const pinFor = (id) =>
-  config.providers?.find((p) => p.providerId === id)?.pins ?? config.pins;
+  config.providers?.find((p) => p.providerId === id)?.pins ??
+  (config.applicationVersion === "2" ? undefined : config.pins);
 function clientFor(id, capability) {
   return createClient({
     baseUrl: config.apiUrl,
@@ -154,14 +157,26 @@ $("find").onclick = () =>
     if (busy) throw new AccessError("JOB_IN_PROGRESS");
     status("Finding provider…");
     provider = undefined;
-    const list = await client.listProviders([$("provider").value]);
-    if (!list.providers.length) throw new AccessError("Provider unavailable");
-    const p = list.providers[0];
-    if (!p.profileIds.includes($("profile").value))
+    const revision = formRevision,
+      name = $("provider").value,
+      profileId = $("profile").value;
+    const selectedClient = clientFor(name, client.capability);
+    let p;
+    if (config.applicationVersion === "2") {
+      const { offers } = await selectedClient.listOffers();
+      const o = offers[0];
+      p = { ...o.payload, name: o.payload.providerId, signedOffer: o };
+    } else {
+      const list = await selectedClient.listProviders([name]);
+      p = list.providers.find((p) => p.providerId === name);
+    }
+    if (!p) throw new AccessError("Provider unavailable");
+    if (!p.profileIds.includes(profileId))
       throw new AccessError("Profile unavailable");
-    const profile = await client.getProfile($("profile").value);
+    const profile = await selectedClient.getProfile(profileId);
+    if (formRevision !== revision) throw new AccessError("FORM_CHANGED_RETRY");
     provider = p;
-    client = clientFor(p.providerId, client.capability);
+    client = selectedClient;
     text("provider-state", p.name);
     text("profile-info", profile.model + " · " + p.mode);
     const h = await client.getHistory(p.providerId);
@@ -184,7 +199,9 @@ $("quote-button").onclick = () =>
       throw new AccessError("Find provider first");
     if (busy) throw new AccessError("JOB_IN_PROGRESS");
     status("Loading quote…");
-    request = await createRequest({
+    const revision = formRevision,
+      selectedProvider = provider;
+    const pendingRequest = await createRequest({
       providerId: provider.providerId,
       profileId: $("profile").value,
       prompt: $("prompt").value,
@@ -192,8 +209,13 @@ $("quote-button").onclick = () =>
       seed: 0,
       publishConsent: $("publish-consent")?.checked === true,
     });
-    quote = await client.createQuote(request);
-    if (quote.mode !== provider.mode) throw new AccessError("MODE_MISMATCH");
+    const pendingQuote = await client.createQuote(pendingRequest);
+    if (formRevision !== revision || provider !== selectedProvider)
+      throw new AccessError("FORM_CHANGED_RETRY");
+    if (pendingQuote.mode !== provider.mode)
+      throw new AccessError("MODE_MISMATCH");
+    request = pendingRequest;
+    quote = pendingQuote;
     submissionAttempted = false;
     $("consent").checked = false;
     text(
@@ -221,7 +243,7 @@ $("submit").onclick = () =>
     if (!quote || !request) throw new AccessError("Get quote first");
     const budget = $("budget")?.value ?? "10";
     if (
-      !(config.accessPolicy === "sponsored-local"
+      !(["sponsored-local", "non-economic"].includes(config.accessPolicy)
         ? budget === "0"
         : /^[1-9][0-9]{0,4}$/.test(budget)) ||
       BigInt(budget) > 10000n
@@ -331,7 +353,7 @@ function renderJob(j) {
   );
   text(
     "payment-state",
-    config.accessPolicy === "sponsored-local"
+    ["sponsored-local", "non-economic"].includes(config.accessPolicy)
       ? "Non-monetary — no settlement or refund claim"
       : (j.payment?.status || "unknown") + " · " + j.mode,
   );
