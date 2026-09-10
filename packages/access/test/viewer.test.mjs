@@ -77,14 +77,8 @@ test("viewer real browser covers keyboard, mobile, states, XSS, streaming and ev
   assert.match(await page.getByRole("alert").textContent(), /consent/i);
   assert.equal(await page.locator("#budget").inputValue(), "10");
   await page.getByLabel(/authorize up to the budget\s+ceiling/i).check();
-  await page
-    .getByLabel(/Recovery passphrase/)
-    .fill("synthetic-browser-passphrase");
-  const recoveryDownload = page.waitForEvent("download");
-  await page
-    .getByRole("button", { name: /Download encrypted recovery/ })
-    .click();
-  await recoveryDownload;
+  // This is the preserved v1 fixture; encrypted recovery is exercised
+  // against actual v2 core/storage in application-recovery-browser.test.mjs.
   await page.getByRole("button", { name: "Submit and stream" }).click();
   await page.getByText("Completed").waitFor();
   const answer = await page.getByTestId("answer").textContent();

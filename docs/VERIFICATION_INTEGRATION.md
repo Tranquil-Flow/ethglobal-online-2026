@@ -42,3 +42,9 @@ These are owner gates, not fabricated endpoint schemas. Protected payment contin
 ## Local compatibility tests
 
 Canonical composition discovery includes `application-assessment.test.mjs`, `operator-unchecked.test.mjs`, `application-serving.test.mjs`, `application-recovery.test.mjs`, existing native gateway/profile/assessor tests and stock OpenAI SDK tests. They exercise production application services with explicitly synthetic executors and controlled checker/readiness fixtures. Exact final commands/revisions are in the application completion ledger and continuation handoff. Do not substitute these for a granted model or proof workload.
+
+## Reconciled research metadata (not adopted runtime code)
+
+The inspected D `wave03-review-1zu8088o/DECISION.json` verdict is `A_BLOCK_UPHELD_C_REAL_ADAPTER_REPAIR_REQUIRED`, with `runtime_authority: false`. A's `continuations/request-integration-03/HANDOFF.md` reports `PASS_SOURCE_ONLY_C_NOT_ADMITTED`. The C successor's real trace identity, request/load budget, entropy and commitment-association issues remain with C and A admission; passing synthetic fixtures is not an accepted financial or computation-check interface. These reports do not supply a drop-in accepted assessor or a renewed grant. The application has not imported their moving sources or executed their model/proof requests.
+
+Native N remains distinct from prospective O. The preserved N computation identity in the wave contract is `sha256:38b0f301ba9361eacea61110d42fb2ceaf7a04fb48a30e0bdaf0803e76ae24d0`; this is research metadata, not a claim that this application has executed it. The existing transport adapter and source-only compatibility gates remain available; actual profile adoption, granted execution and whole-request/financial qualification require the named owners' accepted contracts.

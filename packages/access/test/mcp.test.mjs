@@ -41,6 +41,7 @@ test("MCP stdio tools use SDK; reads decide on compatibility, budget and fresh h
       "access_receipt",
       "access_connect",
       "access_history",
+      "access_offers",
       "access_quote",
       "access_recovery_export",
       "access_recovery_import",

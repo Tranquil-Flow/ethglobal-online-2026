@@ -273,6 +273,11 @@ export function preflightApplication({ config: input, bindings }) {
     typeof bindings.history?.getHistory !== "function"
   )
     fail("INVALID_HISTORY_BINDING");
+  if (
+    bindings.discovery !== undefined &&
+    typeof bindings.discovery?.list !== "function"
+  )
+    fail("INVALID_DISCOVERY_BINDING");
   return { config, entries };
 }
 
@@ -533,10 +538,29 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       return record;
     };
     const directDiscovery = {
-      async list({ names }) {
+      async list({ names, signal }) {
         if (!Array.isArray(names) || names.length > 32) fail("INVALID_INPUT");
         const providers = [],
           errors = [];
+        if (bindings.discovery) {
+          const listed = await bindings.discovery.list({ names, signal });
+          const identity = (p) => {
+            const { source, ...stable } = p;
+            return digestOf(stable);
+          };
+          for (const p of listed.providers) {
+            try {
+              validate("Provider", p);
+              const entry = byProvider.get(p.providerId);
+              if (!entry || identity(p) !== identity(providerRecord(entry)))
+                fail("OFFER_RECORD_MISMATCH");
+              providers.push(p);
+            } catch {
+              errors.push({ name: p.name, code: "OFFER_RECORD_MISMATCH" });
+            }
+          }
+          return { providers, errors: [...listed.errors, ...errors] };
+        }
         for (const name of names) {
           const entry = byProvider.get(name);
           if (!entry) errors.push({ name, code: "PROVIDER_UNAVAILABLE" });
@@ -553,6 +577,12 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
         asset,
         signal,
       }) {
+        const current = bindings.discovery
+          ? await directDiscovery.list({
+              names: providers.map((p) => p.name),
+              signal,
+            })
+          : undefined;
         const reasons = [],
           eligible = [];
         for (const p of providers) {
@@ -562,7 +592,14 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
           try {
             if (
               !entry ||
-              recordIdentity(p) !== recordIdentity(providerRecord(entry))
+              recordIdentity(p) !==
+                recordIdentity(
+                  current
+                    ? current.providers.find(
+                        (x) => x.providerId === p.providerId,
+                      )
+                    : providerRecord(entry),
+                )
             )
               fail("PROVIDER_CHANGED");
             if (!entry.config.profileIds.includes(profileId))
@@ -762,7 +799,9 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
         ]),
       ),
       publication: "disabled",
-      discovery: "direct-stable-offers-not-ENS",
+      discovery: bindings.discovery
+        ? "configured-ensv2-bound-to-offers"
+        : "direct-stable-offers-not-ENS",
       history: bindings.history
         ? "configured-open-attributed-not-proof"
         : "unavailable",

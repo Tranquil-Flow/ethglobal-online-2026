@@ -30,6 +30,11 @@ import {
   createGraphClient,
 } from "../packages/indexing/src/index.mjs";
 
+import {
+  createEnsV2Discovery,
+  collectEnsV2Config,
+} from "../packages/discovery/src/index.mjs";
+
 const fail = (code) => {
   throw Error(code);
 };
@@ -178,6 +183,7 @@ export function loadManagedApplication({ configFile }) {
     "version",
     "providers",
     ...(manifest.history !== undefined ? ["history"] : []),
+    ...(manifest.discovery !== undefined ? ["discovery"] : []),
     ...(manifest.historicalKeys !== undefined ? ["historicalKeys"] : []),
   ]);
   if (
@@ -323,7 +329,14 @@ export function loadManagedApplication({ configFile }) {
     );
     return { ...spec, identityId: digestOf(pub.publicKeyJwk) };
   });
-  return { root, config, entries, history, historicalKeys };
+  let discovery;
+  if (manifest.discovery !== undefined) {
+    const inputs = collectEnsV2Config(manifest.discovery);
+    if (inputs.mode !== config.mode || inputs.operator !== undefined)
+      fail("INVALID_DISCOVERY_BINDING");
+    discovery = createEnsV2Discovery({ inputs });
+  }
+  return { root, config, entries, history, historicalKeys, discovery };
 }
 async function prepare(options, { start = false } = {}) {
   const x = loadManagedApplication(options);
@@ -336,6 +349,7 @@ async function prepare(options, { start = false } = {}) {
     }
   const bindings = {
     ...(x.history ? { history: x.history } : {}),
+    ...(x.discovery ? { discovery: x.discovery } : {}),
     providers: x.entries.map(({ providerId, receiptSigner, runtime }) => ({
       providerId,
       receiptSigner,
