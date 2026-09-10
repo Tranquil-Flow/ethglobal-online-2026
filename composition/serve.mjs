@@ -3,13 +3,16 @@ import { pathToFileURL } from "node:url";
 import { readFileSync, statSync } from "node:fs";
 import { startWorkbench } from "./workbench.mjs";
 import { startDevelopment } from "./index.mjs";
+import { loadOperatorInputs, createOperatorRuntimeBinding } from "./mycelium-operator.mjs";
 const args = process.argv.slice(2),
   options = {};
 let useLocalServices = false,
+  operatorInputsPath,
   configPath,
   bindingsPath;
 for (let i = 0; i < args.length; i++) {
   if (args[i] === "--config") configPath = args[++i];
+  else if (args[i] === "--operator-inputs") operatorInputsPath = args[++i];
   else if (args[i] === "--bindings") bindingsPath = args[++i];
   else if (args[i] === "--local-services") useLocalServices = true;
   else if (args[i] === "--development") options.development = true;
@@ -35,6 +38,9 @@ try {
     )
       throw Error("INVALID_WORKBENCH_CONFIG");
     const config = JSON.parse(readFileSync(configPath, "utf8"));
+    if (operatorInputsPath && (config.mode !== "live" || !bindingsPath))
+      throw Error("INVALID_OPERATOR_INPUTS");
+    const operatorInputs = operatorInputsPath ? loadOperatorInputs(operatorInputsPath) : undefined;
     let bindings = {};
     if (bindingsPath) {
       if (!["live", "mycelium-v3-conformance"].includes(config.mode))
@@ -46,14 +52,19 @@ try {
       if (
         !bindings ||
         Object.keys(bindings).some(
-          (k) => !["runtime", "receiptSigner", "publicationSigner"].includes(k),
+          (k) => !["runtime", "receiptSigner", "publicationSigner", ...(operatorInputs ? ["authorizeRuntimeAccess", "credentialFor"] : [])].includes(k),
         )
       )
         throw Error("LIVE_RUNTIME_REQUIRED");
     }
+    if (operatorInputs) {
+      if (bindings.runtime) throw Error("AMBIGUOUS_OPERATOR_RUNTIME");
+      const runtime = await createOperatorRuntimeBinding(operatorInputs, bindings);
+      bindings = {runtime, receiptSigner:bindings.receiptSigner, publicationSigner:bindings.publicationSigner};
+    }
     app = await startWorkbench({ config, ...bindings });
   } else {
-    if (bindingsPath) throw Error("INVALID_WORKBENCH_CONFIG");
+    if (bindingsPath || operatorInputsPath) throw Error("INVALID_WORKBENCH_CONFIG");
     if (useLocalServices) {
       if (options.development !== true) throw Error("DEVELOPMENT_REQUIRED");
       const { startRehearsalInfrastructure } = await import(
@@ -111,6 +122,13 @@ try {
   console.error(
     [
       "LIVE_RUNTIME_REQUIRED",
+      "INVALID_OPERATOR_INPUTS",
+      "UNSAFE_OPERATOR_INPUTS",
+      "RUNTIME_ACCESS_GRANT_REQUIRED",
+      "INVALID_ACCESS_SCOPE",
+      "OPERATOR_PROFILE_MISMATCH",
+      "OPERATOR_QUALIFICATION_MISMATCH",
+      "AMBIGUOUS_OPERATOR_RUNTIME",
       "INVALID_WORKBENCH_CONFIG",
       "INVALID_PROVIDER_CATALOG",
       "DEVELOPMENT_REQUIRED",

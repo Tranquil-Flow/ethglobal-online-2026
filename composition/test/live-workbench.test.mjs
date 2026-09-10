@@ -271,6 +271,24 @@ test("fails closed before creating state or listeners for incomplete live author
   rmSync(parent, { recursive: true, force: true });
 });
 
+test("live normal application serves safe viewer config, not synthetic authorization", async () => {
+  const parent = mkdtempSync(join(tmpdir(), "live-viewer-"));
+  let app;
+  try {
+    app = await startLiveWorkbench({config: config(join(parent,"state")), runtime: runtime(), receiptSigner: receiptSigner(), publicationSigner: publicationSigner()});
+    assert.equal((await fetch(app.url + "/")).status, 200);
+    const viewer = await (await fetch(app.url + "/config.json")).json();
+    assert.equal(viewer.development, false);
+    assert.equal(viewer.fixture, false);
+    assert.equal(viewer.apiUrl, "https://worker.example.com");
+    assert.equal(viewer.profileId, digestOf(profile));
+    assert.deepEqual(viewer.providers[0].pins, {providerId:'worker.example.eth',...app.pins});
+    assert.ok(!JSON.stringify(viewer).includes("paymentConfigs"));
+    assert.equal((await fetch(app.url + "/development/authorize", {method:"POST"})).status, 404);
+    assert.equal((await fetch(app.url + "/config.json", {headers:{origin:"https://evil.invalid"}})).status, 403);
+  } finally { await app?.close(); rmSync(parent,{recursive:true,force:true}); }
+});
+
 test("starts real loopback core with live factories, keeps HTTPS identity, and cleans up", async () => {
   const parent = mkdtempSync(join(tmpdir(), "live-workbench-http-"));
   const dataDir = join(parent, "state");

@@ -319,6 +319,7 @@ export async function startLiveWorkbench({
   mkdirSync(dir, { recursive: true, mode: 0o700 });
   let release = acquirePrivateStateLock(dir);
   let store,
+    viewer,
     payments,
     indexing,
     provider,
@@ -329,6 +330,7 @@ export async function startLiveWorkbench({
     closed = true;
     const errors = [];
     for (const dispose of [
+      () => viewer?.close(),
       () => app?.close(),
       () => payments?.close(),
       () => indexing?.eventSink?.close(),
@@ -401,7 +403,16 @@ export async function startLiveWorkbench({
       history: indexing.history,
       eventSink: indexing.eventSink,
     });
-    const { url } = await app.listen({ host: "127.0.0.1", port: config.port });
+    const { url: coreUrl } = await app.listen({ host: "127.0.0.1", port: 0 });
+    viewer = await startLiveViewer({coreUrl, port:config.port, config:{
+      apiUrl:new URL(config.payment.resourceUrl).origin,
+      fixture:false,development:false,pins,
+      providerId:config.providers[0].providerId,
+      profileId:digestOf(runtime.profiles[0]),
+      providers:config.providers.map(p=>({providerId:p.providerId,profileIds:p.profileIds,pins:{providerId:p.providerId,...pins}})),
+      replayMethod:runtime.method,
+    }});
+    const {url}=viewer;
     return Object.freeze({
       url,
       mode: "live",
@@ -432,3 +443,4 @@ export async function startLiveWorkbench({
     throw error;
   }
 }
+import { startLiveViewer } from './live-viewer.mjs';
