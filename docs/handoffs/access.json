@@ -1,30 +1,30 @@
 {
   "lane": "access",
   "status": "local_ready",
-  "codeRevision": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+  "codeRevision": "8a6fee1e86a283688029a7704000637eb4331134",
   "historicalLaneCodeRevision": "4e15d0c4abc501a3cdb235c787352bba7023ba01",
   "integrationEvidence": "docs/handoffs/foundation-verification.json",
   "commands": [
     {
-      "id": "access-check",
+      "id": "closure02-access-check",
       "command": "npm --prefix packages/access run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/foundation-verification.json",
-      "localLog": "foundation/logs/code-final-access-check.log"
+      "evidence": "docs/handoffs/application-verification.json",
+      "localLog": "../logs/closure02-access-check.log"
     },
     {
-      "id": "access-smoke",
+      "id": "closure02-access-smoke",
       "command": "npm --prefix packages/access run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/foundation-verification.json",
-      "localLog": "foundation/logs/code-final-access-smoke.log"
+      "evidence": "docs/handoffs/application-verification.json",
+      "localLog": "../logs/closure02-access-smoke.log"
     },
     {
-      "id": "composition",
+      "id": "closure02-integration",
       "command": "npm run smoke:integration",
       "exitCode": 0,
-      "evidence": "docs/handoffs/foundation-verification.json",
-      "localLog": "foundation/logs/code-final-integration.log"
+      "evidence": "docs/handoffs/application-verification.json",
+      "localLog": "../logs/closure02-integration.log"
     }
   ],
   "acceptance": [
@@ -116,8 +116,8 @@
     {
       "id": "real-core-client-composition",
       "status": "qualified",
-      "reason": "Actual combined local application at implementation revision 7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae passed foundation smoke/integration gates; local composition only, not live sponsor or inference qualification.",
-      "evidence": "docs/handoffs/foundation-verification.json"
+      "reason": "Application-local only at 8a6fee1e86a283688029a7704000637eb4331134: actual canonical local composition/ingestion passed. Synthetic executor/checker; not inference, financial protection or public qualification.",
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "live-wallet-payment",
@@ -152,7 +152,7 @@
   ],
   "contractRequests": [],
   "evidencePrivacy": "Foundation handoff uses synthetic/local conformance evidence only; no bearer, wallet secret, Graph credential, private live prompt, or payment proof is included in tracked metadata.",
-  "documentationRevisionNote": "Foundation closure: implementation source tested at 7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae; this handoff metadata may be committed later without changing package/composition bytes. See docs/handoffs/foundation-verification.json and foundation evidence root.",
+  "documentationRevisionNote": "Application implementation tested at 8a6fee1e86a283688029a7704000637eb4331134. Later root README/docs/handoff-only commits do not change package/composition bytes. Final exact-candidate canonical receipt is in the adjacent APPLICATION-HANDOFF.json packet.",
   "reviewTag": {
     "name": "handoff-review-v1",
     "revision": "74ae66f6bd895b13a9ce9de083357c0fcb88e564",
@@ -163,66 +163,66 @@
       "id": "sdk-http-errors",
       "status": "passed",
       "commandIds": [
-        "access-check",
-        "access-smoke",
-        "composition"
+        "closure02-access-check",
+        "closure02-access-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "docs/handoffs/application-verification.json",
       "details": "All HTTP methods; exact shared DTOs and envelopes; malformed JSON/DTOs; safe errors; bounded 429/network retries; AbortSignal/deadline;409 conflict; unsupported/expired quote; request/profile/budget binding."
     },
     {
       "id": "session-payment-consent",
       "status": "passed",
       "commandIds": [
-        "access-check",
-        "access-smoke",
-        "composition"
+        "closure02-access-check",
+        "closure02-access-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "docs/handoffs/application-verification.json",
       "details": "Explicit sessions; expiry/revocation no auto-renew or repay; default no spending; bounded consent; native x402 402 bytes; callback bearer/cookie/header isolation; rejected authorizer header injection; concurrency/replay/ambiguous-paid-outcome controls."
     },
     {
       "id": "sse-reconnect-cancel",
       "status": "passed",
       "commandIds": [
-        "access-check",
-        "access-smoke",
-        "composition"
+        "closure02-access-check",
+        "closure02-access-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "docs/handoffs/application-verification.json",
       "details": "Actual fetch SSE resume with Last-Event-ID; no duplicate deltas/paid resubmission; expired cursor409; stream disconnection not cancel; SDK/real-browser explicit cancellation; paid_but_failed remains separate; bounded output."
     },
     {
       "id": "cli-mcp",
       "status": "passed",
       "commandIds": [
-        "access-check",
-        "access-smoke",
-        "composition"
+        "closure02-access-check",
+        "closure02-access-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "docs/handoffs/application-verification.json",
       "details": "CLI providers/select/profile/quote/submit/stream/inspect/cancel/receipt-integrity/assess/export/history/revoke; official MCP stdio connect/history/quote/select/submit/watch; host and caller authorization; no-quote refusal and stale Graph-derived history veto."
     },
     {
       "id": "browser-accessibility-xss",
       "status": "passed",
       "commandIds": [
-        "access-check",
-        "access-smoke",
-        "composition"
+        "closure02-access-check",
+        "closure02-access-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "docs/handoffs/application-verification.json",
       "details": "Actual Chromium desktop/mobile; Tab/Enter; loading/empty/error/unavailable/development/cancelled paths; accessible alerts/status; CSP/text-only XSS; no page errors/dialogs/horizontal overflow; separate states; consent invalidation; evidence download."
     },
     {
       "id": "privacy-export",
       "status": "passed",
       "commandIds": [
-        "access-check",
-        "access-smoke",
-        "composition"
+        "closure02-access-check",
+        "closure02-access-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md",
+      "evidence": "docs/handoffs/application-verification.json",
       "details": "Permission-restricted CLI files; memory-only browser capability; no bearer in URL/authorizer; no private normal SDK logs; no wallet/Graph secrets; hash/association/signature-validated private export/import; corruption/pin mismatch rejection; evidence deletion yields unavailable assessment; integrity is not execution verification."
     }
   ],
@@ -268,6 +268,139 @@
           "localLog": "artifacts/closeout/fresh-a4b48df-integration.log"
         }
       ]
+    },
+    {
+      "codeRevision": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "commands": [
+        {
+          "id": "closure02-access-check",
+          "command": "npm --prefix packages/access run check",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-access-check.log"
+        },
+        {
+          "id": "closure02-access-smoke",
+          "command": "npm --prefix packages/access run smoke",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-access-smoke.log"
+        },
+        {
+          "id": "closure02-integration",
+          "command": "npm run smoke:integration",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-integration.log"
+        }
+      ],
+      "acceptanceCases": [
+        {
+          "id": "sdk-http-errors",
+          "status": "passed",
+          "commandIds": [
+            "closure02-access-check",
+            "closure02-access-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json",
+          "details": "All HTTP methods; exact shared DTOs and envelopes; malformed JSON/DTOs; safe errors; bounded 429/network retries; AbortSignal/deadline;409 conflict; unsupported/expired quote; request/profile/budget binding."
+        },
+        {
+          "id": "session-payment-consent",
+          "status": "passed",
+          "commandIds": [
+            "closure02-access-check",
+            "closure02-access-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json",
+          "details": "Explicit sessions; expiry/revocation no auto-renew or repay; default no spending; bounded consent; native x402 402 bytes; callback bearer/cookie/header isolation; rejected authorizer header injection; concurrency/replay/ambiguous-paid-outcome controls."
+        },
+        {
+          "id": "sse-reconnect-cancel",
+          "status": "passed",
+          "commandIds": [
+            "closure02-access-check",
+            "closure02-access-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json",
+          "details": "Actual fetch SSE resume with Last-Event-ID; no duplicate deltas/paid resubmission; expired cursor409; stream disconnection not cancel; SDK/real-browser explicit cancellation; paid_but_failed remains separate; bounded output."
+        },
+        {
+          "id": "cli-mcp",
+          "status": "passed",
+          "commandIds": [
+            "closure02-access-check",
+            "closure02-access-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json",
+          "details": "CLI providers/select/profile/quote/submit/stream/inspect/cancel/receipt-integrity/assess/export/history/revoke; official MCP stdio connect/history/quote/select/submit/watch; host and caller authorization; no-quote refusal and stale Graph-derived history veto."
+        },
+        {
+          "id": "browser-accessibility-xss",
+          "status": "passed",
+          "commandIds": [
+            "closure02-access-check",
+            "closure02-access-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json",
+          "details": "Actual Chromium desktop/mobile; Tab/Enter; loading/empty/error/unavailable/development/cancelled paths; accessible alerts/status; CSP/text-only XSS; no page errors/dialogs/horizontal overflow; separate states; consent invalidation; evidence download."
+        },
+        {
+          "id": "privacy-export",
+          "status": "passed",
+          "commandIds": [
+            "closure02-access-check",
+            "closure02-access-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json",
+          "details": "Permission-restricted CLI files; memory-only browser capability; no bearer in URL/authorizer; no private normal SDK logs; no wallet/Graph secrets; hash/association/signature-validated private export/import; corruption/pin mismatch rejection; evidence deletion yields unavailable assessment; integrity is not execution verification."
+        }
+      ],
+      "externalGates": [
+        {
+          "id": "real-core-client-composition",
+          "status": "qualified",
+          "reason": "Application-local only at 8a6fee1e86a283688029a7704000637eb4331134: actual canonical local composition/ingestion passed. Synthetic executor/checker; not inference, financial protection or public qualification.",
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "live-wallet-payment",
+          "status": "blocked",
+          "reason": "Historical external evidence exists, but this foundation scope did not rerun or authorize live wallet/payment/Graph qualification for the new implementation revision; do not claim current public/live qualification from it."
+        },
+        {
+          "id": "live-graph-decision",
+          "status": "blocked",
+          "reason": "Historical external evidence exists, but this foundation scope did not rerun or authorize live wallet/payment/Graph qualification for the new implementation revision; do not claim current public/live qualification from it."
+        },
+        {
+          "id": "public-release",
+          "status": "blocked",
+          "reason": "Outside authorized technical qualification: no source push/public visibility, license change, mainnet/paid hosting, production inference, demo publication or hackathon submission. Testnet actions are separately authorized and documented."
+        },
+        {
+          "id": "mycelium-execution",
+          "status": "inapplicable",
+          "reason": "Mycelium runtime integration is explicitly excluded from the current access lane scope; no execution qualification claimed."
+        },
+        {
+          "id": "gaskiller-integration",
+          "status": "inapplicable",
+          "reason": "Gas Killer integration is explicitly excluded from current scope; no code or worktree modified and no settlement claim."
+        },
+        {
+          "id": "independent-replay",
+          "status": "inapplicable",
+          "reason": "Actual inference replay/mismatch and physical inference are future separate scope. Receipt integrity/private export do not claim independent execution verification."
+        }
+      ],
+      "documentationRevisionNote": "Foundation closure: implementation source tested at 7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae; this handoff metadata may be committed later without changing package/composition bytes. See docs/handoffs/foundation-verification.json and foundation evidence root."
     }
   ],
   "foundationPriorCodeRevision": "5c76af329661fab1a2e237c2b9b328db49c4b131"

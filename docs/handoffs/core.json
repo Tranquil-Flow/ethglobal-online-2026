@@ -1,29 +1,29 @@
 {
   "lane": "core",
   "status": "local_ready",
-  "codeRevision": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+  "codeRevision": "8a6fee1e86a283688029a7704000637eb4331134",
   "reviewContract": "handoff-review-v1",
   "commands": [
     {
-      "id": "core-check",
+      "id": "closure02-core-check",
       "command": "npm --prefix packages/core run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/foundation-verification.json",
-      "localLog": "foundation/logs/code-final-core-check.log"
+      "evidence": "docs/handoffs/application-verification.json",
+      "localLog": "../logs/closure02-core-check.log"
     },
     {
-      "id": "core-smoke",
+      "id": "closure02-core-smoke",
       "command": "npm --prefix packages/core run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/foundation-verification.json",
-      "localLog": "foundation/logs/code-final-core-smoke.log"
+      "evidence": "docs/handoffs/application-verification.json",
+      "localLog": "../logs/closure02-core-smoke.log"
     },
     {
-      "id": "composition",
+      "id": "closure02-integration",
       "command": "npm run smoke:integration",
       "exitCode": 0,
-      "evidence": "docs/handoffs/foundation-verification.json",
-      "localLog": "foundation/logs/code-final-integration.log"
+      "evidence": "docs/handoffs/application-verification.json",
+      "localLog": "../logs/closure02-integration.log"
     }
   ],
   "acceptanceCases": [
@@ -31,69 +31,69 @@
       "id": "http-lifecycle",
       "status": "passed",
       "commandIds": [
-        "core-check",
-        "core-smoke",
-        "composition"
+        "closure02-core-check",
+        "closure02-core-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "restart-idempotency",
       "status": "passed",
       "commandIds": [
-        "core-check",
-        "core-smoke",
-        "composition"
+        "closure02-core-check",
+        "closure02-core-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "private-capabilities",
       "status": "passed",
       "commandIds": [
-        "core-check",
-        "core-smoke",
-        "composition"
+        "closure02-core-check",
+        "closure02-core-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "receipt-integrity-export",
       "status": "passed",
       "commandIds": [
-        "core-check",
-        "core-smoke",
-        "composition"
+        "closure02-core-check",
+        "closure02-core-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "payment-outbox-failures",
       "status": "passed",
       "commandIds": [
-        "core-check",
-        "core-smoke",
-        "composition"
+        "closure02-core-check",
+        "closure02-core-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "assessment-unavailable",
       "status": "passed",
       "commandIds": [
-        "core-check",
-        "core-smoke",
-        "composition"
+        "closure02-core-check",
+        "closure02-core-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     }
   ],
   "externalGates": [
     {
       "id": "combined-app",
       "status": "qualified",
-      "reason": "Foundation local composition at implementation revision 7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae passed npm run smoke:integration and focused native/OpenAI/evidence/recovery gates; local conformance only, not real inference or public qualification.",
-      "evidence": "docs/handoffs/foundation-verification.json"
+      "reason": "Application-local only at 8a6fee1e86a283688029a7704000637eb4331134: actual canonical local composition/ingestion passed. Synthetic executor/checker; not inference, financial protection or public qualification.",
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "mycelium-execution",
@@ -127,7 +127,7 @@
     "platform": "darwin",
     "arch": "arm64"
   },
-  "documentationRevisionNote": "Foundation closure: implementation source tested at 7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae; this handoff metadata may be committed later without changing package/composition bytes. See docs/handoffs/foundation-verification.json and foundation evidence root.",
+  "documentationRevisionNote": "Application implementation tested at 8a6fee1e86a283688029a7704000637eb4331134. Later root README/docs/handoff-only commits do not change package/composition bytes. Final exact-candidate canonical receipt is in the adjacent APPLICATION-HANDOFF.json packet.",
   "verificationHistory": [
     {
       "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
@@ -154,6 +154,127 @@
           "localLog": "artifacts/closeout/fresh-a4b48df-integration.log"
         }
       ]
+    },
+    {
+      "codeRevision": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "commands": [
+        {
+          "id": "closure02-core-check",
+          "command": "npm --prefix packages/core run check",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-core-check.log"
+        },
+        {
+          "id": "closure02-core-smoke",
+          "command": "npm --prefix packages/core run smoke",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-core-smoke.log"
+        },
+        {
+          "id": "closure02-integration",
+          "command": "npm run smoke:integration",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-integration.log"
+        }
+      ],
+      "acceptanceCases": [
+        {
+          "id": "http-lifecycle",
+          "status": "passed",
+          "commandIds": [
+            "closure02-core-check",
+            "closure02-core-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "restart-idempotency",
+          "status": "passed",
+          "commandIds": [
+            "closure02-core-check",
+            "closure02-core-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "private-capabilities",
+          "status": "passed",
+          "commandIds": [
+            "closure02-core-check",
+            "closure02-core-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "receipt-integrity-export",
+          "status": "passed",
+          "commandIds": [
+            "closure02-core-check",
+            "closure02-core-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "payment-outbox-failures",
+          "status": "passed",
+          "commandIds": [
+            "closure02-core-check",
+            "closure02-core-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "assessment-unavailable",
+          "status": "passed",
+          "commandIds": [
+            "closure02-core-check",
+            "closure02-core-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        }
+      ],
+      "externalGates": [
+        {
+          "id": "combined-app",
+          "status": "qualified",
+          "reason": "Application-local only at 8a6fee1e86a283688029a7704000637eb4331134: actual canonical local composition/ingestion passed. Synthetic executor/checker; not inference, financial protection or public qualification.",
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "mycelium-execution",
+          "status": "blocked",
+          "reason": "Goal C implements local clean-room adapter/profile/replay machinery. Current upstream native token/config/completion contract and real metadata/route authority remain required; no physical model execution.",
+          "evidence": "docs/MYCELIUM-GOAL-C-HANDOFF.md"
+        },
+        {
+          "id": "gaskiller-integration",
+          "status": "inapplicable",
+          "reason": "Explicitly excluded future scope. No Gas Killer runtime/check/settlement was accessed or modified.",
+          "evidence": "docs/handoffs/core.md"
+        },
+        {
+          "id": "independent-replay",
+          "status": "inapplicable",
+          "reason": "Not a retained current claim: integrity/export and unavailable assessments are not independent replay or physical inference proof.",
+          "evidence": "docs/handoffs/core.md"
+        },
+        {
+          "id": "public-release",
+          "status": "blocked",
+          "reason": "Outside authorized technical qualification: no source push/public visibility, license change, mainnet/paid hosting, production inference, demo publication or hackathon submission. Testnet actions are separately authorized and documented.",
+          "evidence": "docs/handoffs/core.md"
+        }
+      ],
+      "documentationRevisionNote": "Foundation closure: implementation source tested at 7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae; this handoff metadata may be committed later without changing package/composition bytes. See docs/handoffs/foundation-verification.json and foundation evidence root."
     }
   ],
   "foundationPriorCodeRevision": "5697576298491efbd1a2285def50d49baad27ebd"

@@ -4,7 +4,7 @@ Authority: continuation `hackathon-app-02/GOAL.md`, from preserved buyer anchor 
 
 ## Current disposition
 
-**APPLICATION_IN_PROGRESS — candidate implementation and local journeys exercised; clean install and frozen canonical closure pending.** Do not infer release, selected-model execution or financial protection from these results.
+**Application-only implementation verified at `8a6fee1`; final qualification is resolved by the exact-candidate `../APPLICATION-HANDOFF.json` packet. An absent or unsuccessful final packet is not local completion.** Do not infer release, selected-model execution or financial protection from these results.
 
 ## Canonical R1–R12 ledger
 
@@ -21,7 +21,7 @@ Paths below are relative to this checkout. `composition/test/` is discovered by 
 | R7 | Old bond remains retired; no resurrection or financial authority from history | Preserved schema/financial-refusal regressions | None |
 | R8 | `application-operator.mjs` init/doctor/start, OS lock, bounded lifecycle, preflight, restart, safe errors | Operator/preflight, recovery, existing cancellation/deadline/cleanup tests | Actual host/model envelope and fresh native grant |
 | R9 | Finite `demo:application`, runnable managed start, explicit HTTPS public-origin configuration and existing bounded TLS proxy | `application-demo.mjs`, `application-journey`, `application-https` with actual local verified TLS | Approved multi-host/public HTTPS/testnet demonstration |
-| R10 | Pinned setup, encrypted full-state closure, declared historical signing keys, fresh-target staged restore | Clean export setup/demo passed at 66569c1; final source reproduction pending; `application-backup`, `application-rotation-backup`, operations v1/v2 tests | Exact final runtime/model/application licenses and physical reproduction |
+| R10 | Pinned setup, encrypted full-state closure, declared historical signing keys, fresh-target staged restore | Clean export setup/demo passed at 8a6fee1; `application-backup`, `application-rotation-backup`, operations v1/v2 tests | Exact final runtime/model/application licenses and physical reproduction |
 | R11 | `RegistryV2.sol`, EIP-712 checker statements, ABI/mapping/history; legacy v1 preserved | Actual independent checker/relayer publication without prior receipt in `application-journey`; indexed unlinked claim affects explanation, not blacklist; signatures/replay/reorg tests | Versioned public registry/hosted ingestion deployment |
 | R12 | No-checker serving and safe unavailable/malformed/timeout states; qualified financial modes still refused | `application-assessment`, `operator-unchecked`, existing protected-payment refusal tests | C-owned canonical result authentication, objective adjudication, settlement/economics, public financial qualification |
 
@@ -35,7 +35,7 @@ Additional gates cover uncertain accepted response loss, interrupted SSE, double
 
 ## Evidence and failure adjudication
 
-Continuation commands/logs are append-only in `../commands.jsonl` and `../logs/`. Final exact-candidate evidence will be published in `docs/handoffs/application-verification.json` and the successor handoff only after execution.
+Continuation commands/logs are append-only in `../commands.jsonl` and `../logs/`. `docs/handoffs/application-verification.json` records the executed clean source checks at 8a6fee1. The adjacent successor `APPLICATION-HANDOFF.json` records later exact-final-commit canonical results without a self-referential Git receipt.
 
 - `full-application-journey-03`: integrated local journey passed on the then-dirty candidate. Earlier attempts failed due test-oracle/API invocation mistakes; retained, not presented as product successes.
 - `open-indexed-journey-03`: actual v2 ingestion, attribution, client-decision and reorg path passed. Earlier dual-registry launcher failures remain retained.
@@ -45,7 +45,7 @@ Continuation commands/logs are append-only in `../commands.jsonl` and `../logs/`
 - `lifecycle-expanded-03`: malformed profile/checker/evidence association, timeout and overlapping same-job requests passed. Earlier out-of-order test incorrectly assumed parallel assessor calls: the actual API deliberately serializes per-job requests. No production guard was weakened to satisfy that oracle.
 - `tls-delivery-entrypoint-02`: actual loopback HTTPS entrypoint, independently trusted ephemeral test CA, signed public-origin offers and recovery passed. Certificate/key permission failures are retained; no TLS verification bypass.
 
-A bounded independent review timed out without a final verdict. Its surviving browser-race and rotated-key reproductions were inspected; the integrating owner reproduced/adjudicated both and added canonical regressions. Partial review is not a blanket independent approval.
+Two bounded independent reviews (`deleg_52e4f390`, `deleg_4b1a03c3`) timed out without final verdicts; their retained transcript endings were inspected, and neither remains an outstanding successful review. Its surviving browser-race and rotated-key reproductions were inspected; the integrating owner reproduced/adjudicated both and added canonical regressions. Partial review is not a blanket independent approval.
 
 ## Delivery and one remaining activation request
 
@@ -58,3 +58,7 @@ Use `APPLICATION_QUICKSTART.md`, `APPLICATION_PORTABILITY.md`, `VERIFICATION_INT
 `candidate-check-all-01` failed overall at committed 66569c1, despite 134/134 composition tests passing. Four package handoffs referred to superseded implementation revisions. The access package also had stale MCP tool-inventory expectations and two legacy-v1 fixture tests incorrectly expecting v2 recovery registration. `access-oracle-repair-01` passed all four focused tests after restoring their v1 scope and adding the intended tool to the exact inventory. No production guard or v2 recovery regression was removed.
 
 The R3 reconciliation then identified and closed a genuine managed-v2 configuration gap: optional ENS was only available in the older composition. `managed-ens-red` reproduced the missing field; `managed-ens-green-03` passed six relevant tests including actual ENS record changes, failed selection without redirection, direct signed offers and offline doctor. Two intermediate test-oracle mistakes (expected selection-null versus explicit `PROVIDER_CHANGED`, and doctor `ok` versus literal `status`) were retained and corrected without weakening application guards.
+
+### Frozen source evidence
+
+`closure02-*` at clean committed 8a6fee1 passed all five package checks/smokes, the complete 135-test composition suite, operations (24 plus 1 tests), and actual local v1/v2 Graph ingestion. `clean-setup-demo-02` passed setup and the finite two-provider demo from a fresh source export. There were no skipped/cancelled/failed tests in those TAP summaries. Non-TAP smoke commands have no invented test counts. The later documentation/handoff-only commit must pass all four required canonical commands before the final completion status can be declared.

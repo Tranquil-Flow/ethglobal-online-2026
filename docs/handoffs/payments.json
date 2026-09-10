@@ -1,7 +1,7 @@
 {
   "lane": "payments",
   "status": "local_ready",
-  "codeRevision": "5c76af329661fab1a2e237c2b9b328db49c4b131",
+  "codeRevision": "8a6fee1e86a283688029a7704000637eb4331134",
   "runtime": {
     "node": "20.19.5",
     "npm": "10.8.2",
@@ -12,25 +12,25 @@
   "verifiedAt": "2026-09-07T15:56:23.674930+00:00",
   "commands": [
     {
-      "id": "payments-check",
+      "id": "closure02-payments-check",
       "command": "npm --prefix packages/payments run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/workbench-code-verification.json",
-      "localLog": "artifacts/closeout/workbench-code-payments-check.log"
+      "evidence": "docs/handoffs/application-verification.json",
+      "localLog": "../logs/closure02-payments-check.log"
     },
     {
-      "id": "payments-smoke",
+      "id": "closure02-payments-smoke",
       "command": "npm --prefix packages/payments run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/workbench-code-verification.json",
-      "localLog": "artifacts/closeout/workbench-code-payments-smoke.log"
+      "evidence": "docs/handoffs/application-verification.json",
+      "localLog": "../logs/closure02-payments-smoke.log"
     },
     {
-      "id": "composition",
+      "id": "closure02-integration",
       "command": "npm run smoke:integration",
       "exitCode": 0,
-      "evidence": "docs/handoffs/workbench-code-verification.json",
-      "localLog": "artifacts/closeout/workbench-code-final-integration.log"
+      "evidence": "docs/handoffs/application-verification.json",
+      "localLog": "../logs/closure02-integration.log"
     }
   ],
   "acceptance": [
@@ -303,21 +303,21 @@
   "externalGates": [
     {
       "id": "hedera-blocky402-live-payment",
-      "status": "qualified",
-      "reason": "Two actual bounded Blocky402/Hedera settlements consumed successful non-inference jobs; delayed confirmations and same-job replays reconciled without another signature.",
-      "evidence": "docs/handoffs/hedera-qualification.json"
+      "status": "blocked",
+      "reason": "Historical external evidence/grants are preserved in verificationHistory but do not qualify or authorize this application candidate. Exact current targets, fresh scoped approval and external qualification remain required.",
+      "evidence": "docs/APPLICATION_COMPLETION.md"
     },
     {
       "id": "funded-wallet-approval",
-      "status": "qualified",
-      "reason": "Dedicated owner-authorized funded testnet identities and explicit per-action/total caps were used.",
-      "evidence": "docs/handoffs/hedera-qualification.json"
+      "status": "blocked",
+      "reason": "Historical external evidence/grants are preserved in verificationHistory but do not qualify or authorize this application candidate. Exact current targets, fresh scoped approval and external qualification remain required.",
+      "evidence": "docs/APPLICATION_COMPLETION.md"
     },
     {
       "id": "combined-app",
       "status": "qualified",
-      "reason": "Actual combined local application verified at af665e0cf18889a2445c388e9d54d7548939eea6; this gate is local composition, not live sponsor or inference qualification.",
-      "evidence": "docs/handoffs/verified-code.json"
+      "reason": "Application-local only at 8a6fee1e86a283688029a7704000637eb4331134: actual canonical local composition/ingestion passed. Synthetic executor/checker; not inference, financial protection or public qualification.",
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "public-release",
@@ -720,61 +720,61 @@
       "id": "real-sdk-protocol",
       "status": "passed",
       "commandIds": [
-        "payments-check",
-        "payments-smoke",
-        "composition"
+        "closure02-payments-check",
+        "closure02-payments-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "header-policy",
       "status": "passed",
       "commandIds": [
-        "payments-check",
-        "payments-smoke",
-        "composition"
+        "closure02-payments-check",
+        "closure02-payments-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "request-budget-binding",
       "status": "passed",
       "commandIds": [
-        "payments-check",
-        "payments-smoke",
-        "composition"
+        "closure02-payments-check",
+        "closure02-payments-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "concurrent-replay",
       "status": "passed",
       "commandIds": [
-        "payments-check",
-        "payments-smoke",
-        "composition"
+        "closure02-payments-check",
+        "closure02-payments-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "settlement-recovery",
       "status": "passed",
       "commandIds": [
-        "payments-check",
-        "payments-smoke",
-        "composition"
+        "closure02-payments-check",
+        "closure02-payments-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "paid-but-failed",
       "status": "passed",
       "commandIds": [
-        "payments-check",
-        "payments-smoke",
-        "composition"
+        "closure02-payments-check",
+        "closure02-payments-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     }
   ],
   "environment": {
@@ -783,7 +783,7 @@
     "platform": "darwin",
     "arch": "arm64"
   },
-  "documentationRevisionNote": "Previous handoff preserved in archive/pre-closeout-payments.json. Current package check/smoke and combined integration executed in a fresh owned checkout of codeRevision.",
+  "documentationRevisionNote": "Application implementation tested at 8a6fee1e86a283688029a7704000637eb4331134. Later root README/docs/handoff-only commits do not change package/composition bytes. Final exact-candidate canonical receipt is in the adjacent APPLICATION-HANDOFF.json packet.",
   "verificationHistory": [
     {
       "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
@@ -810,6 +810,145 @@
           "localLog": "artifacts/closeout/fresh-a4b48df-integration.log"
         }
       ]
+    },
+    {
+      "codeRevision": "5c76af329661fab1a2e237c2b9b328db49c4b131",
+      "commands": [
+        {
+          "id": "closure02-payments-check",
+          "command": "npm --prefix packages/payments run check",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-payments-check.log"
+        },
+        {
+          "id": "closure02-payments-smoke",
+          "command": "npm --prefix packages/payments run smoke",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-payments-smoke.log"
+        },
+        {
+          "id": "closure02-integration",
+          "command": "npm run smoke:integration",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-integration.log"
+        }
+      ],
+      "acceptanceCases": [
+        {
+          "id": "real-sdk-protocol",
+          "status": "passed",
+          "commandIds": [
+            "closure02-payments-check",
+            "closure02-payments-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "header-policy",
+          "status": "passed",
+          "commandIds": [
+            "closure02-payments-check",
+            "closure02-payments-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "request-budget-binding",
+          "status": "passed",
+          "commandIds": [
+            "closure02-payments-check",
+            "closure02-payments-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "concurrent-replay",
+          "status": "passed",
+          "commandIds": [
+            "closure02-payments-check",
+            "closure02-payments-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "settlement-recovery",
+          "status": "passed",
+          "commandIds": [
+            "closure02-payments-check",
+            "closure02-payments-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "paid-but-failed",
+          "status": "passed",
+          "commandIds": [
+            "closure02-payments-check",
+            "closure02-payments-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        }
+      ],
+      "externalGates": [
+        {
+          "id": "hedera-blocky402-live-payment",
+          "status": "blocked",
+          "reason": "Historical external evidence/grants are preserved in verificationHistory but do not qualify or authorize this application candidate. Exact current targets, fresh scoped approval and external qualification remain required.",
+          "evidence": "docs/APPLICATION_COMPLETION.md"
+        },
+        {
+          "id": "funded-wallet-approval",
+          "status": "blocked",
+          "reason": "Historical external evidence/grants are preserved in verificationHistory but do not qualify or authorize this application candidate. Exact current targets, fresh scoped approval and external qualification remain required.",
+          "evidence": "docs/APPLICATION_COMPLETION.md"
+        },
+        {
+          "id": "combined-app",
+          "status": "qualified",
+          "reason": "Application-local only at 8a6fee1e86a283688029a7704000637eb4331134: actual canonical local composition/ingestion passed. Synthetic executor/checker; not inference, financial protection or public qualification.",
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "public-release",
+          "status": "blocked",
+          "reason": "Outside authorized technical qualification: no source push/public visibility, license change, mainnet/paid hosting, production inference, demo publication or hackathon submission. Testnet actions are separately authorized and documented."
+        },
+        {
+          "id": "live-refund",
+          "status": "inapplicable",
+          "reason": "Not part of this bounded receipt-payment/ENS/Graph qualification; no live refund or optional HCS publication is claimed."
+        },
+        {
+          "id": "optional-hcs",
+          "status": "inapplicable",
+          "reason": "Not part of this bounded receipt-payment/ENS/Graph qualification; no live refund or optional HCS publication is claimed."
+        },
+        {
+          "id": "mycelium-execution",
+          "status": "inapplicable",
+          "reason": "Explicitly excluded from this payments-local scope; no Mycelium changes, model runs or physical inference qualification."
+        },
+        {
+          "id": "gaskiller-integration",
+          "status": "inapplicable",
+          "reason": "Explicitly excluded from this scope; no Gas Killer integration, changes or settlement performed."
+        },
+        {
+          "id": "independent-replay",
+          "status": "inapplicable",
+          "reason": "Independent inference replay/assessment is a separately authorized future scope; payment idempotency/restart is not inference verification."
+        }
+      ],
+      "documentationRevisionNote": "Previous handoff preserved in archive/pre-closeout-payments.json. Current package check/smoke and combined integration executed in a fresh owned checkout of codeRevision."
     }
   ]
 }

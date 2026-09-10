@@ -1,29 +1,29 @@
 {
   "lane": "indexing",
   "status": "local_ready",
-  "codeRevision": "5c76af329661fab1a2e237c2b9b328db49c4b131",
+  "codeRevision": "8a6fee1e86a283688029a7704000637eb4331134",
   "reviewContract": "handoff-review-v1",
   "commands": [
     {
-      "id": "indexing-check",
+      "id": "closure02-indexing-check",
       "command": "npm --prefix packages/indexing run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/workbench-code-verification.json",
-      "localLog": "artifacts/closeout/workbench-code-indexing-check.log"
+      "evidence": "docs/handoffs/application-verification.json",
+      "localLog": "../logs/closure02-indexing-check.log"
     },
     {
-      "id": "indexing-smoke",
+      "id": "closure02-indexing-smoke",
       "command": "npm --prefix packages/indexing run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/workbench-code-verification.json",
-      "localLog": "artifacts/closeout/workbench-code-indexing-smoke.log"
+      "evidence": "docs/handoffs/application-verification.json",
+      "localLog": "../logs/closure02-indexing-smoke.log"
     },
     {
-      "id": "composition",
+      "id": "closure02-integration",
       "command": "npm run smoke:integration",
       "exitCode": 0,
-      "evidence": "docs/handoffs/workbench-code-verification.json",
-      "localLog": "artifacts/closeout/workbench-code-final-integration.log"
+      "evidence": "docs/handoffs/application-verification.json",
+      "localLog": "../logs/closure02-integration.log"
     }
   ],
   "acceptanceCases": [
@@ -31,93 +31,93 @@
       "id": "local-evm-events",
       "status": "passed",
       "commandIds": [
-        "indexing-check",
-        "indexing-smoke",
-        "composition"
+        "closure02-indexing-check",
+        "closure02-indexing-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "publisher-auth-replay",
       "status": "passed",
       "commandIds": [
-        "indexing-check",
-        "indexing-smoke",
-        "composition"
+        "closure02-indexing-check",
+        "closure02-indexing-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "mapping-build-tests",
       "status": "passed",
       "commandIds": [
-        "indexing-check",
-        "indexing-smoke",
-        "composition"
+        "closure02-indexing-check",
+        "closure02-indexing-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "metadata-provenance",
       "status": "passed",
       "commandIds": [
-        "indexing-check",
-        "indexing-smoke",
-        "composition"
+        "closure02-indexing-check",
+        "closure02-indexing-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "query-freshness",
       "status": "passed",
       "commandIds": [
-        "indexing-check",
-        "indexing-smoke",
-        "composition"
+        "closure02-indexing-check",
+        "closure02-indexing-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "privacy-mode",
       "status": "passed",
       "commandIds": [
-        "indexing-check",
-        "indexing-smoke",
-        "composition"
+        "closure02-indexing-check",
+        "closure02-indexing-smoke",
+        "closure02-integration"
       ],
-      "evidence": "docs/handoffs/closeout-current.md"
+      "evidence": "docs/handoffs/application-verification.json"
     }
   ],
   "externalGates": [
     {
       "id": "local-graph-ingestion",
       "status": "qualified",
-      "reason": "Actual isolated local Graph/IPFS/PostgreSQL ingestion and reorg query verified on chain 31337. Local deployment QmbJdHBffdfQd3HpRzaaxWN9UhyzBF2FFaXpCcvJ7pKA52 and transaction/block handles retained in evidence; services cleaned up. NOT live provider qualification.",
-      "evidence": "docs/handoffs/indexing.md"
+      "reason": "Application-local only at 8a6fee1e86a283688029a7704000637eb4331134: actual canonical local composition/ingestion passed. Synthetic executor/checker; not inference, financial protection or public qualification.",
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "graph-live-provider",
-      "status": "qualified",
-      "reason": "Hosted Graph ingested the exact consented receipt. RPC-backed 12-confirmation History is fresh; actual live ENS/Graph ports plus loopback application quote drive a selection with HISTORY_UNKNOWN, not inference proof.",
-      "evidence": "docs/handoffs/graph-studio-deployment.json"
+      "status": "blocked",
+      "reason": "Historical external evidence/grants are preserved in verificationHistory but do not qualify or authorize this application candidate. Exact current targets, fresh scoped approval and external qualification remain required.",
+      "evidence": "docs/APPLICATION_COMPLETION.md"
     },
     {
       "id": "registry-testnet-deploy",
-      "status": "qualified",
-      "reason": "Existing approved Sepolia deployment retained and runtime hash/publisher/mode revalidated; no duplicate deployment.",
-      "evidence": "docs/handoffs/testnet-deployments.json"
+      "status": "blocked",
+      "reason": "Historical external evidence/grants are preserved in verificationHistory but do not qualify or authorize this application candidate. Exact current targets, fresh scoped approval and external qualification remain required.",
+      "evidence": "docs/APPLICATION_COMPLETION.md"
     },
     {
       "id": "deployment-credentials-approval",
-      "status": "qualified",
-      "reason": "Owner-authorized dedicated testnet funds and free Graph Studio session used; deploy key stayed in dedicated private state.",
-      "evidence": "docs/handoffs/graph-studio-deployment.json"
+      "status": "blocked",
+      "reason": "Historical external evidence/grants are preserved in verificationHistory but do not qualify or authorize this application candidate. Exact current targets, fresh scoped approval and external qualification remain required.",
+      "evidence": "docs/APPLICATION_COMPLETION.md"
     },
     {
       "id": "combined-app",
       "status": "qualified",
-      "reason": "Actual combined local application verified at af665e0cf18889a2445c388e9d54d7548939eea6; this gate is local composition, not live sponsor or inference qualification.",
-      "evidence": "docs/handoffs/verified-code.json"
+      "reason": "Application-local only at 8a6fee1e86a283688029a7704000637eb4331134: actual canonical local composition/ingestion passed. Synthetic executor/checker; not inference, financial protection or public qualification.",
+      "evidence": "docs/handoffs/application-verification.json"
     },
     {
       "id": "public-release",
@@ -138,7 +138,7 @@
     "platform": "darwin",
     "arch": "arm64"
   },
-  "documentationRevisionNote": "Previous handoff preserved in archive/pre-closeout-indexing.json. Current package check/smoke and combined integration executed in a fresh owned checkout of codeRevision.",
+  "documentationRevisionNote": "Application implementation tested at 8a6fee1e86a283688029a7704000637eb4331134. Later root README/docs/handoff-only commits do not change package/composition bytes. Final exact-candidate canonical receipt is in the adjacent APPLICATION-HANDOFF.json packet.",
   "verificationHistory": [
     {
       "codeRevision": "c59a71579aaa7d8cd131dfe4ae265aeaba4c8293",
@@ -165,6 +165,132 @@
           "localLog": "artifacts/closeout/fresh-a4b48df-integration.log"
         }
       ]
+    },
+    {
+      "codeRevision": "5c76af329661fab1a2e237c2b9b328db49c4b131",
+      "commands": [
+        {
+          "id": "closure02-indexing-check",
+          "command": "npm --prefix packages/indexing run check",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-indexing-check.log"
+        },
+        {
+          "id": "closure02-indexing-smoke",
+          "command": "npm --prefix packages/indexing run smoke",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-indexing-smoke.log"
+        },
+        {
+          "id": "closure02-integration",
+          "command": "npm run smoke:integration",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-integration.log"
+        }
+      ],
+      "acceptanceCases": [
+        {
+          "id": "local-evm-events",
+          "status": "passed",
+          "commandIds": [
+            "closure02-indexing-check",
+            "closure02-indexing-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "publisher-auth-replay",
+          "status": "passed",
+          "commandIds": [
+            "closure02-indexing-check",
+            "closure02-indexing-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "mapping-build-tests",
+          "status": "passed",
+          "commandIds": [
+            "closure02-indexing-check",
+            "closure02-indexing-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "metadata-provenance",
+          "status": "passed",
+          "commandIds": [
+            "closure02-indexing-check",
+            "closure02-indexing-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "query-freshness",
+          "status": "passed",
+          "commandIds": [
+            "closure02-indexing-check",
+            "closure02-indexing-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "privacy-mode",
+          "status": "passed",
+          "commandIds": [
+            "closure02-indexing-check",
+            "closure02-indexing-smoke",
+            "closure02-integration"
+          ],
+          "evidence": "docs/handoffs/application-verification.json"
+        }
+      ],
+      "externalGates": [
+        {
+          "id": "local-graph-ingestion",
+          "status": "qualified",
+          "reason": "Application-local only at 8a6fee1e86a283688029a7704000637eb4331134: actual canonical local composition/ingestion passed. Synthetic executor/checker; not inference, financial protection or public qualification.",
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "graph-live-provider",
+          "status": "blocked",
+          "reason": "Historical external evidence/grants are preserved in verificationHistory but do not qualify or authorize this application candidate. Exact current targets, fresh scoped approval and external qualification remain required.",
+          "evidence": "docs/APPLICATION_COMPLETION.md"
+        },
+        {
+          "id": "registry-testnet-deploy",
+          "status": "blocked",
+          "reason": "Historical external evidence/grants are preserved in verificationHistory but do not qualify or authorize this application candidate. Exact current targets, fresh scoped approval and external qualification remain required.",
+          "evidence": "docs/APPLICATION_COMPLETION.md"
+        },
+        {
+          "id": "deployment-credentials-approval",
+          "status": "blocked",
+          "reason": "Historical external evidence/grants are preserved in verificationHistory but do not qualify or authorize this application candidate. Exact current targets, fresh scoped approval and external qualification remain required.",
+          "evidence": "docs/APPLICATION_COMPLETION.md"
+        },
+        {
+          "id": "combined-app",
+          "status": "qualified",
+          "reason": "Application-local only at 8a6fee1e86a283688029a7704000637eb4331134: actual canonical local composition/ingestion passed. Synthetic executor/checker; not inference, financial protection or public qualification.",
+          "evidence": "docs/handoffs/application-verification.json"
+        },
+        {
+          "id": "public-release",
+          "status": "blocked",
+          "reason": "Outside authorized technical qualification: no source push/public visibility, license change, mainnet/paid hosting, production inference, demo publication or hackathon submission. Testnet actions are separately authorized and documented."
+        }
+      ],
+      "documentationRevisionNote": "Previous handoff preserved in archive/pre-closeout-indexing.json. Current package check/smoke and combined integration executed in a fresh owned checkout of codeRevision."
     }
   ]
 }
