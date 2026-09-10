@@ -4,6 +4,7 @@ import {
   offerSigningText,
 } from "../../contracts/offers.mjs";
 import { AccessError, fail, checked, exact, id } from "./errors.mjs";
+import { exportRecovery, proveRecovery } from "./recovery.mjs";
 import {
   decodePaymentRequiredHeader,
   encodePaymentSignatureHeader,
@@ -16,6 +17,24 @@ const enc = (v) => {
   return encodeURIComponent(v);
 };
 const jsonClone = (v) => JSON.parse(JSON.stringify(v));
+function validateRecovered(result, input, quote) {
+  exact(result, ["version", "status", "job", "capability"]);
+  dto("Job", result.job, true);
+  if (
+    result.version !== "2" ||
+    result.status !== "accepted" ||
+    typeof result.capability !== "string" ||
+    !/^[A-Za-z0-9_-]{43}$/.test(result.capability) ||
+    result.job.requestHash !== quote.requestHash ||
+    result.job.mode !== quote.mode ||
+    quote.providerId !== input.providerId ||
+    quote.profileId !== input.profileId ||
+    !result.job.payment
+  )
+    fail("JOB_MISMATCH");
+  for (const k of ["quoteId", "requestHash", "mode"])
+    if (result.job.payment[k] !== quote[k]) fail("JOB_MISMATCH");
+}
 export function safeBaseUrl(baseUrl) {
   let u;
   try {
@@ -884,6 +903,16 @@ export function createClient({
       );
       if (d.jobId !== jobId) fail("JOB_MISMATCH");
       const expected = knownJobs.get(jobId);
+      if (expected?.expected && !expected.requestHash) {
+        expected.requestHash = await digestOf(expected.expected.request);
+        expected.mode = d.mode;
+      }
+      if (
+        expected?.expected &&
+        (d.payment?.quoteId !== expected.expected.quoteId ||
+          d.payment?.paymentId !== expected.expected.paymentId)
+      )
+        fail("JOB_MISMATCH");
       if (
         expected &&
         (expected.requestHash !== d.requestHash || expected.mode !== d.mode)
@@ -936,6 +965,147 @@ export function createClient({
       )
         fail("INVALID_PUBLIC_KEY");
       return d;
+    },
+    // Clients contain private authority in memory, never in a JSON export.
+    toJSON() {
+      return { type: "PrivateAccessClient", connected: !!capability };
+    },
+    async exportRecovery(
+      { request: input, quote, idempotencyKey, passphrase },
+      options,
+    ) {
+      dto("Request", input);
+      dto("Quote", quote);
+      enc(idempotencyKey);
+      auth();
+      return exportRecovery({
+        base,
+        pins,
+        request: jsonClone(input),
+        quote: jsonClone(quote),
+        idempotencyKey,
+        passphrase,
+        register: (body) =>
+          request("/v2/recoveries", {
+            method: "POST",
+            body,
+            privateRoute: true,
+            success: 201,
+            options,
+          }),
+      });
+    },
+    async importRecovery(archive, passphrase, options) {
+      const {
+        result,
+        attempt,
+        pins: originalPins,
+      } = await proveRecovery({
+        base,
+        archive,
+        passphrase,
+        post: (path, body, success) =>
+          request(path, { method: "POST", body, success, options }),
+      });
+      if (
+        result?.version !== "2" ||
+        !["unresolved", "accepted"].includes(result.status)
+      )
+        fail("INVALID_RESPONSE");
+      if (result.status === "unresolved") {
+        exact(result, ["version", "status"]);
+        return { status: "unresolved", attempt, pins: originalPins };
+      }
+      validateRecovered(result, attempt.request, attempt.quote);
+      const child = createClient({
+        baseUrl: base,
+        capability: result.capability,
+        pins: originalPins,
+        fetch: transport,
+        timeoutMs,
+      });
+      child.rememberBuyerContext({
+        request: attempt.request,
+        jobId: result.job.jobId,
+        quoteId: attempt.quote.quoteId,
+        paymentId: result.job.payment.paymentId,
+      });
+      const job = await child.getJob(result.job.jobId, options);
+      return {
+        status: "accepted",
+        job,
+        client: child,
+        attempt,
+        pins: originalPins,
+      };
+    },
+    async revokeRecovery(archive, passphrase, options) {
+      const { result } = await proveRecovery({
+        base,
+        archive,
+        passphrase,
+        action: "revoke",
+        post: (path, body, success) =>
+          request(path, { method: "POST", body, success, options }),
+      });
+      exact(result, ["version", "status"]);
+      if (result.version !== "2" || result.status !== "revoked")
+        fail("INVALID_RESPONSE");
+      return result;
+    },
+    async reconcileAttempt(
+      { request: input, quote, quoteId = quote?.quoteId, idempotencyKey },
+      options,
+    ) {
+      dto("Request", input);
+      dto("Quote", quote);
+      enc(idempotencyKey);
+      auth();
+      if (quoteId !== quote.quoteId) fail("QUOTE_MISMATCH");
+      const result = await request("/v2/attempts/reconcile", {
+        method: "POST",
+        body: { request: input, quoteId, idempotencyKey },
+        privateRoute: true,
+        options,
+      });
+      if (
+        result?.version !== "2" ||
+        !["unresolved", "accepted"].includes(result.status)
+      )
+        fail("INVALID_RESPONSE");
+      if (result.status === "unresolved") {
+        exact(result, ["version", "status"]);
+        return result;
+      }
+      validateRecovered(result, input, quote);
+      if (quote.requestHash !== (await digestOf(input))) fail("QUOTE_MISMATCH");
+      knownJobs.set(result.job.jobId, {
+        requestHash: quote.requestHash,
+        mode: quote.mode,
+        expected: {
+          request: jsonClone(input),
+          jobId: result.job.jobId,
+          quoteId,
+          paymentId: result.job.payment.paymentId,
+        },
+      });
+      attempts.set(idempotencyKey, {
+        busy: false,
+        uncertain: false,
+        accepted: true,
+      });
+      return result;
+    },
+    rememberBuyerContext(value) {
+      exact(value, ["request", "jobId", "quoteId", "paymentId"]);
+      dto("Request", value.request);
+      enc(value.jobId);
+      enc(value.quoteId);
+      enc(value.paymentId);
+      if (knownJobs.has(value.jobId)) fail("BUYER_CONTEXT_ALREADY_BOUND");
+      if (knownJobs.size >= 128) fail("CLIENT_LIMIT");
+      // The original immutable request is caller-retained, not fetched from the provider.
+      knownJobs.set(value.jobId, { expected: jsonClone(value) });
     },
     getBuyerExpectation(jobId) {
       const e = knownJobs.get(jobId)?.expected;

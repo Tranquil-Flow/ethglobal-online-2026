@@ -1,4 +1,5 @@
 import http from "node:http";
+import { createRecoveryRoutes } from "./recovery.mjs";
 import { createOpenAIIngress, isOpenAIPath, openAIError } from "./openai.mjs";
 import {
   readHeaderPolicy,
@@ -196,6 +197,19 @@ export function createApp({
       s = store.get("sessions", tokenHash),
       child = store.get("capabilities", tokenHash);
     const parent = s || (child && store.get("sessions", child.sessionHash));
+    if (child?.recoveryId) {
+      const recovery = store.get("recoveries", child.recoveryId);
+      if (!recovery || recovery.revoked || recovery.expiresAt <= Date.now())
+        fail(401, "ACCESS_REQUIRED");
+      if (
+        !(
+          ["GET", "DELETE"].includes(req.method) ||
+          (req.method === "POST" &&
+            req.url === `/v1/jobs/${child.jobId}/cancel`)
+        )
+      )
+        fail(403, "RECOVERY_SCOPE_DENIED");
+    }
     if (
       !parent ||
       parent.revoked ||
@@ -212,7 +226,7 @@ export function createApp({
     if (!rec || rec.principalId !== s.principalId) fail(404, "NOT_FOUND");
     return { s, rec };
   }
-  function childCapability(s, id) {
+  function childCapability(s, id, recoveryId) {
     const existing = store.list("capabilities").filter((x) => x.jobId === id);
     if (existing.length >= 32) store.delete("capabilities", existing[0].id);
     const token = randomBytes(32).toString("base64url");
@@ -220,6 +234,7 @@ export function createApp({
       jobId: id,
       sessionHash: s.sessionHash,
       expiresAt: s.expiresAt,
+      ...(recoveryId ? { recoveryId } : {}),
     });
     return token;
   }
@@ -1047,6 +1062,18 @@ export function createApp({
     return q;
   }
   const assessmentLocks = new Map();
+  const recoveryRoutes = createRecoveryRoutes({
+    store,
+    config: c,
+    fail,
+    session,
+    childCapability,
+    body,
+    send,
+    exact,
+    quoteFor,
+    rate,
+  });
   const openai = createOpenAIIngress({
     profiles,
     providers,
@@ -1110,6 +1137,7 @@ export function createApp({
     }
     if ([...url.searchParams.keys()].some((k) => k !== "name"))
       fail(400, "INVALID_QUERY");
+    if (await recoveryRoutes.handle(req, res, url.pathname)) return;
     if (method === "GET" && url.pathname === "/healthz")
       return send(res, 200, { status: "ok", mode: c.mode });
     if (method === "POST" && url.pathname === "/v1/sessions") {
