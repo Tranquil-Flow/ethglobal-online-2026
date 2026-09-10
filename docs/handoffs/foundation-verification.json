@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "generatedAt": "2026-09-10T12:47:38.636433+00:00",
+  "implementationCodeRevision": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+  "implementationTree": "be561d168854db2c27235d9f2f92a6a771af57e3",
+  "documentationScope": "foundation handoff metadata updated after implementation commit; logs live in foundation evidence root, outside tracked source",
+  "commands": [
+    {
+      "id": "code-final-core-check",
+      "command": "npm --prefix packages/core run check",
+      "exitCode": 0,
+      "head": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "finalHead": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "log": "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/logs/code-final-core-check.log",
+      "logSha256": "6328b8ed002171c627a639a875c6d17aebabd503d82609fe0f48fddac629a6d5"
+    },
+    {
+      "id": "code-final-core-smoke",
+      "command": "npm --prefix packages/core run smoke",
+      "exitCode": 0,
+      "head": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "finalHead": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "log": "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/logs/code-final-core-smoke.log",
+      "logSha256": "4fcb1906bd3676f03b6982f6e2c54a4449b56f80546ca6a3ad3e39ae33b53f9c"
+    },
+    {
+      "id": "code-final-access-check",
+      "command": "npm --prefix packages/access run check",
+      "exitCode": 0,
+      "head": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "finalHead": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "log": "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/logs/code-final-access-check.log",
+      "logSha256": "331f6baa52b975f035f29146ae80cd53b2b953f37ed971305f396c50f3cce753"
+    },
+    {
+      "id": "code-final-access-smoke",
+      "command": "npm --prefix packages/access run smoke",
+      "exitCode": 0,
+      "head": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "finalHead": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "log": "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/logs/code-final-access-smoke.log",
+      "logSha256": "1bb654c63db0ef91aac6e2f9175c9cde1be2671062a31b2406a1f4cdf96e93cd"
+    },
+    {
+      "id": "code-final-integration",
+      "command": "npm run smoke:integration",
+      "exitCode": 0,
+      "head": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "finalHead": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "log": "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/logs/code-final-integration.log",
+      "logSha256": "08fbb170b14dc254b167813383394ab124197a33c36efbd4d487b816b85c3c8d"
+    },
+    {
+      "id": "code-final-operations",
+      "command": "npm run check:operations",
+      "exitCode": 0,
+      "head": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "finalHead": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "log": "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/logs/code-final-operations.log",
+      "logSha256": "cf439e0b0750bb324e4497d956bbc9418819907dd419810f5f2e3ed062a1394c"
+    },
+    {
+      "id": "code-final-native-journey",
+      "command": "node --test composition/test/mycelium-v3-journey.test.mjs",
+      "exitCode": 0,
+      "head": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "finalHead": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "log": "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/logs/code-final-native-journey.log",
+      "logSha256": "8f730bd0cab69960583aed3af8ae2d8825b8f008dd530aa9893948dd80513896"
+    },
+    {
+      "id": "committed-research-sample",
+      "command": "node composition/export-foundation-sample.mjs /Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/research-input",
+      "exitCode": 0,
+      "head": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "finalHead": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "log": "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/logs/committed-research-sample.log",
+      "logSha256": "6b4acb5a43eba1471ca123d820882ce62bdc8c6af7deb4fb6e5c289bf4cc7fc1"
+    }
+  ],
+  "failedOrHistoricalReceipts": [
+    {
+      "id": "code-final-check-all-600",
+      "command": "npm run check:all",
+      "exitCode": 1,
+      "head": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "finalHead": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
+      "log": "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/logs/code-final-check-all-600.log",
+      "logSha256": "00185f5cb8ca82fa50b78821da36058695ce52ab73510a8110d4ff39ac2f1cbb"
+    }
+  ],
+  "claimBoundary": "Local conformance only; no real model execution, proof-backed inference, financial protection, public deployment, or live wallet/Graph requalification by this foundation scope."
+}

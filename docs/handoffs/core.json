@@ -1,29 +1,29 @@
 {
   "lane": "core",
   "status": "local_ready",
-  "codeRevision": "5697576298491efbd1a2285def50d49baad27ebd",
+  "codeRevision": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
   "reviewContract": "handoff-review-v1",
   "commands": [
     {
       "id": "core-check",
       "command": "npm --prefix packages/core run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/goal-c-code-verification.json",
-      "localLog": "artifacts/closeout/goal-c-core-check.log"
+      "evidence": "docs/handoffs/foundation-verification.json",
+      "localLog": "foundation/logs/code-final-core-check.log"
     },
     {
       "id": "core-smoke",
       "command": "npm --prefix packages/core run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/goal-c-code-verification.json",
-      "localLog": "artifacts/closeout/goal-c-core-smoke.log"
+      "evidence": "docs/handoffs/foundation-verification.json",
+      "localLog": "foundation/logs/code-final-core-smoke.log"
     },
     {
       "id": "composition",
       "command": "npm run smoke:integration",
       "exitCode": 0,
-      "evidence": "docs/handoffs/goal-c-code-verification.json",
-      "localLog": "artifacts/closeout/goal-c-integration-frozen.log"
+      "evidence": "docs/handoffs/foundation-verification.json",
+      "localLog": "foundation/logs/code-final-integration.log"
     }
   ],
   "acceptanceCases": [
@@ -92,8 +92,8 @@
     {
       "id": "combined-app",
       "status": "qualified",
-      "reason": "Frozen local composition at 5697576298491efbd1a2285def50d49baad27ebd passed 71 tests including the native conformance gateway; not real inference or public qualification.",
-      "evidence": "docs/handoffs/goal-c-code-verification.json"
+      "reason": "Foundation local composition at implementation revision 7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae passed npm run smoke:integration and focused native/OpenAI/evidence/recovery gates; local conformance only, not real inference or public qualification.",
+      "evidence": "docs/handoffs/foundation-verification.json"
     },
     {
       "id": "mycelium-execution",
@@ -127,7 +127,7 @@
     "platform": "darwin",
     "arch": "arm64"
   },
-  "documentationRevisionNote": "Previous handoff preserved in archive/pre-closeout-core.json. Current package check/smoke and combined integration executed in a fresh owned checkout of codeRevision.",
+  "documentationRevisionNote": "Foundation closure: implementation source tested at 7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae; this handoff metadata may be committed later without changing package/composition bytes. See docs/handoffs/foundation-verification.json and foundation evidence root.",
   "verificationHistory": [
     {
       "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
@@ -155,5 +155,6 @@
         }
       ]
     }
-  ]
+  ],
+  "foundationPriorCodeRevision": "5697576298491efbd1a2285def50d49baad27ebd"
 }

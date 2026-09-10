@@ -76,3 +76,20 @@ integration smokes, each exit 0. The verification checkout was clean afterward.
 `verified-code.json` retains log hashes and claim boundaries. Subsequent closeout
 documentation changes do not modify package or composition code. The final documentation
 candidate is checked separately; its receipt is `artifacts/closeout/final-verification.json`.
+## Application foundation closure: `7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae`
+
+The Session B foundation implementation commit `7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae` is the tested package/composition source revision for the updated core and access handoffs. It was committed before final component gates. Foundation receipts and logs are retained outside the tracked checkout under `/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/logs/` and indexed in `/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/SAFE-LOG-INDEX.json`; the compact tracked summary is `docs/handoffs/foundation-verification.json`.
+
+Observed exit status **0** for:
+
+```text
+npm --prefix packages/core run check
+npm --prefix packages/core run smoke
+npm --prefix packages/access run check
+npm --prefix packages/access run smoke
+npm run smoke:integration
+npm run check:operations
+node --test composition/test/mycelium-v3-journey.test.mjs
+```
+
+The root `npm run check:all` initially returned exit 1 because the core/access handoff JSON still pointed at older tested revisions (`implementation differs from tested revision`) even though the composition TAP output showed 101/101 passing. This documentation-only closure updates those handoff revision pointers without changing implementation bytes. Live wallet/Graph public external qualifications are not requalified by this foundation scope; they remain historical/external, not current proof of real-model execution or public readiness.

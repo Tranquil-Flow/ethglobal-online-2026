@@ -1,30 +1,30 @@
 {
   "lane": "access",
   "status": "local_ready",
-  "codeRevision": "5c76af329661fab1a2e237c2b9b328db49c4b131",
+  "codeRevision": "7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae",
   "historicalLaneCodeRevision": "4e15d0c4abc501a3cdb235c787352bba7023ba01",
-  "integrationEvidence": "docs/handoffs/integration.md",
+  "integrationEvidence": "docs/handoffs/foundation-verification.json",
   "commands": [
     {
       "id": "access-check",
       "command": "npm --prefix packages/access run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/workbench-code-verification.json",
-      "localLog": "artifacts/closeout/workbench-access-final-check.log"
+      "evidence": "docs/handoffs/foundation-verification.json",
+      "localLog": "foundation/logs/code-final-access-check.log"
     },
     {
       "id": "access-smoke",
       "command": "npm --prefix packages/access run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/workbench-code-verification.json",
-      "localLog": "artifacts/closeout/workbench-access-final-smoke.log"
+      "evidence": "docs/handoffs/foundation-verification.json",
+      "localLog": "foundation/logs/code-final-access-smoke.log"
     },
     {
       "id": "composition",
       "command": "npm run smoke:integration",
       "exitCode": 0,
-      "evidence": "docs/handoffs/workbench-code-verification.json",
-      "localLog": "artifacts/closeout/workbench-code-final-integration.log"
+      "evidence": "docs/handoffs/foundation-verification.json",
+      "localLog": "foundation/logs/code-final-integration.log"
     }
   ],
   "acceptance": [
@@ -116,20 +116,18 @@
     {
       "id": "real-core-client-composition",
       "status": "qualified",
-      "reason": "Actual combined local application verified at af665e0cf18889a2445c388e9d54d7548939eea6; this gate is local composition, not live sponsor or inference qualification.",
-      "evidence": "docs/handoffs/verified-code.json"
+      "reason": "Actual combined local application at implementation revision 7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae passed foundation smoke/integration gates; local composition only, not live sponsor or inference qualification.",
+      "evidence": "docs/handoffs/foundation-verification.json"
     },
     {
       "id": "live-wallet-payment",
-      "status": "qualified",
-      "reason": "Actual SDK/client payment submission, reconciliation, receipt verification and same-job replay succeeded; no inference claim.",
-      "evidence": "docs/handoffs/hedera-qualification.json"
+      "status": "blocked",
+      "reason": "Historical external evidence exists, but this foundation scope did not rerun or authorize live wallet/payment/Graph qualification for the new implementation revision; do not claim current public/live qualification from it."
     },
     {
       "id": "live-graph-decision",
-      "status": "qualified",
-      "reason": "Real application quote plus canonical ENS and hosted Graph adapters drive selection with HISTORY_UNKNOWN, without another payment.",
-      "evidence": "docs/handoffs/graph-studio-deployment.json"
+      "status": "blocked",
+      "reason": "Historical external evidence exists, but this foundation scope did not rerun or authorize live wallet/payment/Graph qualification for the new implementation revision; do not claim current public/live qualification from it."
     },
     {
       "id": "public-release",
@@ -153,8 +151,8 @@
     }
   ],
   "contractRequests": [],
-  "evidencePrivacy": "Only synthetic data in local ignored logs/screenshots/download; no bearer or payment proof in compact handoff. Export contains a synthetic private request; keep ignored.",
-  "documentationRevisionNote": "Previous handoff preserved in archive/pre-closeout-access.json. Current package check/smoke and combined integration executed in a fresh owned checkout of codeRevision.",
+  "evidencePrivacy": "Foundation handoff uses synthetic/local conformance evidence only; no bearer, wallet secret, Graph credential, private live prompt, or payment proof is included in tracked metadata.",
+  "documentationRevisionNote": "Foundation closure: implementation source tested at 7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae; this handoff metadata may be committed later without changing package/composition bytes. See docs/handoffs/foundation-verification.json and foundation evidence root.",
   "reviewTag": {
     "name": "handoff-review-v1",
     "revision": "74ae66f6bd895b13a9ce9de083357c0fcb88e564",
@@ -271,5 +269,6 @@
         }
       ]
     }
-  ]
+  ],
+  "foundationPriorCodeRevision": "5c76af329661fab1a2e237c2b9b328db49c4b131"
 }
