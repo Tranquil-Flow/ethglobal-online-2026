@@ -9,6 +9,15 @@ import {
 const $ = (id) => document.getElementById(id),
   text = (id, v) => ($(id).textContent = v);
 let jobClient, jobPins;
+let jobCursor = 0,
+  connecting = false,
+  pendingSubmission = false,
+  attemptContext;
+const terminalJob = (j) =>
+  ["succeeded", "failed", "cancelled"].includes(j.executionStatus);
+function guardNewWork() {
+  if (pendingSubmission) throw new AccessError("SUBMISSION_UNCERTAIN");
+}
 let client,
   config,
   provider,
@@ -87,31 +96,60 @@ const need = () => {
 };
 $("connect").onclick = () =>
   action(async () => {
-    status("Connecting…");
-    if (!config) config = await fetch("/config.json").then((r) => r.json());
-    client = clientFor($("provider").value);
-    const health = await client.health();
-    text(
-      "mode",
-      config.fixture
-        ? "DEVELOPMENT — synthetic conformance fixture"
-        : health.mode === "development"
-          ? "DEVELOPMENT — no live inference qualification"
-          : "LIVE route — execution and assessment remain separate, unqualified",
-    );
-    await client.connect();
-    status("Connected — no payment authorized");
+    guardNewWork();
+    if (busy || connecting) throw new AccessError("JOB_IN_PROGRESS");
+    if (client?.capability) {
+      status("Connected — already connected; existing session retained");
+      return;
+    }
+    connecting = true;
+    try {
+      status("Connecting…");
+      if (!config) config = await fetch("/config.json").then((r) => r.json());
+      client = clientFor($("provider").value);
+      const health = await client.health();
+      text(
+        "mode",
+        config.fixture
+          ? "DEVELOPMENT — synthetic conformance fixture"
+          : health.mode === "development"
+            ? "DEVELOPMENT — no live inference qualification"
+            : "LIVE route — execution and assessment remain separate, unqualified",
+      );
+      await client.connect();
+      status("Connected — no payment authorized");
+    } finally {
+      connecting = false;
+    }
   });
 $("revoke").onclick = () =>
   action(async () => {
     need();
-    await client.revoke();
+    if (connecting) throw new AccessError("SESSION_OPERATION_IN_PROGRESS");
+    connecting = true;
     streamController?.abort();
-    invalidate();
-    status("Session revoked");
+    try {
+      await client.revoke();
+      invalidate();
+      status(
+        "Session revoked — browser-only context is not a recovery credential",
+      );
+    } catch (error) {
+      if (!(error instanceof AccessError) || error.status !== 401) throw error;
+      // Server already rejects this credential. Forget locally only on the
+      // user's explicit revoke; do not manufacture a new session or payment.
+      client = undefined;
+      invalidate();
+      status(
+        "Session unavailable — local connection forgotten; reconnect explicitly",
+      );
+    } finally {
+      connecting = false;
+    }
   });
 $("find").onclick = () =>
   action(async () => {
+    guardNewWork();
     need();
     if (busy) throw new AccessError("JOB_IN_PROGRESS");
     status("Finding provider…");
@@ -140,6 +178,7 @@ $("find").onclick = () =>
   });
 $("quote-button").onclick = () =>
   action(async () => {
+    guardNewWork();
     need();
     if (!provider || provider.providerId !== $("provider").value)
       throw new AccessError("Find provider first");
@@ -171,6 +210,7 @@ $("quote-button").onclick = () =>
   });
 $("submit").onclick = () =>
   action(async () => {
+    guardNewWork();
     need();
     if (busy || submissionAttempted)
       throw new AccessError(
@@ -179,58 +219,112 @@ $("submit").onclick = () =>
     if (!$("consent").checked)
       throw new AccessError("Explicit payment consent required");
     if (!quote || !request) throw new AccessError("Get quote first");
+    const budget = $("budget")?.value ?? "10";
+    if (
+      !(config.accessPolicy === "sponsored-local"
+        ? budget === "0"
+        : /^[1-9][0-9]{0,4}$/.test(budget)) ||
+      BigInt(budget) > 10000n
+    )
+      throw new AccessError("BUDGET_LIMIT");
+    const submittingClient = client;
+    // Private buyer metadata only: retain the exact attempt BEFORE the network call.
+    // Never serialize the client/session capability or a wallet callback/proof.
+    attemptContext = structuredClone({
+      version: "viewer-attempt-v1",
+      apiUrl: config.apiUrl,
+      request,
+      quote,
+      pins: pinFor(request.providerId),
+      idempotencyKey: crypto.randomUUID(),
+      budget: {
+        maxAmountBaseUnits: budget,
+        asset: quote.asset,
+        network: quote.network,
+      },
+    });
     busy = true;
     submissionAttempted = true;
+    pendingSubmission = true;
     $("submit").disabled = true;
+    text(
+      "attempt-state",
+      "Submitting the retained request — no new authorization on retry",
+    );
     try {
       status("Submitting…");
-      const submittingClient = client,
-        submittedRequest = request;
-      const budget = $("budget")?.value ?? "10";
-      if (
-        !(config.accessPolicy === "sponsored-local"
-          ? budget === "0"
-          : /^[1-9][0-9]{0,4}$/.test(budget)) ||
-        BigInt(budget) > 10000n
-      )
-        throw new AccessError("BUDGET_LIMIT");
       const r = await submittingClient.submitJob({
-        request,
-        quoteId: quote.quoteId,
-        idempotencyKey: crypto.randomUUID(),
-        authorization: {
-          maxAmountBaseUnits: budget,
-          asset: quote.asset,
-          network: quote.network,
-        },
+        request: attemptContext.request,
+        quoteId: attemptContext.quote.quoteId,
+        idempotencyKey: attemptContext.idempotencyKey,
+        authorization: attemptContext.budget,
       });
+      pendingSubmission = false;
       job = r.job;
       jobClient = submittingClient;
-      jobPins = pinFor(submittedRequest.providerId);
+      jobPins = structuredClone(attemptContext.pins);
+      jobCursor = 0;
+      text("attempt-state", "Accepted — retained job " + job.jobId);
       text("receipt-state", "Not checked");
       text("assessment-state", "Separate — not requested");
-      renderJob(job);
+      text(
+        "publication-state",
+        attemptContext.request.publishConsent
+          ? "Not refreshed for this job"
+          : "Not published — consent off",
+      );
       text("answer", "");
-      streamController = new AbortController();
-      for await (const e of jobClient.streamJob(job.jobId, {
-        signal: streamController.signal,
-      })) {
-        if (e.event === "delta")
-          $("answer").append(document.createTextNode(e.data.text));
-        if (e.event === "job") {
-          job = e.data;
-          renderJob(job);
-        }
-      }
+      renderJob(job);
+      if (!terminalJob(job) && !(await streamRetainedJob())) return;
       await publication();
       status("Stream finished");
     } finally {
+      if (pendingSubmission)
+        text(
+          "attempt-state",
+          "Submission outcome unknown — do not authorize again. Keep this page open and download private attempt context for provider reconciliation.",
+        );
       busy = false;
       $("submit").disabled = false;
       $("consent").checked = false;
     }
   });
+async function streamRetainedJob() {
+  const activeClient = jobClient ?? client;
+  streamController = new AbortController();
+  const controller = streamController;
+  try {
+    for await (const e of activeClient.streamJob(job.jobId, {
+      signal: controller.signal,
+      lastEventId: jobCursor,
+    })) {
+      jobCursor = e.id;
+      if (e.event === "delta")
+        $("answer").append(document.createTextNode(e.data.text));
+      if (e.event === "job") {
+        job = e.data;
+        renderJob(job);
+      }
+    }
+    return true;
+  } catch (error) {
+    // Explicit local cancel/revoke should not become a spurious stream failure.
+    if (controller.signal.aborted) return false;
+    throw error;
+  }
+}
 function renderJob(j) {
+  text(
+    "output-state",
+    j.executionStatus === "succeeded"
+      ? j.output
+        ? "Complete — not computation-checked"
+        : "Output unavailable — job completed"
+      : terminalJob(j)
+        ? "Incomplete — not computation-checked"
+        : "Provisional — not computation-checked",
+  );
+  if (j.executionStatus === "succeeded") text("answer", j.output?.text ?? "");
   text(
     "job-state",
     j.executionStatus === "succeeded" ? "Completed" : j.executionStatus,
@@ -376,35 +470,33 @@ $("resume").onclick = () =>
     if (busy) throw new AccessError("JOB_IN_PROGRESS");
     busy = true;
     try {
-      streamController = new AbortController();
-      text("answer", "");
-      for await (const e of (jobClient ?? client).streamJob(job.jobId, {
-        signal: streamController.signal,
-      })) {
-        if (e.event === "delta")
-          $("answer").append(document.createTextNode(e.data.text));
-        if (e.event === "job") {
-          job = e.data;
-          renderJob(job);
-        }
-      }
+      // Durable state survives expired event cursors and deleted evidence bundles.
+      // SDK checks the retained request/output binding; this is not a receipt check.
       job = await (jobClient ?? client).getJob(job.jobId);
       renderJob(job);
-      if (job.executionStatus === "succeeded") {
-        const evidence = await (jobClient ?? client).getEvidence(job.jobId, {
-          expected: buyerContext().expected,
-        });
-        text("answer", evidence.output.text);
-        text(
-          "receipt-state",
-          "Integrity verified against configured pin — not inference verification",
-        );
-      }
+      if (!terminalJob(job) && !(await streamRetainedJob())) return;
       await publication();
       status("Retained job refreshed — no new payment");
     } finally {
       busy = false;
     }
+  });
+$("download-attempt").onclick = () =>
+  action(async () => {
+    if (!attemptContext) throw new AccessError("NO_RETAINED_ATTEMPT");
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(attemptContext, null, 2)], {
+        type: "application/json",
+      }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "private-attempt-context.json";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    status(
+      "Private attempt context downloaded — not a session credential or proof of acceptance",
+    );
   });
 fetch("/config.json")
   .then((r) => r.json())
