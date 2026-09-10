@@ -929,7 +929,28 @@ export function createApp({
       fail(400, "IDEMPOTENCY_KEY_REQUIRED");
     return k;
   }
+  const assessmentInFlight = new Map();
   async function assess(rec, method, key) {
+    const flightKey = digestOf({ jobId: rec.job.jobId, key });
+    const existing = assessmentInFlight.get(flightKey);
+    if (existing) {
+      if (existing.method !== method) fail(409, "IDEMPOTENCY_CONFLICT");
+      return existing.task;
+    }
+    const task = performAssessment(rec, method, key);
+    assessmentInFlight.set(flightKey, { method, task });
+    try {
+      return await task;
+    } finally {
+      assessmentInFlight.delete(flightKey);
+    }
+  }
+  async function performAssessment(rec, method, key) {
+    const trustedAssessor =
+      config.providerAssessors?.[rec.providerId] ?? config.assessor;
+    const selectedAssessor = assessor?.forProvider
+      ? assessor.forProvider(rec.providerId)
+      : assessor;
     const id = rec.job.jobId,
       record = store.get("assessments", id) || { items: [], keys: {} };
     const old = record.keys[hash(key)];
@@ -957,14 +978,14 @@ export function createApp({
     if (
       bundle &&
       rec.evidenceExpiresAt > Date.now() &&
-      assessor &&
-      config.assessor?.method === method
+      selectedAssessor &&
+      trustedAssessor?.method === method
     ) {
       try {
         a = adapterChecked(
           "Assessment",
           await bounded((signal) =>
-            assessor.assess({
+            selectedAssessor.assess({
               receipt: structuredClone(receipt),
               profile: structuredClone(bundle.profile),
               evidenceRef: `core-local:${id}`,
@@ -977,7 +998,7 @@ export function createApp({
           a.profileId !== rec.profileId ||
           a.mode !== c.mode ||
           a.method !== method ||
-          a.verifierId !== config.assessor.verifierId ||
+          a.verifierId !== trustedAssessor.verifierId ||
           (a.outcome === "passed" && !a.evidenceDigest)
         )
           fail(503, "ASSESSMENT_BINDING_MISMATCH");
@@ -988,7 +1009,7 @@ export function createApp({
           receiptDigest: rec.job.receiptDigest,
           method,
           profileId: rec.profileId,
-          verifierId: config.assessor.verifierId,
+          verifierId: trustedAssessor.verifierId,
           outcome: "unavailable",
           mode: c.mode,
           createdAt: iso(),

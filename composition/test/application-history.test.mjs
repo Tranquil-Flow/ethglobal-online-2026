@@ -11,7 +11,7 @@ import {
 import { digestOf } from "../../packages/contracts/index.mjs";
 import { setup } from "./fixtures/application.mjs";
 
-test("application selection rejects explicitly trusted open-history mismatch without treating history as proof", async () => {
+test("application selection uses explicitly trusted legacy observations without treating history as proof", async () => {
   const dir = await mkdtemp(join(tmpdir(), "app-v2-history-"));
   let app;
   try {
@@ -88,6 +88,17 @@ test("application selection rejects explicitly trusted open-history mismatch wit
       )
     ).json();
     assert.equal(publicHistory.observations[0].outcome, "mismatch");
+    const realNow = Date.now;
+    try {
+      Date.now = () => realNow() + 61000;
+      const renewed = await client.listProviders([alpha.providerId]);
+      assert.ok(
+        Date.parse(renewed.providers[0].source.expiresAt) > Date.now(),
+        "direct records renew after initial minute",
+      );
+    } finally {
+      Date.now = realNow;
+    }
   } finally {
     await app?.close();
     await rm(dir, { recursive: true, force: true });

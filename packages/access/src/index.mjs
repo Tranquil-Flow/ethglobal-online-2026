@@ -57,6 +57,23 @@ export function safeBaseUrl(baseUrl) {
     fail("UNSAFE_URL");
   return u.origin;
 }
+export async function selectOfferedProfile(client, providerId, profileIndex) {
+  const offer = (await client.listOffers()).offers.find(
+    (o) => o.payload.providerId === providerId,
+  )?.payload;
+  if (!offer) fail("PROVIDER_OFFER_UNAVAILABLE");
+  if (profileIndex === undefined) {
+    if (offer.profileIds.length !== 1) fail("PROFILE_SELECTION_REQUIRED");
+    profileIndex = 0;
+  }
+  if (
+    !Number.isSafeInteger(profileIndex) ||
+    profileIndex < 0 ||
+    profileIndex >= offer.profileIds.length
+  )
+    fail("INVALID_PROFILE_SELECTION");
+  return offer.profileIds[profileIndex];
+}
 export async function createRequest(fields) {
   const nonce = Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) =>
     b.toString(16).padStart(2, "0"),

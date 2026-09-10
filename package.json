@@ -12,6 +12,8 @@
     "setup": "node scripts/setup.mjs",
     "start": "node composition/serve.mjs",
     "mcp": "node composition/mcp.mjs",
+    "operator": "node composition/application-operator-cli.mjs",
+    "demo:application": "node composition/application-demo.mjs",
     "start:workbench": "node composition/serve.mjs --config composition/workbench.example.json",
     "replay": "node composition/replay.mjs",
     "test": "npm --prefix packages/contracts test",
@@ -21,6 +23,7 @@
     "smoke:integration": "node scripts/check-composition.mjs",
     "check:executor": "node --test conformance/executor-port.test.mjs composition/test/executor.test.mjs",
     "check:operations": "npm --prefix operations run check && npm --prefix operations run smoke && node --test composition/test/backup.test.mjs",
-    "check:local-services": "node --test composition/test/local-services.test.mjs"
+    "check:local-services": "node --test composition/test/local-services.test.mjs",
+    "serve:application:https": "node composition/application-https.mjs"
   }
 }

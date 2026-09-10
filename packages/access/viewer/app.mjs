@@ -8,15 +8,23 @@ import {
 } from "../src/index.mjs";
 const $ = (id) => document.getElementById(id),
   text = (id, v) => ($(id).textContent = v);
-let jobClient, jobPins;
+let jobClient,
+  jobPins,
+  recoveryRoot,
+  recoveryArchive,
+  preparingRecovery = false;
 let formRevision = 0;
 let jobCursor = 0,
   connecting = false,
   pendingSubmission = false,
-  attemptContext;
+  attemptContext,
+  recoveredReadOnly = false;
 const terminalJob = (j) =>
   ["succeeded", "failed", "cancelled"].includes(j.executionStatus);
 function guardNewWork() {
+  if (preparingRecovery)
+    throw new AccessError("RECOVERY_OPERATION_IN_PROGRESS");
+  if (recoveredReadOnly) throw new AccessError("RECOVERY_READ_ONLY");
   if (pendingSubmission) throw new AccessError("SUBMISSION_UNCERTAIN");
 }
 let client,
@@ -39,6 +47,9 @@ function invalidate() {
   formRevision++;
   quote = undefined;
   request = undefined;
+  attemptContext = undefined;
+  recoveryArchive = undefined;
+  recoveryRoot = undefined;
   $("consent").checked = false;
   text("quote", "Quote invalidated — obtain a fresh quote");
 }
@@ -195,6 +206,7 @@ $("quote-button").onclick = () =>
   action(async () => {
     guardNewWork();
     need();
+    if (recoveryArchive) throw new AccessError("RECOVERY_ATTEMPT_FROZEN");
     if (!provider || provider.providerId !== $("provider").value)
       throw new AccessError("Find provider first");
     if (busy) throw new AccessError("JOB_IN_PROGRESS");
@@ -210,12 +222,17 @@ $("quote-button").onclick = () =>
       publishConsent: $("publish-consent")?.checked === true,
     });
     const pendingQuote = await client.createQuote(pendingRequest);
+    if (preparingRecovery || recoveryArchive)
+      throw new AccessError("RECOVERY_ATTEMPT_FROZEN");
     if (formRevision !== revision || provider !== selectedProvider)
       throw new AccessError("FORM_CHANGED_RETRY");
     if (pendingQuote.mode !== provider.mode)
       throw new AccessError("MODE_MISMATCH");
     request = pendingRequest;
     quote = pendingQuote;
+    attemptContext = undefined;
+    recoveryArchive = undefined;
+    recoveryRoot = undefined;
     submissionAttempted = false;
     $("consent").checked = false;
     text(
@@ -229,6 +246,82 @@ $("quote-button").onclick = () =>
         quote.expiresAt,
     );
     status("Quote ready — payment requires consent");
+  });
+function recoveryPassphrase() {
+  const value = $("recovery-passphrase").value;
+  if (value.length < 12 || value.length > 256)
+    throw new AccessError("RECOVERY_PASSPHRASE_REQUIRED");
+  return value;
+}
+function downloadJson(value, name) {
+  const url = URL.createObjectURL(
+    new Blob([JSON.stringify(value, null, 2)], { type: "application/json" }),
+  );
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+$("download-recovery").onclick = () =>
+  action(async () => {
+    guardNewWork();
+    need();
+    if (!request || !quote) throw new AccessError("Get quote first");
+    if (submissionAttempted)
+      throw new AccessError("RECOVERY_MUST_PRECEDE_SUBMISSION");
+    if (recoveryArchive) throw new AccessError("RECOVERY_ALREADY_PREPARED");
+    const passphrase = recoveryPassphrase(),
+      revision = formRevision,
+      originClient = client;
+    const pendingAttempt = structuredClone({
+      version: "viewer-attempt-v1",
+      apiUrl: config.apiUrl,
+      request,
+      quote,
+      pins: pinFor(request.providerId),
+      idempotencyKey: crypto.randomUUID(),
+      budget: {
+        maxAmountBaseUnits: $("budget")?.value ?? "10",
+        asset: quote.asset,
+        network: quote.network,
+      },
+    });
+    preparingRecovery = true;
+    try {
+      const archive = await originClient.exportRecovery({
+        request: pendingAttempt.request,
+        quote: pendingAttempt.quote,
+        idempotencyKey: pendingAttempt.idempotencyKey,
+        passphrase,
+      });
+      if (revision !== formRevision || client !== originClient) {
+        let revoked = false;
+        try {
+          await originClient.revokeRecovery(archive, passphrase);
+          revoked = true;
+        } catch {}
+        text(
+          "attempt-state",
+          revoked
+            ? "Changed attempt discarded; unused recovery revoked"
+            : "Changed attempt discarded; unused recovery revocation unconfirmed",
+        );
+        throw new AccessError("FORM_CHANGED_RETRY");
+      }
+      attemptContext = pendingAttempt;
+      recoveryArchive = archive;
+      recoveryRoot = originClient;
+      downloadJson(recoveryArchive, "encrypted-attempt-recovery.json");
+      text(
+        "attempt-state",
+        "Encrypted recovery downloaded before submission — exact attempt frozen",
+      );
+      status("Recovery ready — now explicitly authorize this frozen attempt");
+    } finally {
+      preparingRecovery = false;
+      $("recovery-passphrase").value = "";
+    }
   });
 $("submit").onclick = () =>
   action(async () => {
@@ -250,21 +343,24 @@ $("submit").onclick = () =>
     )
       throw new AccessError("BUDGET_LIMIT");
     const submittingClient = client;
-    // Private buyer metadata only: retain the exact attempt BEFORE the network call.
-    // Never serialize the client/session capability or a wallet callback/proof.
-    attemptContext = structuredClone({
-      version: "viewer-attempt-v1",
-      apiUrl: config.apiUrl,
-      request,
-      quote,
-      pins: pinFor(request.providerId),
-      idempotencyKey: crypto.randomUUID(),
-      budget: {
-        maxAmountBaseUnits: budget,
-        asset: quote.asset,
-        network: quote.network,
-      },
-    });
+    // Recovery-aware submissions reuse the exact pre-exported identifier. Ordinary
+    // submissions retain the same private in-memory context as before.
+    if (!attemptContext)
+      attemptContext = structuredClone({
+        version: "viewer-attempt-v1",
+        apiUrl: config.apiUrl,
+        request,
+        quote,
+        pins: pinFor(request.providerId),
+        idempotencyKey: crypto.randomUUID(),
+        budget: {
+          maxAmountBaseUnits: budget,
+          asset: quote.asset,
+          network: quote.network,
+        },
+      });
+    if (attemptContext.budget.maxAmountBaseUnits !== budget)
+      throw new AccessError("RECOVERY_ATTEMPT_CHANGED");
     busy = true;
     submissionAttempted = true;
     pendingSubmission = true;
@@ -309,6 +405,87 @@ $("submit").onclick = () =>
       busy = false;
       $("submit").disabled = false;
       $("consent").checked = false;
+    }
+  });
+$("import-recovery").onclick = () =>
+  action(async () => {
+    if (!config) config = await fetch("/config.json").then((r) => r.json());
+    const file = $("recovery-file").files?.[0];
+    if (!file || file.size > 2097152)
+      throw new AccessError("RECOVERY_FILE_REQUIRED");
+    const archive = JSON.parse(await file.text());
+    const passphrase = recoveryPassphrase();
+    const root = createClient({ baseUrl: config.apiUrl });
+    try {
+      const recovered = await root.importRecovery(archive, passphrase);
+      recoveryRoot = root;
+      recoveryArchive = archive;
+      recoveredReadOnly = true;
+      request = structuredClone(recovered.attempt.request);
+      quote = structuredClone(recovered.attempt.quote);
+      attemptContext = {
+        version: "viewer-attempt-v1",
+        apiUrl: config.apiUrl,
+        request,
+        quote,
+        pins: structuredClone(recovered.pins),
+        idempotencyKey: recovered.attempt.idempotencyKey,
+      };
+      $("submit").disabled = true;
+      $("cancel").disabled = true;
+      $("assess").disabled = true;
+      if (recovered.status === "unresolved") {
+        text(
+          "attempt-state",
+          "Recovery imported read-only — attempt unresolved",
+        );
+        status("Attempt unresolved — no submit or resubmit permitted");
+        return;
+      }
+      client = recovered.client;
+      jobClient = recovered.client;
+      jobPins = structuredClone(recovered.pins);
+      job = recovered.job;
+      jobCursor = 0;
+      renderJob(job);
+      text(
+        "attempt-state",
+        "Recovered accepted job read-only — no resubmission",
+      );
+      text("receipt-state", "Not checked");
+      text("assessment-state", "Separate — read-only recovery");
+      await publication();
+      status("Accepted job recovered read-only — no new payment or execution");
+    } finally {
+      $("recovery-passphrase").value = "";
+    }
+  });
+$("revoke-recovery").onclick = () =>
+  action(async () => {
+    if (!recoveryRoot || !recoveryArchive)
+      throw new AccessError("NO_IMPORTED_RECOVERY");
+    const passphrase = recoveryPassphrase();
+    try {
+      await recoveryRoot.revokeRecovery(recoveryArchive, passphrase);
+      streamController?.abort();
+      client = undefined;
+      jobClient = undefined;
+      job = undefined;
+      recoveredReadOnly = false;
+      recoveryRoot = undefined;
+      recoveryArchive = undefined;
+      $("submit").disabled = false;
+      $("cancel").disabled = false;
+      $("assess").disabled = false;
+      text(
+        "attempt-state",
+        "Recovery revoked — reconnect explicitly for new work",
+      );
+      text("job-state", "No job");
+      text("answer", "");
+      status("Recovery revoked");
+    } finally {
+      $("recovery-passphrase").value = "";
     }
   });
 async function streamRetainedJob() {
@@ -360,6 +537,7 @@ function renderJob(j) {
 }
 $("cancel").onclick = () =>
   action(async () => {
+    if (recoveredReadOnly) throw new AccessError("RECOVERY_READ_ONLY");
     if (!job) {
       text("job-state", "Nothing to cancel");
       return;
@@ -371,6 +549,7 @@ $("cancel").onclick = () =>
   });
 $("assess").onclick = () =>
   action(async () => {
+    if (recoveredReadOnly) throw new AccessError("RECOVERY_READ_ONLY");
     need();
     if (!job) throw new AccessError("No job");
     const a = await (jobClient ?? client).createAssessment(

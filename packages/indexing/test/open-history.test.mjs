@@ -1,12 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHistory, queryProviderHistory } from "../src/index.mjs";
+import { digestOf } from "../../contracts/index.mjs";
 import { assessment, event, providerId } from "./fixtures.mjs";
 import { config, graphData } from "./history.test.mjs";
 
 const hex = (d) => "0x" + d.slice(7);
 const hash = "0x" + "a".repeat(64);
 const openAddress = "0x" + "2".repeat(40);
+const adverseAssessment = { ...assessment, outcome: "mismatch" };
 
 function openGraphData() {
   const data = graphData();
@@ -15,14 +17,14 @@ function openGraphData() {
     {
       id: "synthetic-open-log",
       statementDigest: "0x" + "4".repeat(64),
-      objectDigest: hex(event.objectDigest),
+      objectDigest: hex(digestOf(adverseAssessment)),
       receiptDigest: hex(event.receiptDigest),
       providerKey: hex(event.providerKey),
       verifierKey: hex(event.verifierKey),
       methodKey: hex(event.methodKey),
-      outcome: 1,
+      outcome: 2,
       mode: 0,
-      publicMetadata: JSON.stringify(assessment),
+      publicMetadata: JSON.stringify(adverseAssessment),
       valid: true,
       linked: false,
       chainId: "31337",
@@ -38,7 +40,7 @@ function openGraphData() {
   return data;
 }
 
-test("history consumes open checker-signed v2 claims without requiring a v1 receipt", async () => {
+test("history attributes unlinked adverse v2 claims without treating them as provider failures", async () => {
   const report = await queryProviderHistory({
     config: {
       ...config,
@@ -52,14 +54,16 @@ test("history consumes open checker-signed v2 claims without requiring a v1 rece
     providerId,
   });
   assert.equal(report.history.freshness, "fresh");
-  assert.deepEqual(report.history.observations, [assessment]);
+  assert.deepEqual(report.history.observations, []);
+  assert.deepEqual(report.unlinkedClaims[0].assessment, adverseAssessment);
   assert.equal(
     report.provenance[0].statementDigest,
     "sha256:" + "4".repeat(64),
   );
   assert.equal(report.provenance[0].author, "0x" + "3".repeat(40));
   assert.equal(report.provenance[0].publisher, undefined);
-  assert.deepEqual(report.reasons, ["UNKNOWN_VERIFIER"]);
+  assert.deepEqual(report.reasons, ["HISTORY_UNKNOWN", "UNLINKED_CLAIM"]);
+  assert.equal(report.reasons.includes("ASSESSMENT_MISMATCH"), false);
 });
 
 test("history rejects malformed open claims instead of mixing them into provider selection", async () => {

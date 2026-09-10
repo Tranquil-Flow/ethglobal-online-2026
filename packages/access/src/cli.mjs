@@ -14,6 +14,7 @@ import { pathToFileURL } from "node:url";
 import {
   createClient,
   createRequest,
+  selectOfferedProfile,
   developmentAuthorizer,
   verifyReceiptIntegrity,
   checkBuyerEvidenceJson,
@@ -35,7 +36,7 @@ export async function privateWrite(path, value) {
   }
   return path;
 }
-async function privateRead(path) {
+export async function privateRead(path) {
   const s = await lstat(path);
   if (
     !s.isFile() ||
@@ -46,6 +47,19 @@ async function privateRead(path) {
     throw new AccessError("PRIVATE_FILE_PERMISSIONS");
   if (s.size > 2097152) throw new AccessError("FILE_TOO_LARGE");
   return JSON.parse(await readFile(path, "utf8"));
+}
+export async function readPrivatePassphrase(path) {
+  if (!path) throw new AccessError("RECOVERY_PASSPHRASE_FILE_REQUIRED");
+  const value = await privateRead(path);
+  if (
+    !value ||
+    Object.keys(value).length !== 1 ||
+    typeof value.passphrase !== "string" ||
+    value.passphrase.length < 12 ||
+    value.passphrase.length > 256
+  )
+    throw new AccessError("INVALID_RECOVERY_PASSPHRASE_FILE");
+  return value.passphrase;
 }
 export async function runCli(argv) {
   const options = {},
@@ -137,6 +151,50 @@ export async function runCli(argv) {
   });
   const save = (name, value) =>
     privateWrite(join(dir, name + "-" + random() + ".json"), value);
+  if (command === "recovery-export") {
+    if (!options["request-file"] || !options["pins-file"])
+      throw new AccessError("RECOVERY_REQUEST_AND_PINS_FILES_REQUIRED");
+    const { request, quote } = await privateRead(options["request-file"]);
+    const passphrase = await readPrivatePassphrase(options["passphrase-file"]);
+    const archive = await client.exportRecovery({
+      request,
+      quote,
+      idempotencyKey: options["idempotency-key"],
+      passphrase,
+    });
+    return {
+      recoveryFile: await save("encrypted-recovery", archive),
+      encrypted: true,
+      reusableCapabilityExported: false,
+    };
+  }
+  if (command === "recovery-import") {
+    if (!options["recovery-file"])
+      throw new AccessError("RECOVERY_FILE_REQUIRED");
+    const recovered = await client.importRecovery(
+      await privateRead(options["recovery-file"]),
+      await readPrivatePassphrase(options["passphrase-file"]),
+    );
+    if (recovered.status === "unresolved")
+      return { status: "unresolved", readOnly: true };
+    return {
+      status: "accepted",
+      readOnly: true,
+      job: recovered.job,
+      buyerExpectationFile: await save(
+        "recovered-buyer-expectation",
+        recovered.client.getBuyerExpectation(recovered.job.jobId),
+      ),
+    };
+  }
+  if (command === "recovery-revoke") {
+    if (!options["recovery-file"])
+      throw new AccessError("RECOVERY_FILE_REQUIRED");
+    return client.revokeRecovery(
+      await privateRead(options["recovery-file"]),
+      await readPrivatePassphrase(options["passphrase-file"]),
+    );
+  }
   if (command === "connect") {
     if (session) throw new AccessError("REVOKE_EXISTING_SESSION_FIRST");
     const s = await client.connect();
@@ -154,16 +212,28 @@ export async function runCli(argv) {
     await unlink(sessionFile);
     return { revoked, localForgotten: true };
   }
+  if (command === "offers") return client.listOffers();
   if (command === "providers") return client.listProviders(pos.slice(1));
   if (command === "profile") return client.getProfile(arg);
   if (command === "history") return client.getHistory(arg);
   if (command === "quote") {
+    if (options.profile && options["profile-index"] !== undefined)
+      throw new AccessError("SELECT_ONE_PROFILE");
+    const profileId =
+      options.profile ??
+      (await selectOfferedProfile(
+        client,
+        options.provider,
+        options["profile-index"] === undefined
+          ? undefined
+          : Number(options["profile-index"]),
+      ));
     const prompt = options["prompt-file"]
       ? await readFile(options["prompt-file"], "utf8")
       : options.prompt;
     const request = await createRequest({
       providerId: options.provider,
-      profileId: options.profile,
+      profileId,
       prompt,
       maxOutputTokens: Number(options["max-output"] || 8),
       seed: Number(options.seed || 0),
@@ -274,7 +344,7 @@ export async function runCli(argv) {
       claim: "hashes and receipt integrity, not trusted execution",
     };
   throw new AccessError(
-    "Commands: connect revoke providers profile select quote submit stream inspect cancel receipt signature-check assess export history",
+    "Commands: connect revoke offers providers profile select quote recovery-export recovery-import recovery-revoke submit stream inspect cancel receipt signature-check assess export history",
   );
 }
 if (

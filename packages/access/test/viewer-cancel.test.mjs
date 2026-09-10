@@ -36,6 +36,14 @@ test("real browser cancellation preserves separate paid failure, expiry never re
     .filter({ hasText: /expires/ })
     .waitFor();
   await page.getByLabel(/authorize up to/).check();
+  await page
+    .getByLabel(/Recovery passphrase/)
+    .fill("synthetic-cancel-passphrase");
+  const recoveryDownload = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: /Download encrypted recovery/ })
+    .click();
+  await recoveryDownload;
   await page.getByRole("button", { name: "Submit and stream" }).click();
   await page
     .getByTestId("job-state")

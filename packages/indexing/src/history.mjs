@@ -166,6 +166,15 @@ function historyConfig(config) {
 export function createHistory({ config, client, provider } = {}) {
   const c = historyConfig(config || { mode: "development", chainId: "31337" });
   return {
+    getReport({ providerId, signal }) {
+      return queryProviderHistory({
+        config: c,
+        client,
+        provider,
+        providerId,
+        signal,
+      });
+    },
     async getHistory({ providerId, signal }) {
       return (
         await queryProviderHistory({
@@ -286,6 +295,7 @@ function openObservation(row, c, meta, providerKey) {
       logIndex: Number(row.logIndex),
       author: row.author,
       relayer: row.relayer,
+      linked: false,
       contractAddress: row.contractAddress,
       chainId: String(row.chainId),
     },
@@ -321,6 +331,7 @@ export async function queryProviderHistory({
     reasons: [],
     counts: {},
     provenance: [],
+    unlinkedClaims: [],
     truncated: false,
   };
   if (client && c.deployment) {
@@ -457,6 +468,7 @@ export async function queryProviderHistory({
         report.truncated = true;
       const observations = [],
         provenance = [],
+        unlinkedClaims = [],
         counts = {},
         seen = new Set();
       for (const item of rows.slice(0, c.limit)) {
@@ -466,8 +478,13 @@ export async function queryProviderHistory({
             : openObservation(item.row, c, meta, providerKey);
         if (seen.has(parsed.key)) continue;
         seen.add(parsed.key);
-        observations.push(parsed.assessment);
         provenance.push(parsed.provenance);
+        if (item.type === "open")
+          unlinkedClaims.push({
+            assessment: parsed.assessment,
+            provenance: parsed.provenance,
+          });
+        else observations.push(parsed.assessment);
         const key = JSON.stringify([
           parsed.assessment.verifierId,
           parsed.assessment.outcome,
@@ -480,6 +497,7 @@ export async function queryProviderHistory({
       history.freshness =
         now - meta.block.timestamp * 1000 > c.maxAgeMs ? "stale" : "fresh";
       report.provenance = provenance;
+      report.unlinkedClaims = unlinkedClaims;
       report.counts = counts;
     } catch (e) {
       if (signal?.aborted) throw failure("ABORTED", true);
@@ -489,6 +507,7 @@ export async function queryProviderHistory({
   }
   validate("History", history);
   report.reasons = historyReasons(history, c);
+  if (report.unlinkedClaims.length) report.reasons.push("UNLINKED_CLAIM");
   if (report.truncated) report.reasons.push("HISTORY_WINDOW_LIMIT");
   return report;
 }

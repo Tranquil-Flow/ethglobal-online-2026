@@ -96,6 +96,34 @@
         </p>
         <button id="submit">Submit and stream</button>
         <button id="cancel">Cancel</button>
+        <fieldset>
+          <legend>Encrypted attempt recovery</legend>
+          <label
+            >Recovery passphrase (12–256 characters)<input
+              id="recovery-passphrase"
+              type="password"
+              minlength="12"
+              maxlength="256"
+              autocomplete="new-password"
+          /></label>
+          <button id="download-recovery">
+            Download encrypted recovery before submitting
+          </button>
+          <label
+            >Encrypted recovery file<input
+              type="file"
+              id="recovery-file"
+              accept="application/json"
+          /></label>
+          <button id="import-recovery">Import read-only recovery</button>
+          <button id="revoke-recovery">Revoke imported recovery</button>
+          <p class="hint">
+            The file freezes this request, quote, retry identifier and public
+            pins before submission. It is passphrase encrypted and contains no
+            reusable session capability. An imported recovery can inspect the
+            accepted job, but cannot submit or resubmit work.
+          </p>
+        </fieldset>
       </section>
       <section aria-labelledby="result-title">
         <h2 id="result-title">4 · Separate claims</h2>
@@ -135,7 +163,8 @@
           Keep this page open and reconcile the retained attempt with the
           provider. Attempt context contains the original request, quote and
           retry identifier, not credentials or proof that a job was accepted.
-          Reloading forgets browser-only state.
+          Reloading forgets browser-only state unless you import the encrypted
+          recovery file above.
         </p>
         <p class="hint">
           Keep buyer context separately from provider evidence. It contains your

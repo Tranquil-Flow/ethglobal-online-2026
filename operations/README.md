@@ -1,5 +1,7 @@
 # Operations backup and restore
 
+For managed application v2, use [application portability](../docs/APPLICATION_PORTABILITY.md) and [operator quickstart](../docs/APPLICATION_QUICKSTART.md). The three-file procedure below is the preserved **historical v1 development format**, not the complete v2 closure.
+
 Local, dependency-free Node.js backup/restore for the application's private development state. The encrypted artifact contains exactly:
 
 - `core.sqlite`

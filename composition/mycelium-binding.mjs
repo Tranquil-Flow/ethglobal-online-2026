@@ -197,30 +197,32 @@ export async function createMyceliumRuntimeBinding({
     mode,
     simulator: mode === "development",
     profile,
-    create({ store, providerPins }) {
-      const loadEvidence = async (ref) => {
-        if (!/^core-local:[a-f0-9-]{36}$/.test(ref || ""))
-          throw Error("EVIDENCE_UNAVAILABLE");
-        const id = ref.slice("core-local:".length),
-          row = store.get("jobs", id),
-          bundle = store.get("private", id),
-          receipt = store.get("receipts", id)?.receipt;
-        if (
-          !row ||
-          !Number.isSafeInteger(row.evidenceExpiresAt) ||
-          row.evidenceExpiresAt <= Date.now() ||
-          !bundle?.request ||
-          !receipt
-        )
-          throw Error("EVIDENCE_UNAVAILABLE");
-        return {
-          version: "1",
-          mode,
-          ...bundle,
-          receipt,
-          assessments: store.get("assessments", id)?.items ?? [],
-        };
-      };
+    create({ store, providerPins, loadEvidence: scopedEvidence }) {
+      const loadEvidence =
+        scopedEvidence ??
+        (async (ref) => {
+          if (!/^core-local:[a-f0-9-]{36}$/.test(ref || ""))
+            throw Error("EVIDENCE_UNAVAILABLE");
+          const id = ref.slice("core-local:".length),
+            row = store.get("jobs", id),
+            bundle = store.get("private", id),
+            receipt = store.get("receipts", id)?.receipt;
+          if (
+            !row ||
+            !Number.isSafeInteger(row.evidenceExpiresAt) ||
+            row.evidenceExpiresAt <= Date.now() ||
+            !bundle?.request ||
+            !receipt
+          )
+            throw Error("EVIDENCE_UNAVAILABLE");
+          return {
+            version: "1",
+            mode,
+            ...bundle,
+            receipt,
+            assessments: store.get("assessments", id)?.items ?? [],
+          };
+        });
       const assessors = new Map(
         providers.map((p) => [
           p.providerId,

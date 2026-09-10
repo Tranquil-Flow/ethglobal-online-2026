@@ -3,18 +3,47 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { pathToFileURL } from "node:url";
+import { basename, join } from "node:path";
+import { mkdir, lstat } from "node:fs/promises";
 import {
   createClient,
   createRequest,
+  selectOfferedProfile,
   developmentAuthorizer,
   checkBuyerEvidenceJson,
   AccessError,
 } from "./index.mjs";
 import { decideProvider } from "./decision.mjs";
+import { privateRead, privateWrite, readPrivatePassphrase } from "./cli.mjs";
 const text = z.string().min(1).max(256),
   amount = z.string().regex(/^(0|[1-9][0-9]{0,77})$/);
-export function createAccessMcp({ client, allowDevelopmentPayment = false }) {
+export function createAccessMcp({
+  client,
+  allowDevelopmentPayment = false,
+  recoveryPassphraseFile,
+  recoveryDirectory,
+}) {
   const server = new McpServer({ name: "ethonline-access", version: "0.1.0" });
+  async function recoveryStore() {
+    if (!recoveryPassphraseFile || !recoveryDirectory)
+      throw new AccessError("HOST_RECOVERY_FILES_NOT_CONFIGURED");
+    await mkdir(recoveryDirectory, { recursive: true, mode: 0o700 });
+    const s = await lstat(recoveryDirectory);
+    if (!s.isDirectory() || s.isSymbolicLink() || s.mode & 0o077)
+      throw new AccessError("PRIVATE_DIRECTORY_PERMISSIONS");
+    return {
+      passphrase: await readPrivatePassphrase(recoveryPassphraseFile),
+      path(name) {
+        if (
+          typeof name !== "string" ||
+          basename(name) !== name ||
+          !/^recovery-[A-Za-z0-9-]+\.json$/.test(name)
+        )
+          throw new AccessError("INVALID_RECOVERY_FILE_NAME");
+        return join(recoveryDirectory, name);
+      },
+    };
+  }
   const register = (name, description, inputSchema, fn, readOnlyHint = true) =>
     server.registerTool(
       name,
@@ -60,6 +89,12 @@ export function createAccessMcp({ client, allowDevelopmentPayment = false }) {
     false,
   );
   register(
+    "access_offers",
+    "Read fresh signed offers for the independently pinned provider.",
+    {},
+    () => client.listOffers(),
+  );
+  register(
     "access_history",
     "Read Graph-derived history via HTTP, not direct Graph credentials.",
     { providerId: text },
@@ -83,13 +118,22 @@ export function createAccessMcp({ client, allowDevelopmentPayment = false }) {
     "Explicitly disclose one request to one provider for a quote; does not authorize payment.",
     {
       providerId: text,
-      profileId: text,
+      profileId: text.optional(),
+      profileIndex: z.number().int().min(0).max(127).optional(),
       prompt: z.string().min(1).max(32768),
       maxOutputTokens: z.number().int().min(1).max(4096),
       seed: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
     },
     async (a) => {
-      const request = await createRequest(a);
+      if (a.profileId !== undefined && a.profileIndex !== undefined)
+        throw new AccessError("SELECT_ONE_PROFILE");
+      const { profileIndex, ...fields } = a;
+      const request = await createRequest({
+        ...fields,
+        profileId:
+          a.profileId ??
+          (await selectOfferedProfile(client, a.providerId, profileIndex)),
+      });
       return { request, quote: await client.createQuote(request) };
     },
     false,
@@ -123,6 +167,56 @@ export function createAccessMcp({ client, allowDevelopmentPayment = false }) {
         );
       const r = await client.submitJob(a);
       return { job: r.job };
+    },
+    false,
+  );
+  register(
+    "access_recovery_export",
+    "Before submission, encrypt the exact request, quote, retry identifier and public pins to a host-private file. No reusable capability is exported; passphrase comes only from host configuration.",
+    {
+      request: z.record(z.unknown()),
+      quote: z.record(z.unknown()),
+      idempotencyKey: text,
+    },
+    async (a) => {
+      const store = await recoveryStore();
+      const archive = await client.exportRecovery({
+        request: a.request,
+        quote: a.quote,
+        idempotencyKey: a.idempotencyKey,
+        passphrase: store.passphrase,
+      });
+      const fileName = `recovery-${crypto.randomUUID()}.json`;
+      await privateWrite(store.path(fileName), archive);
+      return { fileName, encrypted: true, reusableCapabilityExported: false };
+    },
+    false,
+  );
+  register(
+    "access_recovery_import",
+    "Import one host-private encrypted recovery and return only the read-only reconciliation result; never submit or resubmit.",
+    { fileName: text },
+    async (a) => {
+      const store = await recoveryStore();
+      const recovered = await client.importRecovery(
+        await privateRead(store.path(a.fileName)),
+        store.passphrase,
+      );
+      return recovered.status === "accepted"
+        ? { status: "accepted", readOnly: true, job: recovered.job }
+        : { status: "unresolved", readOnly: true };
+    },
+  );
+  register(
+    "access_recovery_revoke",
+    "Revoke one host-private encrypted recovery; passphrase comes only from host configuration.",
+    { fileName: text },
+    async (a) => {
+      const store = await recoveryStore();
+      return client.revokeRecovery(
+        await privateRead(store.path(a.fileName)),
+        store.passphrase,
+      );
     },
     false,
   );
@@ -219,7 +313,12 @@ if (
       baseUrl: process.env.ETHONLINE_BASE_URL || "http://127.0.0.1:4350",
       paymentAuthorizer: allow ? developmentAuthorizer : undefined,
     });
-    const server = createAccessMcp({ client, allowDevelopmentPayment: allow });
+    const server = createAccessMcp({
+      client,
+      allowDevelopmentPayment: allow,
+      recoveryPassphraseFile: process.env.ETHONLINE_RECOVERY_PASSPHRASE_FILE,
+      recoveryDirectory: process.env.ETHONLINE_RECOVERY_DIRECTORY,
+    });
     await server.connect(new StdioServerTransport());
   } catch {
     console.error("MCP_START_FAILED");

@@ -1,4 +1,6 @@
-import { mkdirSync } from "node:fs";
+import { mkdirSync, chmodSync, existsSync, lstatSync } from "node:fs";
+import { createServer as createPortProbe } from "node:net";
+import { assertPrivateDirectory } from "../operations/src/private-files.mjs";
 import { join, resolve } from "node:path";
 import { createApp, createStore } from "../packages/core/src/index.mjs";
 import { createReceiptVerifier } from "../packages/core/src/receipts.mjs";
@@ -70,9 +72,25 @@ export function validateApplicationConfig(input) {
       "providers",
       "core",
       "history",
+      "publicOrigin",
     ],
     ["version", "mode", "accessPolicy", "dataDir", "port", "providers"],
   );
+  if (input.publicOrigin !== undefined) {
+    let url;
+    try {
+      url = new URL(input.publicOrigin);
+    } catch {
+      fail("INVALID_PUBLIC_ORIGIN");
+    }
+    if (
+      url.protocol !== "https:" ||
+      url.origin !== input.publicOrigin ||
+      url.username ||
+      url.password
+    )
+      fail("INVALID_PUBLIC_ORIGIN");
+  }
   if (input.accessPolicy !== "non-economic")
     fail("PROTECTED_PAYMENT_UNAVAILABLE");
   if (
@@ -160,8 +178,27 @@ export function validateApplicationConfig(input) {
       "maintenanceMs",
     ];
     exact(input.core, keys, []);
+    const ceilings = {
+      sessionTtlMs: 86400000,
+      jobDeadlineMs: 300000,
+      portTimeoutMs: 30000,
+      maxBodyBytes: 1048576,
+      maxOutputBytes: 1048576,
+      maxExportBytes: 8388608,
+      maxQueue: 1024,
+      concurrency: 32,
+      maxEvents: 8192,
+      retentionMs: 2592000000,
+      evidenceRetentionMs: 604800000,
+      maxRecords: 100000,
+      sessionRate: 10000,
+      requestRate: 10000,
+      maintenanceMs: 60000,
+    };
     if (
-      Object.values(input.core).some((x) => !Number.isSafeInteger(x) || x < 1)
+      Object.entries(input.core).some(
+        ([k, x]) => !Number.isSafeInteger(x) || x < 1 || x > ceilings[k],
+      )
     )
       fail("INVALID_CORE_LIMIT");
   }
@@ -242,10 +279,43 @@ export function preflightApplication({ config: input, bindings }) {
 export async function startApplicationWorkbench({ config: input, bindings }) {
   const { config, entries } = preflightApplication({ config: input, bindings });
   const historyPolicy = validateHistoryPolicy(config.history);
-  const sourceIssuedMs = Date.now();
-  const sourceIssuedAt = new Date(sourceIssuedMs).toISOString();
-  const sourceExpiresAt = new Date(sourceIssuedMs + 60000).toISOString();
+  const recordIdentity = (p) => {
+    const { resolvedAt, expiresAt, ...source } = p.source;
+    return digestOf({ ...p, source });
+  };
   const dir = resolve(config.dataDir);
+  if (existsSync(dir)) {
+    assertPrivateDirectory(dir);
+    const directories = [
+      join(dir, "providers"),
+      ...entries.map((e) =>
+        join(dir, "providers", digestOf(e.config.providerId).slice(7)),
+      ),
+    ];
+    for (const path of directories)
+      if (existsSync(path)) assertPrivateDirectory(path);
+    const files = [
+      join(dir, "core.sqlite"),
+      ...directories.slice(1).map((p) => join(p, "runtime.sqlite")),
+    ];
+    for (const path of files)
+      if (existsSync(path)) {
+        const st = lstatSync(path);
+        if (
+          !st.isFile() ||
+          st.isSymbolicLink() ||
+          st.nlink !== 1 ||
+          (st.mode & 0o777) !== 0o600
+        )
+          fail("PRIVATE_STATE_REQUIRED");
+      }
+  }
+  if (config.port)
+    await new Promise((resolve, reject) => {
+      const probe = createPortProbe();
+      probe.once("error", () => reject(Error("PORT_UNAVAILABLE")));
+      probe.listen(config.port, "127.0.0.1", () => probe.close(resolve));
+    });
   mkdirSync(dir, { recursive: true, mode: 0o700 });
   const release = acquirePrivateStateLock(dir);
   let store,
@@ -355,6 +425,30 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       const r = e.binding.runtime.create({
         store: child,
         providerPins: { [e.config.providerId]: e.pins },
+        async loadEvidence(ref) {
+          if (!/^core-local:[a-f0-9-]{36}$/.test(ref || ""))
+            fail("EVIDENCE_UNAVAILABLE");
+          const id = ref.slice(11),
+            row = store.get("jobs", id),
+            bundle = store.get("private", id),
+            receipt = store.get("receipts", id)?.receipt;
+          if (
+            !row ||
+            row.providerId !== e.config.providerId ||
+            !Number.isSafeInteger(row.evidenceExpiresAt) ||
+            row.evidenceExpiresAt <= Date.now() ||
+            !bundle ||
+            !receipt
+          )
+            fail("EVIDENCE_UNAVAILABLE");
+          return structuredClone({
+            version: "1",
+            mode: config.mode,
+            ...bundle,
+            receipt,
+            assessments: store.get("assessments", id)?.items ?? [],
+          });
+        },
       });
       if (
         r?.executor?.mode !== config.mode ||
@@ -416,7 +510,7 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
         version: "1",
         providerId: entry.config.providerId,
         name: entry.config.providerId,
-        endpoint: viewer.url,
+        endpoint: config.publicOrigin ?? viewer.url,
         profileIds: entry.config.profileIds,
         paymentNetwork: "non-economic",
         paymentAsset: "none",
@@ -426,11 +520,11 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
           chainId: "application-direct",
           blockNumber: 0,
           blockHash: "0x" + "0".repeat(64),
-          resolvedAt: sourceIssuedAt,
-          expiresAt: sourceExpiresAt,
+          resolvedAt: new Date(Date.now()).toISOString(),
+          expiresAt: new Date(Date.now() + 60000).toISOString(),
         },
         historyEndpoint:
-          viewer.url +
+          (config.publicOrigin ?? viewer.url) +
           "/v1/providers/" +
           encodeURIComponent(entry.config.providerId) +
           "/history",
@@ -466,7 +560,10 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
             codes = [];
           const entry = byProvider.get(p.providerId);
           try {
-            if (!entry || digestOf(p) !== digestOf(providerRecord(entry)))
+            if (
+              !entry ||
+              recordIdentity(p) !== recordIdentity(providerRecord(entry))
+            )
               fail("PROVIDER_CHANGED");
             if (!entry.config.profileIds.includes(profileId))
               reject.push("PROFILE_UNSUPPORTED");
@@ -507,16 +604,21 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
             if (matching.length && !valid.length)
               reject.push("NO_ELIGIBLE_QUOTE");
             let historyCode = "HISTORY_UNKNOWN";
-            if (
-              bindings.history &&
-              historyPolicy.trustedVerifiers.length &&
-              historyPolicy.trustedMethods.length
-            ) {
+            if (bindings.history) {
               try {
-                const h = await bindings.history.getHistory({
-                  providerId: p.providerId,
-                  signal,
-                });
+                const report =
+                  typeof bindings.history.getReport === "function"
+                    ? await bindings.history.getReport({
+                        providerId: p.providerId,
+                        signal,
+                      })
+                    : null;
+                const h =
+                  report?.history ??
+                  (await bindings.history.getHistory({
+                    providerId: p.providerId,
+                    signal,
+                  }));
                 validate("History", h);
                 const observedAt = Date.parse(h.observedAt);
                 const fresh =
@@ -532,6 +634,8 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
                       ? "HISTORY_STALE"
                       : "HISTORY_UNKNOWN";
                 else {
+                  if (report?.unlinkedClaims?.length)
+                    codes.push("UNLINKED_CHECKER_CLAIM_NOT_PROOF");
                   const observations = h.observations.filter(
                     (o) =>
                       o.profileId === profileId &&
@@ -550,6 +654,14 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
                 historyCode = "HISTORY_UNKNOWN";
               }
             }
+            if (signal?.aborted) fail("SELECTION_ABORTED");
+            if (Date.parse(p.source.expiresAt) <= Date.now())
+              reject.push("PROVIDER_EXPIRED");
+            if (
+              valid.length &&
+              !valid.some((q) => Date.parse(q.expiresAt) > Date.now())
+            )
+              reject.push("QUOTE_EXPIRED");
             codes.push(historyCode, ...reject);
             if (!reject.length) {
               codes.push("ELIGIBLE");
@@ -577,6 +689,14 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
         mode: config.mode,
         profiles,
         providerIds: config.providers.map((p) => p.providerId),
+        providerAssessors: Object.fromEntries(
+          [...ports]
+            .filter(([, r]) => r.assessor)
+            .map(([id, r]) => [
+              id,
+              { method: r.assessor.method, verifierId: r.assessor.verifierId },
+            ]),
+        ),
         providerProfiles: Object.fromEntries(
           config.providers.map((p) => [p.providerId, p.profileIds]),
         ),
@@ -587,6 +707,11 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       payments,
       discovery: directDiscovery,
       history: bindings.history,
+      assessor: {
+        forProvider(id) {
+          return ports.get(id)?.assessor;
+        },
+      },
       offers: {
         async list() {
           if (!viewer) fail("STARTING");
@@ -601,7 +726,7 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
                 runtimeDigest: e.config.runtimeDigest,
                 limits: e.config.limits,
                 aliases: e.config.aliases,
-                endpoint: viewer.url,
+                endpoint: config.publicOrigin ?? viewer.url,
                 mode: config.mode,
                 accessPolicy: "non-economic",
                 issuedAt: new Date(now).toISOString(),
@@ -614,12 +739,28 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
     });
     const { url: coreUrl } = await app.listen({ host: "127.0.0.1", port: 0 });
     const publicConfig = {
+      ...(config.publicOrigin ? { apiUrl: config.publicOrigin } : {}),
       applicationVersion: "2",
       fixture: false,
       development: config.mode === "development",
       accessPolicy: "non-economic",
       payment: "non-monetary-no-settlement",
-      assessment: "unavailable",
+      assessment: [...ports.values()].some((r) => r.assessor)
+        ? "configured-observations-not-proof"
+        : "unavailable",
+      checking: Object.fromEntries(
+        [...ports].map(([id, r]) => [
+          id,
+          r.assessor
+            ? {
+                method: r.assessor.method,
+                verifierId: r.assessor.verifierId,
+                mode: config.mode,
+                claim: "observation-not-financial-authority",
+              }
+            : null,
+        ]),
+      ),
       publication: "disabled",
       discovery: "direct-stable-offers-not-ENS",
       history: bindings.history
