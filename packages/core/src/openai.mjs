@@ -252,7 +252,9 @@ export function createOpenAIIngress({
             fail(504, "CHAT_WAIT_DEADLINE");
           if (stream && Date.now() - heartbeat >= 1000) {
             heartbeat = Date.now();
-            if (!res.write(": heartbeat\n\n")) {
+            // Keep the transport alive without dispatching an empty event:
+            // stock OpenAI 2.24 retains the previous SSE ID across comments.
+            if (!res.write(": heartbeat\n")) {
               res.destroy();
               return;
             }
