@@ -1,10 +1,13 @@
 import { resolve } from "node:path";
+import { X509Certificate, createPrivateKey } from "node:crypto";
+import { isIP } from "node:net";
+import { createSecureContext } from "node:tls";
 import { fileURLToPath } from "node:url";
 import { createHttpsProxy } from "../operations/src/proxy.mjs";
 import { readPrivateFile } from "../operations/src/private-files.mjs";
 
 /** Explicit loopback TLS ingress; external exposure remains a deployment gate. */
-export async function startApplicationHttps({ configFile }) {
+function loadTlsMaterial({ configFile, now = Date.now() }) {
   const bytes = readPrivateFile(configFile, {
     maxBytes: 16384,
     code: "PRIVATE_CONFIG_REQUIRED",
@@ -40,10 +43,81 @@ export async function startApplicationHttps({ configFile }) {
     maxBytes: 1048576,
     code: "PRIVATE_CERT_REQUIRED",
   }).data;
-  const key = readPrivateFile(config.keyFile, {
-    maxBytes: 16384,
-    code: "PRIVATE_KEY_REQUIRED",
-  }).data;
+  let key;
+  try {
+    key = readPrivateFile(config.keyFile, {
+      maxBytes: 16384,
+      code: "PRIVATE_KEY_REQUIRED",
+    }).data;
+    let certificate, privateKey;
+    try {
+      certificate = new X509Certificate(cert);
+      privateKey = createPrivateKey(key);
+    } catch {
+      throw Error("INVALID_TLS_MATERIAL");
+    }
+    const host = origin.hostname.replace(/^\[|\]$/g, "");
+    if (!(isIP(host) ? certificate.checkIP(host) : certificate.checkHost(host)))
+      throw Error("TLS_CERTIFICATE_HOST_MISMATCH");
+    if (
+      !Number.isSafeInteger(now) ||
+      now < Date.parse(certificate.validFrom) ||
+      now >= Date.parse(certificate.validTo)
+    )
+      throw Error("TLS_CERTIFICATE_TIME_INVALID");
+    if (!certificate.checkPrivateKey(privateKey))
+      throw Error("TLS_CERTIFICATE_KEY_MISMATCH");
+    createSecureContext({ cert, key });
+    let upstream;
+    try {
+      upstream = new URL(config.upstream);
+    } catch {
+      throw Error("INVALID_TLS_UPSTREAM");
+    }
+    if (
+      !["http:", "https:"].includes(upstream.protocol) ||
+      !["localhost", "127.0.0.1", "[::1]"].includes(upstream.hostname) ||
+      upstream.username ||
+      upstream.password ||
+      upstream.pathname !== "/" ||
+      upstream.search ||
+      upstream.hash
+    )
+      throw Error("INVALID_TLS_UPSTREAM");
+    if (
+      !Number.isInteger(config.port) ||
+      config.port < 0 ||
+      config.port > 65535
+    )
+      throw Error("INVALID_TLS_PORT");
+    return { config, origin, cert, key, certificate };
+  } catch (e) {
+    cert.fill(0);
+    key?.fill(0);
+    throw e;
+  }
+}
+export function inspectApplicationHttps(options) {
+  const { config, cert, key, certificate } = loadTlsMaterial(options);
+  try {
+    return {
+      status: "tls-material-checked-offline",
+      upstream: config.upstream,
+      publicOrigin: config.publicOrigin,
+      port: config.port,
+      certificateFingerprint: certificate.fingerprint256,
+      validFrom: certificate.validFrom,
+      validTo: certificate.validTo,
+      networkContacted: false,
+      chainTrustVerified: false,
+    };
+  } finally {
+    cert.fill(0);
+    key.fill(0);
+  }
+}
+export async function startApplicationHttps({ configFile }) {
+  const { config, origin, cert, key } = loadTlsMaterial({ configFile });
   let proxy;
   try {
     proxy = createHttpsProxy({

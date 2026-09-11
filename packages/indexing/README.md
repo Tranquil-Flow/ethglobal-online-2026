@@ -35,9 +35,37 @@ Tests bind port 0. Manual lane port reservation is **4340**; the package intenti
 ```js
 import {
   createEventSink, createPublicationStore, createHistory,
-  createGraphClient, queryProviderHistory, historyReasons, validateDeployment
+  createGraphClient, queryProviderHistory, historyReasons, validateDeployment,
+  planOpenRegistryDeployment, inspectOpenRegistryDeployment
 } from './src/index.mjs';
 ```
+
+### RegistryV2 offline deployment plan and inspection
+
+The open registry has a separate, explicit offline plan branch. It accepts only finite safe integers, mode `0` (development) or `1` (live), a nonzero sender and a nonnegative CREATE nonce. Supported pairs are development `0`/chain `31337` with 1–256 confirmations, or live `1`/Sepolia `11155111` with 12–256 confirmations. The five input fields are closed; the CLI reads at most 64 KiB from a stable regular non-linked file:
+
+```json
+{"mode":0,"chainId":31337,"sender":"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266","nonce":2,"confirmations":2}
+```
+
+```sh
+npm --prefix packages/indexing run deploy:dry-run -- --open-plan /operator-owned/open-plan.json
+```
+
+This branch has no provider, signer, credential lookup, or broadcast path. Its `mycelium.open-registry-deployment-plan/v1` output includes the CREATE address, exact unsigned `creationData` and hash, complete constructor-substituted `expectedRuntime` and hash, both named immutable values, solc version/settings/metadata hash, and source keccak hashes. Runtime substitution is derived from solc AST declaration IDs and every `immutableReferences` location; unknown or incomplete compiler layouts fail rather than masking bytes. The legacy Registry v1 command and bytecode remain unchanged. Compiler loading is lazy: ordinary indexing/application imports do not require the deployment-only solc module; explicit planning/inspection requires the pinned build dependencies.
+
+Inspection is read-only and always recompiles/recomputes that plan. It requires the actual transaction hash and checks RPC chain ID; exact CREATE sender, nonce, zero value and calldata; successful receipt and predicted address; canonical block hash and configured depth; and the complete code bytes/hash at the receipt block. Unknown, pending, reverted, reorged, mismatched, or wrong-code deployments fail closed.
+
+```js
+const plan = planOpenRegistryDeployment(config); // synchronous and offline
+const inspection = await inspectOpenRegistryDeployment({
+  provider, transactionHash, plan: config
+});
+```
+
+The inspector also accepts the complete frozen planner output and rejects any changed derived field rather than silently recomputing away drift. It checks the receipt transaction hash and rechecks canonical block/depth after code inspection. `signal` and bounded `timeoutMs` (default 10000, maximum 60000) bound RPC waits; configure timeouts/cleanup on the externally owned provider as well, since abandoning a wait does not cancel that provider’s underlying transport. Provider failures are redacted. This trusts the supplied RPC observations; it is not a light-client/consensus proof.
+
+Successful inspection returns `mycelium.open-registry-deployment-inspection/v1` with `verified:true`, transaction/sender/nonce/value, chain/address/block/finality, creation/runtime hashes, compiler metadata hash, and source hashes. It is evidence about one observed local/read-only deployment only; it does not broadcast, mint grants, qualify a public deployment, or authorize funds.
 
 ### EventSink
 

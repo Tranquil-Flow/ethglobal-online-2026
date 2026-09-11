@@ -17,6 +17,7 @@ test("v2 raw-logit metadata is representable without coercing or changing v1 pro
     old.profileId,
     "sha256:0e34ab827c13e65cbabbeed4381c69afbf87ceb5c41ad9605ddc8b6d2bb70202",
   );
+  input.schema = "mycelium.workbench.operator.v2";
   input.metadata.version = "2";
   input.metadata.selector = structuredClone(raw);
   const p = createMyceliumProfile(input.metadata);
@@ -41,6 +42,7 @@ test("v2 raw-logit metadata is representable without coercing or changing v1 pro
 });
 test("raw metadata cannot relabel the legacy quantized protocol", async () => {
   const input = inputFixture();
+  input.schema = "mycelium.workbench.operator.v2";
   input.metadata.version = "2";
   input.metadata.selector = structuredClone(raw);
   await assert.rejects(
@@ -59,4 +61,15 @@ test("raw metadata cannot relabel the legacy quantized protocol", async () => {
     }),
     /UNSUPPORTED_METADATA_PROTOCOL/,
   );
+});
+
+test("legacy operator v1 retains its original metadata-version boundary", () => {
+  const input = inputFixture();
+  input.metadata.version = "2";
+  input.metadata.selector = {
+    algorithm: "raw-logit-greedy",
+    tieBreak: "lowest-token-id",
+    nonfinite: "reject",
+  };
+  assert.throws(() => validateOperatorInputs(input), /INVALID_OPERATOR_INPUTS/);
 });

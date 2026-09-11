@@ -65,6 +65,11 @@ export function validateOperatorInputs(input) {
     input.expectedEvidenceClass.includes("conformance")
   )
     fail();
+  if (
+    input.schema === "mycelium.workbench.operator.v1" &&
+    input.metadata?.version !== "1"
+  )
+    fail();
   const p = createMyceliumProfile(input.metadata),
     r = validateRuntimeProfileV1(input.runtimeProfile);
   const m = p.metadata;

@@ -13,6 +13,10 @@ export {
   historyReasons,
 } from "./history.mjs";
 export { validateDeployment } from "./config.mjs";
+export {
+  planOpenRegistryDeployment,
+  inspectOpenRegistryDeployment,
+} from "./open-deployment.mjs";
 export { createIndexingAdapters } from "./adapters.mjs";
 export {
   collectDeploymentEvidence,

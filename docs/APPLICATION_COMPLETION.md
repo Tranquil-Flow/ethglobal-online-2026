@@ -4,6 +4,9 @@ Authority: continuation `hackathon-app-02/GOAL.md`, from preserved buyer anchor 
 
 ## Current disposition
 
+**Successor 03: end-to-end work remains incomplete.** Native configuration/admission and public deployment preparation are being exercised locally; no new model/physical/checking/financial/public qualification is authorized or claimed. The preserved application-only milestone below is historical. Current successor results belong in the adjacent `END-TO-END-HANDOFF.json`, not the predecessor packet.
+
+
 **Application-only implementation verified at `8a6fee1`; final qualification is resolved by the exact-candidate `../APPLICATION-HANDOFF.json` packet. An absent or unsuccessful final packet is not local completion.** Do not infer release, selected-model execution or financial protection from these results.
 
 ## Canonical R1–R12 ledger
@@ -62,3 +65,16 @@ The R3 reconciliation then identified and closed a genuine managed-v2 configurat
 ### Frozen source evidence
 
 `closure02-*` at clean committed 8a6fee1 passed all five package checks/smokes, the complete 135-test composition suite, operations (24 plus 1 tests), and actual local v1/v2 Graph ingestion. `clean-setup-demo-02` passed setup and the finite two-provider demo from a fresh source export. There were no skipped/cancelled/failed tests in those TAP summaries. Non-TAP smoke commands have no invented test counts. The later documentation/handoff-only commit must pass all four required canonical commands before the final completion status can be declared.
+
+## Successor 03 — remaining end-to-end qualification
+
+`docs/qualification/CASE-REGISTRY.json` is the single logical case inventory for the enlarged goal. Its provider roles are unresolved placeholders, all real-world groups remain NOT_RUN, and no null command/resource ceiling is executable. A must bind and price concrete groups before a new grant. The original R1–R12 table above remains the implementation crosswalk; this section does not relabel its local evidence as physical/public qualification.
+
+- R1/R3/R8: native readiness previously occurred before occupied-port/private-state preflight, and provider A could be contacted before provider B's grant failed. `native-start-admission-red` reproduced two failures; lazy async runtime construction plus all-grants-first admission repaired them. Added private-lock and positive model-shaped HTTP controls; no model executed.
+- R1/R3/R10: `plan-native`/`init-native` now construct private pinned native configuration without manual profile-digest copying, an operative grant or a credential. Whole-catalog/permission/expiry/target-safety controls and missing-grant startup are exercised through the normal operator CLI. `native-import-red` retained the missing CLI path.
+- R1/R5: additive native metadata v2 can state raw-logit greedy/lowest-ID/nonfinite rejection without falsely declaring quantization. V1 fixture Profile ID is unchanged; the legacy candidate protocol refuses raw v2 metadata. This represents policy only, not empirical conformance of any producer.
+- R3/R8/R9/R10: offline app/TLS deployment planning, public-pin export, certificate/key/name/time checks and reused real-TLS acceptance are exercised. No listener or runtime contact during planning; certificate-chain/public endpoint qualification stays false.
+- R6/R11: explicit RegistryV2 offline planning and deployed receipt/code inspection use the existing compiler/EVM stack. Real local planned calldata, complete immutable substitution, finalized receipt/runtime checks, reorg/unknown/pending cases, altered frozen plans, safe RPC deadlines and bounded file reads are tested. Legacy Registry and RegistryV2 template hashes are unchanged. The timed-out worker return was treated as partial source, reviewed and rerun by the integrator; additional review failures remain retained.
+- R2/R4/R7/R12: native membership authority and physical attribution remain owner-scoped; old bond remains retired. No accepted financial interface was invented or activated, and no signature/history event can unlock funds.
+
+Current public metadata read: A06 remains source-only/full-programme-blocked; C full-verify-05 provides scoped fixtures/historical/prepared/blocked results; D full-programme-review-02 records no operative grant. The historical A stdio application adapter exists and used development mode; it is not a ready v3 gateway packet. The owned `producer-profile-discriminator` accepted A's public artifact as the shared Profile DTO and rejected treating it as an operator/grant packet. That is a format check, not an assertion that no producer exists. A must admit the specific serving binding/mode and exact codec/termination semantics. C/A/D must supply the accepted checking/financial contracts; deployment/native owners must supply operator identities, targets and authority.

@@ -370,6 +370,18 @@ async function prepare(options, { start = false } = {}) {
   preflightApplication({ config: x.config, bindings });
   return { ...x, bindings };
 }
+export async function getApplicationPublicPins({ configFile, providerId }) {
+  const x = await prepare({ configFile });
+  const validated = preflightApplication({
+    config: x.config,
+    bindings: x.bindings,
+  });
+  const entry = validated.entries.find(
+    (e) => e.config.providerId === providerId,
+  );
+  if (!entry) fail("UNKNOWN_PROVIDER");
+  return structuredClone(entry.pins);
+}
 export async function doctorApplication(options) {
   const x = await prepare(options);
   return {

@@ -119,4 +119,17 @@ npm run operator -- doctor --config "$PRIVATE/new-native-app/application.json"
 
 All native grants are checked before any provider contact; each is rechecked before credential retrieval. Gateway readiness occurs only after application port/state-lock/identity preflight. This fixes the earlier managed-start ordering, whose synthetic-only preflight cases did not cover native readiness.
 
-Native metadata version `1` retains its quantized-greedy selector and exact profile bytes. Additive metadata version `2` declares `selector:{"algorithm":"raw-logit-greedy","tieBreak":"lowest-token-id","nonfinite":"reject"}` without a quantum/rounding field. Its manifest artifact is `mycelium-profile-manifest-v2`. Other metadata requirements remain explicit; live qualification is still owner-declared-unqualified. Raw metadata is refused by the legacy candidate protocol and must use the v3 binding. These fields represent an owner's declared policy; they neither prove the implementation follows it nor make A's historical experimental stdio adapter a production gateway.
+Native metadata version `1` retains its quantized-greedy selector and exact profile bytes. Legacy operator v1 remains restricted to metadata v1; use operator v2 for raw metadata v2. Additive metadata version `2` declares `selector:{"algorithm":"raw-logit-greedy","tieBreak":"lowest-token-id","nonfinite":"reject"}` without a quantum/rounding field. Its manifest artifact is `mycelium-profile-manifest-v2`. Other metadata requirements remain explicit; live qualification is still owner-declared-unqualified. Raw metadata is refused by the legacy candidate protocol and must use the v3 binding. These fields represent an owner's declared policy; they neither prove the implementation follows it nor make A's historical experimental stdio adapter a production gateway.
+
+## Offline public deployment preflight (successor 03)
+
+Use fixed, distinct application and loopback TLS ports for a deployment plan. `application.json.publicOrigin` must equal the TLS public origin, and TLS upstream must identify that application's exact loopback HTTP port.
+
+```sh
+npm run operator -- plan-deployment --config "$PRIVATE/new-native-app/application.json" --tls-config "$PRIVATE/tls.json"
+npm run operator -- public-pins --config "$PRIVATE/new-native-app/application.json" --provider alpha.example.eth
+```
+
+`public-pins` exports only the selected provider's public signing pins. Transfer them through the trusted operator channel into the client's pins file; receiving a key from an untrusted endpoint is not independent identity trust. No runtime credential or signing private key is exported. Both commands stay offline and open no service listener. The plan validates configuration coherence, certificate/key matching, hostname and validity dates, but reports `chainTrustVerified:false`, `grantVerified:false`, `publicDeployment:false` and `financialProtection:false`. Actual external certificate trust and service qualification remain separate. TLS start reuses the same material checks.
+
+The indexing package's `deploy:dry-run -- --open-plan <file>` prepares exact versioned registry calldata and complete constructor-specific runtime bytes; `inspectOpenRegistryDeployment` verifies an actual already-mined transaction through a separately authorized read-only provider. See `packages/indexing/README.md` for the closed plan and bounds. Neither operation is a broadcast tool or a financial verdict. Do not invent addresses, nonces, funding or hosted deployment identifiers to complete a public configuration. Configure hosted Graph/ENS through the existing accepted operator interfaces only after target approval, and retain generated manifest/code/receipt provenance.

@@ -1,4 +1,5 @@
-import solc from "solc";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 function source(name) {
@@ -9,7 +10,9 @@ function source(name) {
     ),
   };
 }
-export function compileAll() {
+
+function compileDetailed() {
+  const solc = require("solc");
   const input = {
     language: "Solidity",
     sources: {
@@ -22,7 +25,14 @@ export function compileAll() {
       optimizer: { enabled: true, runs: 200 },
       outputSelection: {
         "*": {
-          "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object"],
+          "": ["ast"],
+          "*": [
+            "abi",
+            "metadata",
+            "evm.bytecode.object",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.immutableReferences",
+          ],
         },
       },
     },
@@ -32,9 +42,23 @@ export function compileAll() {
   if (errors.length)
     throw new Error(errors.map((x) => x.formattedMessage).join("\n"));
   return {
-    Registry: output.contracts["Registry.sol"].Registry,
-    RegistryV2: output.contracts["RegistryV2.sol"].RegistryV2,
+    contracts: {
+      Registry: output.contracts["Registry.sol"].Registry,
+      RegistryV2: output.contracts["RegistryV2.sol"].RegistryV2,
+    },
+    sources: input.sources,
+    sourceOutputs: output.sources,
+    compilerVersion: solc.version(),
+    settings: input.settings,
   };
+}
+
+export function compileAllWithMetadata() {
+  return compileDetailed();
+}
+
+export function compileAll() {
+  return compileDetailed().contracts;
 }
 export function compile() {
   return compileAll().Registry;
@@ -55,7 +79,7 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   }
   console.log(
     "Solidity " +
-      solc.version() +
+      require("solc").version() +
       " compiled Registry and RegistryV2 (Shanghai target)",
   );
 }

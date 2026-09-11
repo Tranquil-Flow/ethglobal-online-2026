@@ -1,5 +1,6 @@
 import {
   initializeApplication,
+  getApplicationPublicPins,
   doctorApplication,
   startManagedApplication,
 } from "./application-operator.mjs";
@@ -12,7 +13,9 @@ import {
   writePrivateExclusive,
 } from "../operations/src/private-files.mjs";
 import { initializeNativeApplication } from "./application-native-import.mjs";
+import { planApplicationDeployment } from "./application-deployment.mjs";
 const fields = {
+  "--tls-config": "tlsConfigFile",
   "--data-dir": "dataDir",
   "--config": "configFile",
   "--artifact": "artifactPath",
@@ -63,6 +66,17 @@ try {
         }),
       ),
     );
+  } else if (action === "public-pins") {
+    requireOptions(options, ["configFile"]);
+    if (providerIds.length !== 1) fail();
+    console.log(
+      JSON.stringify(
+        await getApplicationPublicPins({
+          ...options,
+          providerId: providerIds[0],
+        }),
+      ),
+    );
   } else {
     if (providerIds.length) fail();
     if (action === "plan-native" || action === "init-native") {
@@ -75,6 +89,9 @@ try {
           }),
         ),
       );
+    } else if (action === "plan-deployment") {
+      requireOptions(options, ["configFile", "tlsConfigFile"]);
+      console.log(JSON.stringify(await planApplicationDeployment(options)));
     } else if (action === "doctor" || action === "start") {
       requireOptions(options, ["configFile"]);
       if (action === "doctor")
