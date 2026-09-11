@@ -5,6 +5,8 @@ import { resolve } from "node:path";
 import { chromium } from "playwright";
 import { createFixtureServer, fixtureProfile } from "../src/fixture.mjs";
 import { createViewerServer } from "../scripts/serve-viewer.mjs";
+import { developmentAuthorizer } from "../src/index.mjs";
+import { validate } from "../src/contracts.mjs";
 
 const evidenceDir = resolve(
   new URL("../../../artifacts/access", import.meta.url).pathname,
@@ -147,6 +149,189 @@ test("viewer real browser covers keyboard, mobile, states, XSS, streaming and ev
       2,
     ),
   );
+});
+
+test("viewer renders sponsor identifiers from frozen DTOs, not invented counts or live claims", async (t) => {
+  const fixture = createFixtureServer();
+  const { url: apiUrl } = await fixture.listen();
+  t.after(() => fixture.close());
+  // Controlled HTTP observations only; not ENS, Graph, Hedera or Sepolia evidence.
+  const viewer = createViewerServer({ apiUrl });
+  const { url } = await viewer.listen();
+  fixture.allowOrigin(url);
+  t.after(() => viewer.close());
+  const browser = await chromium.launch();
+  t.after(() => browser.close());
+  const page = await browser.newPage();
+  page.setDefaultTimeout(5000);
+  const tx = "0.0.123@1712345678.000000001";
+  const publicationTx = "0x" + "a".repeat(64);
+  let historyUrl = "https://graph.example/query/fixture/public-version";
+  let published = true;
+  const externalRequests = [];
+  page.on("request", (r) => {
+    if (
+      ![new URL(apiUrl).origin, new URL(url).origin].includes(
+        new URL(r.url()).origin,
+      )
+    )
+      externalRequests.push(r.url());
+  });
+  await page.route(apiUrl + "/v1/providers?**", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    if (body.providers[0]) {
+      body.providers[0].historyEndpoint = historyUrl;
+      validate("Provider", body.providers[0]);
+    }
+    await route.fulfill({ response, json: body });
+  });
+  await page.route(apiUrl + "/v1/jobs/*/events", async (route) => {
+    const response = await route.fetch();
+    const body = (await response.text()).replace(
+      /^data: (.+)$/gm,
+      (line, json) => {
+        const data = JSON.parse(json);
+        if (!data.payment) return line;
+        data.payment.transactionRef = tx;
+        validate("Job", data);
+        return "data: " + JSON.stringify(data);
+      },
+    );
+    await route.fulfill({ response, body });
+  });
+  await page.route(apiUrl + "/v1/jobs/*/publication", async (route) => {
+    const body = {
+      version: "1",
+      jobId: new URL(route.request().url()).pathname.split("/")[3],
+      consent: published,
+      events: published
+        ? [
+            {
+              kind: "receipt",
+              objectDigest: "sha256:" + "b".repeat(64),
+              status: "confirmed",
+              transactionRef: publicationTx,
+            },
+          ]
+        : [],
+    };
+    validate("PublicationState", body);
+    await route.fulfill({
+      json: body,
+      headers: { "access-control-allow-origin": url },
+    });
+  });
+  await page.exposeFunction("authorizeFixturePayment", developmentAuthorizer);
+  await page.goto(url);
+  await page.evaluate(async () => {
+    const { setPaymentAuthorizer } = await import("/app.js");
+    setPaymentAuthorizer((context) => window.authorizeFixturePayment(context));
+  });
+  await page.getByRole("button", { name: "Connect", exact: true }).click();
+  await page
+    .getByRole("status")
+    .filter({ hasText: /Connected/ })
+    .waitFor();
+  await page.getByLabel("Profile digest").fill(fixtureProfile.profileId);
+  await page.getByRole("button", { name: "Find provider" }).click();
+  await page
+    .getByRole("status")
+    .filter({ hasText: /Provider selected/ })
+    .waitFor();
+  assert.match(
+    await page.locator("#provider-ens-name").textContent(),
+    /safe\.eth/,
+  );
+  assert.equal(
+    await page.locator("#history-url a").getAttribute("href"),
+    historyUrl,
+  );
+  assert.equal(await page.locator("#history-url a").textContent(), historyUrl);
+  assert.match(
+    await page.locator("#history-receipts-seen").textContent(),
+    /Not supplied by server/,
+  );
+  await page
+    .getByLabel("Prompt", { exact: true })
+    .fill("synthetic sponsor rendering");
+  await page.getByRole("button", { name: "Get quote" }).click();
+  await page
+    .getByTestId("quote")
+    .filter({ hasText: /expires/ })
+    .waitFor();
+  await page.getByLabel(/authorize up to/).check();
+  await page.getByRole("button", { name: "Submit and stream" }).click();
+  await page
+    .getByRole("status")
+    .filter({ hasText: /Stream finished/ })
+    .waitFor();
+  assert.equal(await page.locator("#payment-tx a").textContent(), tx);
+  assert.equal(
+    await page.locator("#payment-tx a").getAttribute("href"),
+    "https://hashscan.org/testnet/transaction/" + encodeURIComponent(tx),
+  );
+  assert.match(
+    await page.locator("#payment-tx").textContent(),
+    /Facilitator: Not supplied by server/,
+  );
+  assert.equal(
+    await page.locator("#publication-tx a").getAttribute("href"),
+    "https://sepolia.etherscan.io/tx/" + publicationTx,
+  );
+  assert.equal(
+    await page.locator("#publication-tx a").textContent(),
+    publicationTx,
+  );
+  for (const anchor of await page.locator("a.sponsor-link").all()) {
+    assert.match(await anchor.getAttribute("rel"), /noreferrer/);
+    assert.equal(await anchor.getAttribute("referrerpolicy"), "no-referrer");
+  }
+  assert.match(await page.locator("#mode").textContent(), /DEVELOPMENT/);
+  assert.match(
+    await page.locator("#output-state").textContent(),
+    /not computation-checked/,
+  );
+  await mkdir(evidenceDir, { recursive: true });
+  await page.screenshot({
+    path: resolve(evidenceDir, "viewer-sponsor-identifiers.png"),
+    fullPage: true,
+  });
+  published = false;
+  await page.getByRole("button", { name: "Refresh publication state" }).click();
+  await page
+    .getByTestId("publication-state")
+    .filter({ hasText: /consent off/ })
+    .waitFor();
+  assert.equal(await page.locator("#publication-tx a").count(), 0);
+  for (const unsafe of [
+    "javascript:alert(1)",
+    "https://name:private-canary@graph.example/query",
+  ]) {
+    historyUrl = unsafe;
+    await page.getByRole("button", { name: "Find provider" }).click();
+    await page
+      .getByRole("status")
+      .filter({ hasText: /Provider selected/ })
+      .waitFor();
+    assert.equal(await page.locator("#history-url a").count(), 0);
+    assert.doesNotMatch(
+      await page.locator("#history-url").textContent(),
+      /private-canary|javascript:/,
+    );
+  }
+  await page.getByLabel("Provider name").fill("missing.eth");
+  await page.getByRole("button", { name: "Find provider" }).click();
+  await page
+    .getByRole("alert")
+    .filter({ hasText: /unavailable/ })
+    .waitFor();
+  assert.equal(await page.locator("#history-url a").count(), 0);
+  assert.doesNotMatch(
+    await page.locator("#provider-ens-name").textContent(),
+    /safe\.eth/,
+  );
+  assert.deepEqual(externalRequests, []);
 });
 
 test("viewer shows empty, loading, unavailable, error and cancelled paths accessibly", async (t) => {

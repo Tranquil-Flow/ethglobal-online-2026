@@ -132,6 +132,12 @@ dd {
 footer {
   padding-top: 0;
 }
+.sponsor-link {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  color: #476157;
+  overflow-wrap: anywhere;
+}
 @media (max-width: 650px) {
   main {
     grid-template-columns: 1fr;

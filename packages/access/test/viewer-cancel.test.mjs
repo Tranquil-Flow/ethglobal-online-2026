@@ -15,6 +15,13 @@ test("real browser cancellation preserves separate paid failure, expiry never re
   const browser = await chromium.launch();
   t.after(() => browser.close());
   const page = await browser.newPage();
+  const transactionRef = "0.0.123@1712345678.000000002";
+  await page.route(apiUrl + "/v1/jobs/*/cancel", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    body.payment.transactionRef = transactionRef;
+    await route.fulfill({ response, json: body });
+  });
   await page.goto(url);
   await page.getByRole("button", { name: "Connect", exact: true }).click();
   await page
@@ -51,6 +58,23 @@ test("real browser cancellation preserves separate paid failure, expiry never re
   assert.match(
     await page.getByTestId("payment-state").textContent(),
     /paid_but_failed/,
+  );
+  assert.equal(
+    await page.locator("#payment-tx a").textContent(),
+    transactionRef,
+  );
+  assert.equal(
+    await page.locator("#payment-tx a").getAttribute("href"),
+    "https://hashscan.org/testnet/transaction/" +
+      encodeURIComponent(transactionRef),
+  );
+  assert.match(
+    await page.locator("#payment-tx").textContent(),
+    /Facilitator: Not supplied by server/,
+  );
+  assert.match(
+    await page.locator("#history-receipts-seen").textContent(),
+    /Not supplied by server/,
   );
   await page.screenshot({
     path: resolve("../../artifacts/access/viewer-cancelled.png"),

@@ -48,8 +48,8 @@
         <div data-testid="provider-state" id="provider-state">
           No provider selected
         </div>
+        <p id="provider-ens-name">Provider ENS name: Not supplied by server</p>
         <p id="profile-info"></p>
-        <p id="history"></p>
       </section>
       <section aria-labelledby="request-title">
         <h2 id="request-title">3 · Inspect & authorize</h2>
@@ -93,6 +93,10 @@
         <p class="hint">
           Publication requires separate opt-in before quoting. No wallet keys
           are held here. Live payment requires a user-controlled authorizer.
+        </p>
+        <p id="payment-tx">
+          Transaction: Not supplied by server · Facilitator: Not supplied by
+          server
         </p>
         <button id="submit">Submit and stream</button>
         <button id="cancel">Cancel</button>
@@ -150,6 +154,12 @@
             Not published — consent off
           </dd>
         </dl>
+        <p id="publication-tx">
+          Publication transaction: Not supplied by server
+        </p>
+        <p id="history"></p>
+        <p id="history-url">Graph query URL: Not supplied by server</p>
+        <p id="history-receipts-seen">Receipts seen: Not supplied by server</p>
         <pre data-testid="answer" id="answer" aria-label="Answer"></pre>
         <button id="resume">Resume / refresh retained job</button>
         <button id="check-receipt">Verify receipt integrity</button>

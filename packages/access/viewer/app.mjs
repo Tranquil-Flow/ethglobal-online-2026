@@ -93,8 +93,48 @@ function clientFor(id, capability) {
         },
   });
 }
+// These links expose only server-supplied public identifiers on an explicit click.
+// No prefetch, HTML interpretation, credential-bearing URL or inferred receipt count.
+const notSupplied = "Not supplied by server";
+function sponsorLink(parent, label, href) {
+  const link = document.createElement("a");
+  link.className = "sponsor-link";
+  link.textContent = label;
+  link.href = href;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.referrerPolicy = "no-referrer";
+  parent.append(link);
+}
+function graphLink(value) {
+  text("history-url", "Graph query URL: ");
+  if (!value) return $("history-url").append(notSupplied);
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.username || url.password)
+      throw new Error("UNSAFE_URL");
+    sponsorLink($("history-url"), value, url.href);
+  } catch {
+    $("history-url").append("Unavailable — unsafe URL");
+  }
+}
+function transaction(id, prefix, value, kind) {
+  const parent = typeof id === "string" ? $(id) : id;
+  parent.textContent = prefix;
+  if (!value) return parent.append(notSupplied);
+  const href =
+    kind === "hedera" && /^0\.0\.\d+[@-]\d+[.-]\d{1,9}$/.test(value)
+      ? "https://hashscan.org/testnet/transaction/" + encodeURIComponent(value)
+      : kind === "sepolia" && /^0x[0-9a-fA-F]{64}$/.test(value)
+        ? "https://sepolia.etherscan.io/tx/" + value
+        : undefined;
+  if (href) sponsorLink(parent, value, href);
+  else parent.append(document.createTextNode(value));
+}
 async function publication() {
   if (!job || config.fixture) return;
+  // Clear first: a failed refresh must not preserve an old transaction claim.
+  transaction("publication-tx", "Publication transaction: ", undefined);
   const p = await (jobClient ?? client).getPublication(job.jobId);
   text(
     "publication-state",
@@ -104,6 +144,16 @@ async function publication() {
         : "Consent given; no publishable result yet"
       : "Not published — consent off",
   );
+  const events = p.consent ? p.events.filter((e) => e.transactionRef) : [];
+  if (events.length) {
+    text("publication-tx", "Publication transactions: ");
+    for (const [i, event] of events.entries()) {
+      if (i) $("publication-tx").append(" · ");
+      const item = document.createElement("span");
+      transaction(item, event.kind + ": ", event.transactionRef, "sepolia");
+      $("publication-tx").append(item);
+    }
+  }
 }
 const need = () => {
   if (!client?.capability) throw new AccessError("Connect explicitly first");
@@ -168,6 +218,10 @@ $("find").onclick = () =>
     if (busy) throw new AccessError("JOB_IN_PROGRESS");
     status("Finding provider…");
     provider = undefined;
+    text("provider-ens-name", "Provider ENS name: " + notSupplied);
+    text("provider-state", "No provider selected");
+    text("history", "History: not loaded");
+    graphLink();
     const revision = formRevision,
       name = $("provider").value,
       profileId = $("profile").value;
@@ -189,6 +243,8 @@ $("find").onclick = () =>
     provider = p;
     client = selectedClient;
     text("provider-state", p.name);
+    text("provider-ens-name", "Provider ENS name: " + p.providerId);
+    graphLink(p.historyEndpoint);
     text("profile-info", profile.model + " · " + p.mode);
     const h = await client.getHistory(p.providerId);
     text(
@@ -392,6 +448,7 @@ $("submit").onclick = () =>
           : "Not published — consent off",
       );
       text("answer", "");
+      transaction("publication-tx", "Publication transaction: ", undefined);
       renderJob(job);
       if (!terminalJob(job) && !(await streamRetainedJob())) return;
       await publication();
@@ -534,6 +591,13 @@ function renderJob(j) {
       ? "Non-monetary — no settlement or refund claim"
       : (j.payment?.status || "unknown") + " · " + j.mode,
   );
+  transaction(
+    "payment-tx",
+    "Transaction: ",
+    j.payment?.transactionRef,
+    "hedera",
+  );
+  $("payment-tx").append(" · Facilitator: " + notSupplied);
 }
 $("cancel").onclick = () =>
   action(async () => {
