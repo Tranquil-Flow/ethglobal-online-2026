@@ -1,0 +1,74 @@
+{
+  "status": "component-gates-passed-public-gate-pending",
+  "codeRevision": "b53126d57b6dc7e32cc78af1b05887d38ab21711",
+  "testedToCommittedCodeBytesEqual": true,
+  "commands": [
+    {
+      "id": "step5-access-check",
+      "command": "npm --prefix packages/access run check",
+      "exitCode": 0,
+      "logSha256": "d9d6ddac078c6ee69dc7bb4519022b27314bcbc5ac6175d9e3e3f199d8986907",
+      "summaryLines": [
+        "# tests 33",
+        "# suites 0",
+        "# pass 33",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 22131.412083"
+      ]
+    },
+    {
+      "id": "step5-access-smoke",
+      "command": "npm --prefix packages/access run smoke",
+      "exitCode": 0,
+      "logSha256": "eeca67ba131301e23b433a0eb8ccd0ec215bfe4d3d883453c7b1e0370c02c07b",
+      "summaryLines": [
+        "# tests 3",
+        "# suites 0",
+        "# pass 3",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 10516.154583",
+        "# tests 1",
+        "# suites 0",
+        "# pass 1",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 1365.33375",
+        "# tests 4",
+        "# suites 0",
+        "# pass 4",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 9615.833125"
+      ]
+    },
+    {
+      "id": "step5-indexing-check",
+      "command": "npm --prefix packages/indexing run check",
+      "exitCode": 0,
+      "logSha256": "2d38e18e928ed619e94ab8b5e59f58d2df36afe0f1e592c077798816a1dc0a47",
+      "summaryLines": [
+        "# tests 44",
+        "# suites 0",
+        "# pass 44",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 58709.730083"
+      ]
+    },
+    {
+      "id": "step5-indexing-smoke",
+      "command": "npm --prefix packages/indexing run smoke",
+      "exitCode": 0,
+      "logSha256": "29bdf17431b22ee939a844c682ddcd77c12c7c5545538a38f67527d529c3215d",
+      "summaryLines": []
+    }
+  ],
+  "scope": "Local component behavior only; no public journey is claimed by these gates"
+}
