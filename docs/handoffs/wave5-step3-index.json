@@ -1,0 +1,60 @@
+{
+  "status": "passed",
+  "codeRevision": "231deba03180bb167e26062cf34a37d2d82444ee",
+  "scope": "Test fixture correction only; production indexing bytes unchanged",
+  "defect": "HTTP fixture regenerated timestamps under an unchanged block hash. Boundary-crossing delay reproduces unavailable-vs-fresh RED. Snapshot captured once fixes the oracle while preserving every assertion and production provenance guard.",
+  "commands": [
+    {
+      "id": "step3-index-clock-red",
+      "command": "node --test --test-name-pattern=real Graph HTTP transport packages/indexing/test/history.test.mjs",
+      "exitCode": 1,
+      "logSha256": "5a19a329d40d39b944749f775a9a08aec5c5ec6246d119f45dc06db3b9ae9f84",
+      "summaryLines": [
+        "# tests 1",
+        "# suites 0",
+        "# pass 0",
+        "# fail 1",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 1377.504166"
+      ]
+    },
+    {
+      "id": "step3-index-clock-green",
+      "command": "node --test packages/indexing/test/history.test.mjs",
+      "exitCode": 0,
+      "logSha256": "77a433d227bd55a6004bac865219431f909aeaf3a1967833411144871a3fd9b0",
+      "summaryLines": [
+        "# tests 8",
+        "# suites 0",
+        "# pass 8",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 2212.3065"
+      ]
+    },
+    {
+      "id": "step3-index-check",
+      "command": "npm --prefix packages/indexing run check",
+      "exitCode": 0,
+      "logSha256": "a01e26b5ab3fb571138af044b901a9fa2d8193b7785c53f5c6853344c95eeffe",
+      "summaryLines": [
+        "# tests 42",
+        "# suites 0",
+        "# pass 42",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 62114.288292"
+      ]
+    },
+    {
+      "id": "step3-index-smoke",
+      "command": "npm --prefix packages/indexing run smoke",
+      "exitCode": 0,
+      "logSha256": "29bdf17431b22ee939a844c682ddcd77c12c7c5545538a38f67527d529c3215d",
+      "summaryLines": []
+    }
+  ]
+}

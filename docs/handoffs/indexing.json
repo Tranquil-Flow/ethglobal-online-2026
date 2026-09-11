@@ -1,20 +1,20 @@
 {
   "lane": "indexing",
   "status": "local_ready",
-  "codeRevision": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+  "codeRevision": "231deba03180bb167e26062cf34a37d2d82444ee",
   "reviewContract": "handoff-review-v1",
   "commands": [
     {
-      "id": "integration09-frozen-indexing-check",
+      "id": "step3-index-check",
       "command": "npm --prefix packages/indexing run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/integration09-component-evidence.json"
+      "evidence": "docs/handoffs/wave5-step3-index.json"
     },
     {
-      "id": "integration09-frozen-indexing-smoke",
+      "id": "step3-index-smoke",
       "command": "npm --prefix packages/indexing run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/integration09-component-evidence.json"
+      "evidence": "docs/handoffs/wave5-step3-index.json"
     }
   ],
   "acceptanceCases": [
@@ -22,60 +22,60 @@
       "id": "local-evm-events",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-indexing-check",
-        "integration09-frozen-indexing-smoke"
+        "step3-index-check",
+        "step3-index-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step3-index.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "publisher-auth-replay",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-indexing-check",
-        "integration09-frozen-indexing-smoke"
+        "step3-index-check",
+        "step3-index-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step3-index.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "mapping-build-tests",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-indexing-check",
-        "integration09-frozen-indexing-smoke"
+        "step3-index-check",
+        "step3-index-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step3-index.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "metadata-provenance",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-indexing-check",
-        "integration09-frozen-indexing-smoke"
+        "step3-index-check",
+        "step3-index-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step3-index.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "query-freshness",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-indexing-check",
-        "integration09-frozen-indexing-smoke"
+        "step3-index-check",
+        "step3-index-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step3-index.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "privacy-mode",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-indexing-check",
-        "integration09-frozen-indexing-smoke"
+        "step3-index-check",
+        "step3-index-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step3-index.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     }
   ],
@@ -129,7 +129,7 @@
     "platform": "darwin",
     "arch": "arm64"
   },
-  "documentationRevisionNote": "Current component evidence binds implementation commit 59c5cb141f951d402e047e818920ef5eb24a6a3a. Historical evidence remains at integrationPriorHandoffCommit. Final whole-application/native/public disposition is in the adjacent NONVERIFICATION-INTEGRATION-HANDOFF.json; no selected checker or protected finance is inferred.",
+  "documentationRevisionNote": "Wave 5 prerequisite repair: 42 indexing tests plus package build/check/smoke passed on bytes equal to 231deba03180bb167e26062cf34a37d2d82444ee. Only one test fixture changed; production guard/source and historical receipts remain unchanged.",
   "verificationHistory": [
     {
       "codeRevision": "c59a71579aaa7d8cd131dfe4ae265aeaba4c8293",
@@ -492,6 +492,86 @@
           "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
         }
       ]
+    },
+    {
+      "codeRevision": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+      "commands": [
+        {
+          "id": "integration09-frozen-indexing-check",
+          "command": "npm --prefix packages/indexing run check",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/integration09-component-evidence.json"
+        },
+        {
+          "id": "integration09-frozen-indexing-smoke",
+          "command": "npm --prefix packages/indexing run smoke",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/integration09-component-evidence.json"
+        }
+      ],
+      "acceptanceCases": [
+        {
+          "id": "local-evm-events",
+          "status": "passed",
+          "commandIds": [
+            "integration09-frozen-indexing-check",
+            "integration09-frozen-indexing-smoke"
+          ],
+          "evidence": "docs/handoffs/integration09-component-evidence.json",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        },
+        {
+          "id": "publisher-auth-replay",
+          "status": "passed",
+          "commandIds": [
+            "integration09-frozen-indexing-check",
+            "integration09-frozen-indexing-smoke"
+          ],
+          "evidence": "docs/handoffs/integration09-component-evidence.json",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        },
+        {
+          "id": "mapping-build-tests",
+          "status": "passed",
+          "commandIds": [
+            "integration09-frozen-indexing-check",
+            "integration09-frozen-indexing-smoke"
+          ],
+          "evidence": "docs/handoffs/integration09-component-evidence.json",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        },
+        {
+          "id": "metadata-provenance",
+          "status": "passed",
+          "commandIds": [
+            "integration09-frozen-indexing-check",
+            "integration09-frozen-indexing-smoke"
+          ],
+          "evidence": "docs/handoffs/integration09-component-evidence.json",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        },
+        {
+          "id": "query-freshness",
+          "status": "passed",
+          "commandIds": [
+            "integration09-frozen-indexing-check",
+            "integration09-frozen-indexing-smoke"
+          ],
+          "evidence": "docs/handoffs/integration09-component-evidence.json",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        },
+        {
+          "id": "privacy-mode",
+          "status": "passed",
+          "commandIds": [
+            "integration09-frozen-indexing-check",
+            "integration09-frozen-indexing-smoke"
+          ],
+          "evidence": "docs/handoffs/integration09-component-evidence.json",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        }
+      ],
+      "documentationRevisionNote": "Current component evidence binds implementation commit 59c5cb141f951d402e047e818920ef5eb24a6a3a. Historical evidence remains at integrationPriorHandoffCommit. Final whole-application/native/public disposition is in the adjacent NONVERIFICATION-INTEGRATION-HANDOFF.json; no selected checker or protected finance is inferred."
     }
   ],
   "integrationPriorHandoffCommit": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
