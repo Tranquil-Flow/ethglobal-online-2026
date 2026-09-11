@@ -1,6 +1,6 @@
 # WAVE 5 — Live demo qualification, distributed Mycelium, public HTTPS, live Hedera paid call
 
-**Status:** Steps 1–4 passed; Steps 5–6 remain. Per-step evidence: `docs/handoffs/wave5-step1.json`, `wave5-step2.json`, `wave5-step3.json`, `wave5-step4.json`.
+**Status:** Steps 1–4 passed. Step 5 paused at the real Funnel enablement/login gate; Step 6 remains unrun. See `docs/handoffs/wave5-blocker.json`. Per-step evidence: `docs/handoffs/wave5-step1.json`, `wave5-step2.json`, `wave5-step3.json`, `wave5-step4.json`.
 **Branch baseline:** `b08b27a42bb37795056ccc61a911873211eeb7f3`
 **Workbench:** `workbench/` in this directory
 **Inheritance:** continues the application-owned runtime (OWNED10) and managed integration (INTEGRATION09) work. Leaves A/B/C research untouched.

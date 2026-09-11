@@ -1,0 +1,49 @@
+{
+  "step": 5,
+  "status": "BLOCKED_OWNER_ACTION",
+  "observedAt": "2026-09-11T21:24:44.819044+00:00",
+  "completedSteps": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "lastQualifiedCodeRevision": "42d432d9091e851dee1703f9cce039046ac9902b",
+  "lastQualifiedCompositionTests": 231,
+  "preflight": {
+    "tls": "passed",
+    "tailscaleBackend": "Running",
+    "serveConfiguration": {},
+    "funnelConfiguration": {},
+    "featureText": "Funnel is not enabled on your tailnet.\nTo enable, visit:",
+    "featureShouldWait": true,
+    "featureComplete": false,
+    "enablementPage": "Tailscale sign-in wall observed in the Hermes preview"
+  },
+  "requiredOwnerAction": "Sign in to the node-specific Tailscale Funnel enablement page opened in the preview and enable Funnel for m4pro. Keep the agreed temporary window/no-cloud-deploy scope. Then ask to resume.",
+  "privateEnablementURLRecord": ".private/wave5/step5-funnel-feature-preflight.log",
+  "remainingImplementation": [
+    "Step 5 public journey collector and receipt-indexed selection evidence remain unimplemented/unqualified behind this preflight gate",
+    "Step 6 private wallet adapter, offline tests, funded-wallet/facilitator preflight and actual one-tinybar consuming paid call remain unimplemented/unrun"
+  ],
+  "evidence": {
+    "featureReceipt": ".private/wave5/step5-funnel-feature-preflight.json",
+    "featureLogSha256": "719fd25adc62cd83e42922aba86c87bbb92add4c8a616a2590f271ae0ccb7e78",
+    "cleanupReceipt": ".private/wave5/step5-blocked-controller-check.json"
+  },
+  "cleanup": {
+    "ownedLaptopListenerAbsent": true,
+    "modelInstallationRetained": true,
+    "separateLoopbackOllamaUntouched": true,
+    "tailscaleServingUnchanged": true,
+    "publicWindowOpened": false
+  },
+  "boundaries": {
+    "verificationMethodSelected": false,
+    "hederaPayerDebitTinybars": "0",
+    "pushOrPR": false,
+    "submission": false,
+    "cloudDeployment": false,
+    "researchSessionsModified": false
+  }
+}
