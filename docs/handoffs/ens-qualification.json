@@ -120,5 +120,13 @@
   },
   "sourceRevision": "97a57293f3b4279d94b571e678edb53ce62638f4",
   "testOnlyEndpoint": "The .invalid HTTPS identity is deliberately not a publicly reachable inference service; qualification HTTP runs only on loopback.",
-  "registrationRecovery": "Original register transaction exceeded its RPC wait timeout. A proposed fee replacement was rejected before signing because the original had mined. No replacement was created. Canonical reverse parent link was then set before subname resolution."
+  "registrationRecovery": "Original register transaction exceeded its RPC wait timeout. A proposed fee replacement was rejected before signing because the original had mined. No replacement was created. Canonical reverse parent link was then set before subname resolution.",
+  "wave5": [
+    {
+      "step": 3,
+      "evidence": "docs/handoffs/ens-wave5-qualification.json",
+      "sourceRevision": "f5cf38d8c0bd4d30acb9850a7fea4e1ed3a9629a",
+      "independentReadbackLogSha256": "3017901cf55f61e3c4991d499d54448092ea1a0c5a37bc0b542bfd70b64b126f"
+    }
+  ]
 }

@@ -1,0 +1,88 @@
+{
+  "step": 3,
+  "status": "PASSED",
+  "codeRevision": "f5cf38d8c0bd4d30acb9850a7fea4e1ed3a9629a",
+  "acceptance": {
+    "oneOperatorTwoRealProviders": {
+      "status": "passed",
+      "privateOperator": "step3-two-node-0WSsQ8/app/operator.json"
+    },
+    "bothVisibleToSelection": {
+      "status": "passed",
+      "providers": [
+        "service.ethonline-node-a.eth",
+        "service.ethonline-node-b.eth"
+      ]
+    },
+    "bothLiveENSv2Sepolia": {
+      "status": "passed",
+      "evidence": "docs/handoffs/ens-wave5-qualification.json",
+      "transactions": 16,
+      "minimumIndependentConfirmations": 33
+    },
+    "allExistingTestsGreen": {
+      "status": "passed",
+      "command": "npm run check:all",
+      "exitCode": 0,
+      "composition": "225/225; no skips",
+      "logSha256": "f1a8e0aa4af5e3e921b7057cd38f1d0a9c65df00adac5e127ab16379872037fe"
+    }
+  },
+  "jobs": [
+    {
+      "providerId": "service.ethonline-node-a.eth",
+      "providerKey": "sha256:75a861f53853102fc6b809fb4606718ed4649d09c14d2b7e3fe0bb2f10ce06bd",
+      "receiptDigest": "sha256:145a30625e6f4cdfd2ed2db406f774de3e97c1ab9576c5718a6e56771a5c1fff",
+      "profileId": "sha256:5cee0d1e0897eceaa7fc4eac6dbaec12881741a6ebce249fa92fcc1e110c1950",
+      "outputBytes": 74,
+      "executionStatus": "succeeded"
+    },
+    {
+      "providerId": "service.ethonline-node-b.eth",
+      "providerKey": "sha256:0e3784695993340af930772b748c5bb6e9d1a0eceaadf1788c962535555b3667",
+      "receiptDigest": "sha256:c285b2bde88d243234e674f8f76e2aac232dfd3af242c0cc9b7e5ce5ff6b35ec",
+      "profileId": "sha256:0542943d1358a7b3c2762e7b9ae9a8ab38c2d2a735d7e5e913e9c00c8568a079",
+      "outputBytes": 85,
+      "executionStatus": "succeeded"
+    }
+  ],
+  "graph": [
+    {
+      "providerId": "service.ethonline-node-a.eth",
+      "queryUrl": "https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.2.0-unchecked-20260911",
+      "history": {
+        "version": "1",
+        "providerId": "service.ethonline-node-a.eth",
+        "observations": [],
+        "freshness": "fresh",
+        "chainId": "11155111",
+        "observedAt": "2026-09-11T19:54:09.116Z",
+        "mode": "live",
+        "indexedBlock": 11684072,
+        "indexedBlockHash": "0xea7ca11ff134665060dd37c4b516d073116fa5caa4643ac642e128c3eab8a904"
+      }
+    },
+    {
+      "providerId": "service.ethonline-node-b.eth",
+      "queryUrl": "https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.2.0-unchecked-20260911",
+      "history": {
+        "version": "1",
+        "providerId": "service.ethonline-node-b.eth",
+        "observations": [],
+        "freshness": "fresh",
+        "chainId": "11155111",
+        "observedAt": "2026-09-11T19:54:18.980Z",
+        "mode": "live",
+        "indexedBlock": 11684072,
+        "indexedBlockHash": "0xea7ca11ff134665060dd37c4b516d073116fa5caa4643ac642e128c3eab8a904"
+      }
+    }
+  ],
+  "sepoliaActualFeeWei": "3266949035376855",
+  "retainedFailures": [
+    "step3-check-all.json: startup timeout and two-provider timeout; affected tests passed after owned orphan cleanup",
+    "step3-check-all-after-cleanup.json: all 225 composition tests passed, outer gate failed on index fixture timestamp drift",
+    "step3-index-clock-red.json: deterministic cross-second reproduction; production validator unchanged by fix"
+  ],
+  "claimBoundary": "Two local live Ollama provider profiles on one physical host plus live hosted Graph and ENS registration. Not distributed execution, inference verification, public service qualification, or Hedera paid consumption."
+}

@@ -1,6 +1,6 @@
 # WAVE 5 — Live demo qualification, distributed Mycelium, public HTTPS, live Hedera paid call
 
-**Status:** Planned, not yet executed.
+**Status:** Steps 1–3 passed; Steps 4–6 remain. Per-step evidence: `docs/handoffs/wave5-step1.json`, `wave5-step2.json`, `wave5-step3.json`.
 **Branch baseline:** `b08b27a42bb37795056ccc61a911873211eeb7f3`
 **Workbench:** `workbench/` in this directory
 **Inheritance:** continues the application-owned runtime (OWNED10) and managed integration (INTEGRATION09) work. Leaves A/B/C research untouched.
@@ -104,6 +104,8 @@ Run the application with two providers, both pointing at this host's Ollama on d
 
 ### Step 4 — Move provider B to `evis-macbook-pro-1`
 
+**Owner clarification:** Keep both ENS names on the shared HTTPS application gateway and route B’s model work through an owned SSH tunnel to the laptop. Bind the node identifier through existing Profile artifacts referenced by the signed receipt; do not add a forbidden `runtime` receipt field.
+
 **Pre-flight (already confirmed 2026-09-11):**
 - Tailscale ping: `evis-macbook-pro-1` reachable.
 - SSH: `ssh mycelium-laptop echo ok` works (key `~/.ssh/id_ed25519_m4pro_to_laptop` configured).
@@ -123,6 +125,8 @@ Run the application with two providers, both pointing at this host's Ollama on d
 - Receipts from A and B have different providerKeys, different node identifiers in their `runtime` claim.
 
 ### Step 5 — Public HTTPS journey
+
+**Owner clarification:** A single temporary Tailscale public qualification window is authorized, restoring prior serving configuration afterward. No cloud deployment, push, PR or submission is authorized.
 
 Start a Tailscale Funnel/Serve on this host, then run the full end-to-end against the public origin.
 

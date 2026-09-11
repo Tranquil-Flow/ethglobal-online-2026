@@ -1,0 +1,166 @@
+{
+  "status": "passed",
+  "chainId": 11155111,
+  "observedAt": "2026-09-11T19:11:38.747Z",
+  "confirmedAtLeast": 12,
+  "owner": "0xb4f0b42fbB0fCAf62703475039A7E26EF6dD5EaE",
+  "records": {
+    "providers": [
+      {
+        "version": "1",
+        "providerId": "service.ethonline-node-a.eth",
+        "name": "service.ethonline-node-a.eth",
+        "endpoint": "https://m4pro.tail53d0d3.ts.net",
+        "profileIds": [
+          "sha256:5cee0d1e0897eceaa7fc4eac6dbaec12881741a6ebce249fa92fcc1e110c1950"
+        ],
+        "paymentNetwork": "non-economic",
+        "paymentAsset": "none",
+        "paymentReceiver": "service.ethonline-node-a.eth",
+        "mode": "live",
+        "source": {
+          "chainId": "11155111",
+          "blockNumber": 11683876,
+          "blockHash": "0x14630597293afbb6db05017de296d72be733d8afe11d9f36aad4ece39d0ae144",
+          "resolvedAt": "2026-09-11T19:11:28.499Z",
+          "expiresAt": "2026-09-11T19:11:58.499Z"
+        },
+        "historyEndpoint": "https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.2.0-unchecked-20260911"
+      },
+      {
+        "version": "1",
+        "providerId": "service.ethonline-node-b.eth",
+        "name": "service.ethonline-node-b.eth",
+        "endpoint": "https://m4pro.tail53d0d3.ts.net",
+        "profileIds": [
+          "sha256:0542943d1358a7b3c2762e7b9ae9a8ab38c2d2a735d7e5e913e9c00c8568a079"
+        ],
+        "paymentNetwork": "non-economic",
+        "paymentAsset": "none",
+        "paymentReceiver": "service.ethonline-node-b.eth",
+        "mode": "live",
+        "source": {
+          "chainId": "11155111",
+          "blockNumber": 11683876,
+          "blockHash": "0x14630597293afbb6db05017de296d72be733d8afe11d9f36aad4ece39d0ae144",
+          "resolvedAt": "2026-09-11T19:11:33.105Z",
+          "expiresAt": "2026-09-11T19:12:03.105Z"
+        },
+        "historyEndpoint": "https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.2.0-unchecked-20260911"
+      }
+    ],
+    "errors": []
+  },
+  "proxies": {
+    "service.ethonline-node-a.eth": {
+      "resolver": "0x04f8aD7e0B7cfBb02EE7D756c09c36951604FdB1",
+      "registry": "0x8F827dFD6d87B3E51C9A6E5a8BC0E1E8FaF1AaF7"
+    },
+    "service.ethonline-node-b.eth": {
+      "resolver": "0xC3dDa786E6eDA5cAe63Cd3246b5704558E76eb01",
+      "registry": "0x5493e8c13096cdAC71AbA03a7De02B86f8C081f0"
+    }
+  },
+  "transactions": {
+    "ethonline-node-a-resolver": {
+      "transactionHash": "0xaeb6961c778842a955602c7d7ca2cd9c495c03e2914f7af481dcfe558e78aa02",
+      "blockNumber": 11683837,
+      "blockHash": "0xf656692550918785ce3e4184d48f3cb4c78767fcbd4d334e5ab6d68c5b24bc47",
+      "actualFeeWei": "693179743318614"
+    },
+    "ethonline-node-a-registry": {
+      "transactionHash": "0x200da11aa9333cd50d517bf63251d7aa27025b09814d9bcc329710e80acf8193",
+      "blockNumber": 11683838,
+      "blockHash": "0xf8e8bedbab3e378875c809282b45346c7b282a0e620c9e20cd71c82efb4d08ae",
+      "actualFeeWei": "202401782375364"
+    },
+    "ethonline-node-a-mint-test-usdc": {
+      "transactionHash": "0x3a51d537e02df507af986aced5ec6149426cb8050d7d61fcfe204ad2292eb2db",
+      "blockNumber": 11683839,
+      "blockHash": "0xb0393ab770343371861255b3fb7ed89ee00860dddefb67699f0525e0e9d95752",
+      "actualFeeWei": "44247661873116"
+    },
+    "ethonline-node-a-approve-test-usdc": {
+      "transactionHash": "0xc30b62184847efb9b9fa4e1da754ddbccfdb77df7c37f1a46d45e667ced014c4",
+      "blockNumber": 11683841,
+      "blockHash": "0x6b6556d2ea9e812011d6b434862d2aba67ede16c60f3219279d6e3fbc8ddbb85",
+      "actualFeeWei": "35962743175212"
+    },
+    "ethonline-node-a-commit": {
+      "transactionHash": "0xc4bc23fcfd0cbe5c8d7c9d1787ca19811d99da6176c2d1577cd7670752b8112d",
+      "blockNumber": 11683842,
+      "blockHash": "0xe426195d2f24b66f18bd0e62e999723657792a746a364befebaf2a6d34d80401",
+      "actualFeeWei": "59390843208476"
+    },
+    "ethonline-node-a-register": {
+      "transactionHash": "0xc685a5205d00429024830f6ecfd14e7de5b835bc087a42e20f7bec9124519f2f",
+      "blockNumber": 11683849,
+      "blockHash": "0xfa6177b18fb9417fffc1d5c967cbb7c045ae7f7017119e5dc2025e359b5e9440",
+      "actualFeeWei": "305223531487482"
+    },
+    "ethonline-node-a-canonical-parent": {
+      "transactionHash": "0x89cf958f49a9a28eced3e2f19308754adb5b8e0ccb251e4e0608d6bd126f1516",
+      "blockNumber": 11683850,
+      "blockHash": "0x1ac7e16d39f351dd31e902190db0086d0c55f2c0dac8dc2d9ae3c3dc26b3e5e6",
+      "actualFeeWei": "97450505102414"
+    },
+    "ethonline-node-a-service": {
+      "transactionHash": "0xf6bfa52ec6157c0ad3dbf1b4dbc47e6bb5451ade9296e5c80d32034f751da00b",
+      "blockNumber": 11683851,
+      "blockHash": "0xf1e4ff18e20d24a9a0fc343c8b415fffc61348d900695557487620b711a97cc7",
+      "actualFeeWei": "169114858668712"
+    },
+    "ethonline-node-b-resolver": {
+      "transactionHash": "0xae81cde4dc9ba491d92c2dcec463ed3bcd10b73280abe0441f7ad96179b147b2",
+      "blockNumber": 11683852,
+      "blockHash": "0xff6176dea189953343019dde4f5fec1309cd18d1d258780fb2c43a5542d26172",
+      "actualFeeWei": "724553339946448"
+    },
+    "ethonline-node-b-registry": {
+      "transactionHash": "0xc12373de5b217c6d4c7dc4629cf3359e013da7eac546990a544d21c9b20031cf",
+      "blockNumber": 11683853,
+      "blockHash": "0x352374344ea33a4ea5fa8f844aa53f98325c09fdb639cd5d42db2ba9eab7ccad",
+      "actualFeeWei": "215632681703348"
+    },
+    "ethonline-node-b-mint-test-usdc": {
+      "transactionHash": "0xe982c2206a6f9ac5444e06eb352e4a5611a5e63d6e78c0ae74de1de04e99d440",
+      "blockNumber": 11683854,
+      "blockHash": "0xa62fad603b6e0f89e1786eacf1d13ab80637b7020a599840ae04f3028c303b79",
+      "actualFeeWei": "40043024740524"
+    },
+    "ethonline-node-b-approve-test-usdc": {
+      "transactionHash": "0xf95e6128f560eaafbc70ee80c8d52015f590b8d468a31d985e9edd6d42e86f65",
+      "blockNumber": 11683855,
+      "blockHash": "0x3c2481a2877052346d51cef96d5148cfda49e5e0d1843beda901dab164f6136e",
+      "actualFeeWei": "60925806939504"
+    },
+    "ethonline-node-b-commit": {
+      "transactionHash": "0x8adf0255830334d680fd4349ced00e39bd72c3db7a41d4cfd0d05fca71571059",
+      "blockNumber": 11683856,
+      "blockHash": "0x04f5f738a5269c71361832f33c807e587869c4fbe987367aaf9fcd388814b5d0",
+      "actualFeeWei": "56454026238047"
+    },
+    "ethonline-node-b-register": {
+      "transactionHash": "0x70da895a12a8cd6680cfeaaad148a577f86026697a52e3ff50eb6a40d981ebeb",
+      "blockNumber": 11683863,
+      "blockHash": "0x42f62f300040d7bdfd11352f283f468372009cca0c96d2eafc6ed4b33cad058f",
+      "actualFeeWei": "276959673207555"
+    },
+    "ethonline-node-b-canonical-parent": {
+      "transactionHash": "0x8d27d674d7c614c57fcc22127ddd05c9e4d376f5ef2129255e6b7645a5879d18",
+      "blockNumber": 11683864,
+      "blockHash": "0x8cd41db748efa37914994a62ee2b7edbf3f79f02f4d4112ab9f9cb599c2d0672",
+      "actualFeeWei": "104848113470074"
+    },
+    "ethonline-node-b-service": {
+      "transactionHash": "0xd9b6ca187f310452a8bcff4d06b6d293f5ae9d9a58c33369f8a424a88544b9dc",
+      "blockNumber": 11683865,
+      "blockHash": "0xfac8f1cabd4bca4103b68a4cb4b096ad7bedf13e10159979fc6b285fd0e0df43",
+      "actualFeeWei": "180560699921965"
+    }
+  },
+  "maximumReservedFeeWei": "4070394384449512",
+  "actualFeeWei": "3266949035376855",
+  "inferenceVerified": false,
+  "publicServiceQualified": false
+}
