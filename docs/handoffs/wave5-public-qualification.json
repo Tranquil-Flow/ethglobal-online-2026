@@ -1,0 +1,143 @@
+{
+  "status": "passed",
+  "observedAt": "2026-09-11T22:41:44.962Z",
+  "sourceRevision": "e5bbdfd4fb9e6006f2faafd0a451289f405fd48c",
+  "inferenceVerified": false,
+  "receiptIntegrityVerified": true,
+  "tls": {
+    "authorized": true,
+    "publicAddress": "176.58.90.46",
+    "hostname": "m4pro.tail53d0d3.ts.net",
+    "fingerprint256": "24:85:D9:4E:E1:49:41:05:8A:B2:B2:79:F8:79:BE:EA:3A:80:A6:46:E6:8A:A1:79:9D:C7:CC:21:9C:C1:13:68",
+    "issuer": {
+      "C": "US",
+      "O": "Let's Encrypt",
+      "CN": "YE2"
+    },
+    "protocol": "TLSv1.3"
+  },
+  "ens": [
+    {
+      "version": "1",
+      "providerId": "service.ethonline-node-a.eth",
+      "name": "service.ethonline-node-a.eth",
+      "endpoint": "https://m4pro.tail53d0d3.ts.net",
+      "profileIds": [
+        "sha256:7b75d6bced105f508c91d760429d054fd2faaea6b07e97b2003c75db904ec330"
+      ],
+      "paymentNetwork": "non-economic",
+      "paymentAsset": "none",
+      "paymentReceiver": "service.ethonline-node-a.eth",
+      "mode": "live",
+      "source": {
+        "chainId": "11155111",
+        "blockNumber": 11684899,
+        "blockHash": "0xae1a5a948bc22629543e0de3b6c5fa15e6d87fb09c0c7d798ea00a99627c288f",
+        "resolvedAt": "2026-09-11T22:41:27.748Z",
+        "expiresAt": "2026-09-11T22:41:57.748Z"
+      },
+      "historyEndpoint": "https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.2.0-unchecked-20260911"
+    },
+    {
+      "version": "1",
+      "providerId": "service.ethonline-node-b.eth",
+      "name": "service.ethonline-node-b.eth",
+      "endpoint": "https://m4pro.tail53d0d3.ts.net",
+      "profileIds": [
+        "sha256:c12e0960de8f644d43729cfae5bdfc9f632390ec576fbb351243c54f23d36a68"
+      ],
+      "paymentNetwork": "non-economic",
+      "paymentAsset": "none",
+      "paymentReceiver": "service.ethonline-node-b.eth",
+      "mode": "live",
+      "source": {
+        "chainId": "11155111",
+        "blockNumber": 11684899,
+        "blockHash": "0xae1a5a948bc22629543e0de3b6c5fa15e6d87fb09c0c7d798ea00a99627c288f",
+        "resolvedAt": "2026-09-11T22:41:32.350Z",
+        "expiresAt": "2026-09-11T22:42:02.350Z"
+      },
+      "historyEndpoint": "https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.2.0-unchecked-20260911"
+    }
+  ],
+  "receiptDigest": "sha256:56f52c2000fd8ac20fe277b6689f314b640b870d2640a0f07694d57062ec59f0",
+  "publicationTransaction": "0x1cfc5c76992e4034ddc6130e9282d43137362c5cb51a84e21eb377241773f482",
+  "receiptRegistry": "0x9fd43D7b41c82406A776b700702EEA3813ac426A",
+  "graph": {
+    "queryUrl": "https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.2.0-unchecked-20260911",
+    "deploymentId": "QmZo3C1H3DgDnRB54SVrMWGUvtmS5ajzeADxAyD62TX2gZ",
+    "observedReceipt": {
+      "receiptDigest": "sha256:56f52c2000fd8ac20fe277b6689f314b640b870d2640a0f07694d57062ec59f0",
+      "providerId": "service.ethonline-node-b.eth",
+      "transactionHash": "0x1cfc5c76992e4034ddc6130e9282d43137362c5cb51a84e21eb377241773f482",
+      "blockNumber": 11684790,
+      "blockHash": "0x1f32546bdc1104a8b45a5f52574f8ac96497ce81f9f112d293e857ab5f242ee5",
+      "logIndex": 87,
+      "mode": "live",
+      "chainId": "11155111",
+      "contractAddress": "0x9fd43d7b41c82406a776b700702eea3813ac426a",
+      "publisher": "0xb4f0b42fbb0fcaf62703475039a7e26ef6dd5eae"
+    }
+  },
+  "history": {
+    "version": "1",
+    "providerId": "service.ethonline-node-b.eth",
+    "observations": [],
+    "freshness": "fresh",
+    "chainId": "11155111",
+    "observedAt": "2026-09-11T22:41:38.191Z",
+    "mode": "live",
+    "indexedBlock": 11684888,
+    "indexedBlockHash": "0x7dcc0f4c2c7ae131296322f00a82956cf0c29fb63a73b3db7dfd32eafa0e53c4"
+  },
+  "selection": {
+    "selected": {
+      "version": "1",
+      "providerId": "service.ethonline-node-b.eth",
+      "name": "service.ethonline-node-b.eth",
+      "endpoint": "https://m4pro.tail53d0d3.ts.net",
+      "profileIds": [
+        "sha256:c12e0960de8f644d43729cfae5bdfc9f632390ec576fbb351243c54f23d36a68"
+      ],
+      "paymentNetwork": "non-economic",
+      "paymentAsset": "none",
+      "paymentReceiver": "service.ethonline-node-b.eth",
+      "mode": "live",
+      "source": {
+        "chainId": "11155111",
+        "blockNumber": 11684899,
+        "blockHash": "0xae1a5a948bc22629543e0de3b6c5fa15e6d87fb09c0c7d798ea00a99627c288f",
+        "resolvedAt": "2026-09-11T22:41:32.350Z",
+        "expiresAt": "2026-09-11T22:42:02.350Z"
+      },
+      "historyEndpoint": "https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.2.0-unchecked-20260911"
+    },
+    "reasons": [
+      {
+        "providerId": "service.ethonline-node-a.eth",
+        "eligible": false,
+        "codes": [
+          "HISTORY_UNKNOWN",
+          "PROFILE_UNSUPPORTED",
+          "QUOTE_REQUIRED"
+        ]
+      },
+      {
+        "providerId": "service.ethonline-node-b.eth",
+        "eligible": true,
+        "codes": [
+          "INDEXED_RECEIPT_OBSERVED_NOT_PROOF",
+          "HISTORY_UNKNOWN",
+          "ELIGIBLE"
+        ]
+      }
+    ]
+  },
+  "hedera": {
+    "historical": true,
+    "transactionId": "0.0.7162784@1788862682.819285020",
+    "result": "SUCCESS",
+    "amountTinybars": "1",
+    "note": "Readback of pre-existing paid-call evidence; Wave 5 new paid call is Step 6, not claimed here"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "step": 5,
+  "status": "PASSED",
+  "rootGateCodeRevision": "353fe3e0aec87adc11ff97b316b3bb09907db5e9",
+  "publicRuntimeSourceRevision": "e5bbdfd4fb9e6006f2faafd0a451289f405fd48c",
+  "acceptance": {
+    "publicJourney": "passed; genuine public Funnel address and trusted TLS, ENS and model output, real publication and Graph-indexed receipt",
+    "externalRevalidation": "artifacts/closeout/external-revalidation.json",
+    "inferenceVerified": false,
+    "historyFreshness": "fresh",
+    "fourSponsorArtifacts": "Real ENS, receipt-registry transaction and Graph query; historical Hedera transfer independently read back, explicitly not the new Step 6 payment",
+    "checkAll": "exit 0; 237/237 composition tests; no skips"
+  },
+  "publicationTransaction": "0x1cfc5c76992e4034ddc6130e9282d43137362c5cb51a84e21eb377241773f482",
+  "receiptDigest": "sha256:56f52c2000fd8ac20fe277b6689f314b640b870d2640a0f07694d57062ec59f0",
+  "publicEvidence": "docs/handoffs/wave5-public-qualification.json",
+  "externalArtifactSha256": "d2681cda1eeacbd91320efb2a426acf8a1d98ffcd840e9024719932b41bd1b63",
+  "rootLogSha256": "4805dcfb70df82daa40231fb3f42f1b173f5b6186a722ffd532d9dec3ab80734",
+  "verificationScope": "Live public journey passed before window closure. Final root gate exercises local/physical checks and public preflight-only discovery; it does not pretend to re-open the closed public window. Later changes are local test setup/capture/Graph-startup repairs, not the served model/publication logic.",
+  "cleanup": {
+    "closedAt": "2026-09-11T23:09:06.841Z",
+    "servingRestored": true,
+    "errors": []
+  },
+  "retainedFailures": [
+    "Stale provider snapshot after confirmation wait: harness now re-resolves before selection; same retained job/transaction revalidated without new publication",
+    "100ms cleanup test included HTTP setup: actual session is now established before the same 100ms cleanup test; explicit authenticated DELETE and policy-rejection checks retained",
+    "Browser response capture now reads the actual JSON when the response arrives",
+    "Local Graph database-pool startup recovery is one bounded owned-process restart, with real readiness still required"
+  ],
+  "remaining": "Step 6 private wallet/bridge tests and live one-tinybar consumption remain. An additional bounded public window was requested but no response has been received; no additional exposure is authorized yet."
+}
