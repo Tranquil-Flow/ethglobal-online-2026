@@ -298,9 +298,12 @@ test(
         publishConsent: false,
       });
       const quote = await client.createQuote(next, { signal: t.signal });
+      const nextListing = await client.listProviders(m.providerIds, {
+        signal: t.signal,
+      });
       const decision = await client.selectProviders(
         {
-          providers: listed.providers,
+          providers: nextListing.providers,
           quotes: [quote],
           profileId: next.profileId,
           maxAmountBaseUnits: "0",
