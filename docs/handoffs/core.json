@@ -1,20 +1,20 @@
 {
   "lane": "core",
   "status": "local_ready",
-  "codeRevision": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+  "codeRevision": "692c4799b49f0dc949d3281e2629c7cff0951a43",
   "reviewContract": "handoff-review-v1",
   "commands": [
     {
-      "id": "integration09-frozen-core-check",
+      "id": "owned10-core-check",
       "command": "npm --prefix packages/core run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/integration09-component-evidence.json"
+      "evidence": "docs/handoffs/owned10-component-evidence.json"
     },
     {
-      "id": "integration09-frozen-core-smoke",
+      "id": "owned10-core-smoke",
       "command": "npm --prefix packages/core run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/integration09-component-evidence.json"
+      "evidence": "docs/handoffs/owned10-component-evidence.json"
     }
   ],
   "acceptanceCases": [
@@ -22,61 +22,61 @@
       "id": "http-lifecycle",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-core-check",
-        "integration09-frozen-core-smoke"
+        "owned10-core-check",
+        "owned10-core-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
-      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+      "evidence": "docs/handoffs/owned10-component-evidence.json",
+      "note": "Current core check/smoke passed on application-owned native source; no model or public-native qualification inferred."
     },
     {
       "id": "restart-idempotency",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-core-check",
-        "integration09-frozen-core-smoke"
+        "owned10-core-check",
+        "owned10-core-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
-      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+      "evidence": "docs/handoffs/owned10-component-evidence.json",
+      "note": "Current core check/smoke passed on application-owned native source; no model or public-native qualification inferred."
     },
     {
       "id": "private-capabilities",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-core-check",
-        "integration09-frozen-core-smoke"
+        "owned10-core-check",
+        "owned10-core-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
-      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+      "evidence": "docs/handoffs/owned10-component-evidence.json",
+      "note": "Current core check/smoke passed on application-owned native source; no model or public-native qualification inferred."
     },
     {
       "id": "receipt-integrity-export",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-core-check",
-        "integration09-frozen-core-smoke"
+        "owned10-core-check",
+        "owned10-core-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
-      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+      "evidence": "docs/handoffs/owned10-component-evidence.json",
+      "note": "Current core check/smoke passed on application-owned native source; no model or public-native qualification inferred."
     },
     {
       "id": "payment-outbox-failures",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-core-check",
-        "integration09-frozen-core-smoke"
+        "owned10-core-check",
+        "owned10-core-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
-      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+      "evidence": "docs/handoffs/owned10-component-evidence.json",
+      "note": "Current core check/smoke passed on application-owned native source; no model or public-native qualification inferred."
     },
     {
       "id": "assessment-unavailable",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-core-check",
-        "integration09-frozen-core-smoke"
+        "owned10-core-check",
+        "owned10-core-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
-      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+      "evidence": "docs/handoffs/owned10-component-evidence.json",
+      "note": "Current core check/smoke passed on application-owned native source; no model or public-native qualification inferred."
     }
   ],
   "externalGates": [
@@ -89,7 +89,7 @@
     {
       "id": "mycelium-execution",
       "status": "blocked",
-      "reason": "Goal C implements local clean-room adapter/profile/replay machinery. Current upstream native token/config/completion contract and real metadata/route authority remain required; no physical model execution.",
+      "reason": "Application-owned native lifecycle is implemented and model-free exercised. Fresh bounded model-run approval/execution and physical/public qualification remain pending; Session A is no longer an operational dependency.",
       "evidence": "docs/MYCELIUM-GOAL-C-HANDOFF.md"
     },
     {
@@ -118,7 +118,7 @@
     "platform": "darwin",
     "arch": "arm64"
   },
-  "documentationRevisionNote": "Current component evidence binds implementation commit 59c5cb141f951d402e047e818920ef5eb24a6a3a. Historical evidence remains at integrationPriorHandoffCommit. Final whole-application/native/public disposition is in the adjacent NONVERIFICATION-INTEGRATION-HANDOFF.json; no selected checker or protected finance is inferred.",
+  "documentationRevisionNote": "Owned native source 692c4799b49f0dc949d3281e2629c7cff0951a43 has current core/codec evidence. Exact whole-app gates and real-model approval remain separate.",
   "verificationHistory": [
     {
       "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
@@ -475,5 +475,6 @@
   ],
   "foundationPriorCodeRevision": "5697576298491efbd1a2285def50d49baad27ebd",
   "integrationPriorHandoffCommit": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
-  "integrationPriorCodeRevision": "e1960b77b448bb050b2eb431255e9343975bfe8b"
+  "integrationPriorCodeRevision": "e1960b77b448bb050b2eb431255e9343975bfe8b",
+  "ownedNativePriorHandoffCommit": "692c4799b49f0dc949d3281e2629c7cff0951a43"
 }

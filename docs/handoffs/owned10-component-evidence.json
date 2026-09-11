@@ -1,0 +1,64 @@
+{
+  "schema": "mycelium.owned-native.component-evidence.v1",
+  "codeRevision": "692c4799b49f0dc949d3281e2629c7cff0951a43",
+  "modelLoads": 0,
+  "scope": "Core and Python codec/diagnostic gates; model qualification separately pending",
+  "commands": [
+    {
+      "id": "owned10-core-check",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/core",
+        "run",
+        "check"
+      ],
+      "head": "692c4799b49f0dc949d3281e2629c7cff0951a43",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "exitCode": 0,
+      "startedAt": "2026-09-11T15:52:55.385255+00:00",
+      "finishedAt": "2026-09-11T15:52:58.608518+00:00",
+      "sha256": "e8a007de7e03ee359ccec672f63d960037a3cad4e62b3f5eeaab739e74fef66e"
+    },
+    {
+      "id": "owned10-core-smoke",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/core",
+        "run",
+        "smoke"
+      ],
+      "head": "692c4799b49f0dc949d3281e2629c7cff0951a43",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "exitCode": 0,
+      "startedAt": "2026-09-11T15:52:58.670235+00:00",
+      "finishedAt": "2026-09-11T15:53:00.179920+00:00",
+      "sha256": "bc85065d1086b563afcec81e26a988d6abb0f99fe8628e19a3bfb2a908e6f2b4"
+    },
+    {
+      "id": "owned10-python-frozen",
+      "argv": [
+        "/usr/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "composition/native_runtime",
+        "-p",
+        "test_codec.py",
+        "-v"
+      ],
+      "head": "692c4799b49f0dc949d3281e2629c7cff0951a43",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "exitCode": 0,
+      "startedAt": "2026-09-11T15:53:00.239701+00:00",
+      "finishedAt": "2026-09-11T15:53:00.415288+00:00",
+      "sha256": "ed5d1aaf3b251ea1b9ab7299fd3562a27a3f07a139f99ca34fef55c2fe0a80b8"
+    }
+  ]
+}
