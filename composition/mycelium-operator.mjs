@@ -214,7 +214,7 @@ export function loadOperatorInputs(path) {
  * The callback is provided by trusted host code, never by this JSON document.
  * Approval must enforce the durable per-grant request/replay budget externally.
  */
-export async function createOperatorRuntimeBinding(
+export async function authorizeOperatorRuntime(
   input,
   { authorizeRuntimeAccess, credentialFor } = {},
 ) {
@@ -233,6 +233,13 @@ export async function createOperatorRuntimeBinding(
   )
     fail("RUNTIME_ACCESS_GRANT_REQUIRED");
   validateOperatorInputs(input); // Approval cannot extend an expired scope.
+  return { input, pins };
+}
+export async function createOperatorRuntimeBinding(input, access = {}) {
+  const approved = await authorizeOperatorRuntime(input, access);
+  input = approved.input;
+  const { pins } = approved;
+  const { credentialFor } = access;
   const gateway = async (g) => ({
     ...g,
     bearerToken: await credentialFor(g.credentialRef),

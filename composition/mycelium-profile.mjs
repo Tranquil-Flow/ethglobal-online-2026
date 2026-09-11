@@ -3,6 +3,7 @@ import { digestOf, validate } from "../packages/contracts/index.mjs";
 const SHA256 = /^sha256:[0-9a-f]{64}$/;
 const SOURCE_COMMIT = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/;
 const MANIFEST_ROLE = "mycelium-profile-manifest-v1";
+const MANIFEST_ROLE_V2 = "mycelium-profile-manifest-v2";
 const MAX_PROMPT_CHARACTERS = 32768;
 const MAX_PROMPT_UTF8_BYTES = 131072;
 const MAX_OUTPUT_TOKENS = 4096;
@@ -161,13 +162,18 @@ function validateMetadata(metadata) {
   exactKeys(metadata.runtime, RUNTIME_FIELDS);
   exactKeys(metadata.codec, CODEC_FIELDS);
   exactKeys(metadata.numerics, NUMERICS_FIELDS);
-  exactKeys(metadata.selector, SELECTOR_FIELDS);
+  exactKeys(
+    metadata.selector,
+    metadata.version === "2"
+      ? ["algorithm", "tieBreak", "nonfinite"]
+      : SELECTOR_FIELDS,
+  );
   exactKeys(metadata.limits, LIMIT_FIELDS);
   exactKeys(metadata.requestPolicy, REQUEST_POLICY_FIELDS);
   exactKeys(metadata.qualification, QUALIFICATION_FIELDS);
 
   if (
-    metadata.version !== "1" ||
+    !["1", "2"].includes(metadata.version) ||
     !["development", "live"].includes(metadata.mode)
   ) {
     throw failure(
@@ -204,7 +210,10 @@ function validateMetadata(metadata) {
     requireText(artifact.role);
     requireDigest(artifact.digest);
     requireText(artifact.uri, 2048);
-    if (artifact.role === MANIFEST_ROLE)
+    if (
+      artifact.role === MANIFEST_ROLE ||
+      (metadata.version === "2" && artifact.role === MANIFEST_ROLE_V2)
+    )
       throw failure(
         "RESERVED_ARTIFACT_ROLE",
         "Manifest artifact role is reserved",
@@ -214,7 +223,17 @@ function validateMetadata(metadata) {
     roles.add(artifact.role);
   }
 
-  if (
+  if (metadata.version === "2") {
+    if (
+      metadata.selector.algorithm !== "raw-logit-greedy" ||
+      metadata.selector.tieBreak !== "lowest-token-id" ||
+      metadata.selector.nonfinite !== "reject"
+    )
+      throw failure(
+        "UNSUPPORTED_SELECTOR",
+        "Raw greedy requires exact maximum, lowest token ID ties and nonfinite rejection",
+      );
+  } else if (
     metadata.selector.algorithm !== "quantized-greedy" ||
     metadata.selector.rounding !== "python-round-half-even" ||
     metadata.selector.tieBreak !== "lowest-token-id" ||
@@ -327,7 +346,7 @@ export function createMyceliumProfile(input) {
     artifacts: [
       ...metadata.artifacts,
       {
-        role: MANIFEST_ROLE,
+        role: metadata.version === "2" ? MANIFEST_ROLE_V2 : MANIFEST_ROLE,
         digest: manifestDigest,
         uri: `urn:${manifestDigest}`,
       },

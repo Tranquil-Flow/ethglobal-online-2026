@@ -22,6 +22,7 @@ import {
   loadOperatorInputs,
   validateOperatorInputs,
   createOperatorRuntimeBinding,
+  authorizeOperatorRuntime,
 } from "./mycelium-operator.mjs";
 import { fileRuntimeAccess } from "./operator-files.mjs";
 import { createMyceliumProfile } from "./mycelium-profile.mjs";
@@ -344,8 +345,18 @@ async function prepare(options, { start = false } = {}) {
     if (e.input) {
       const { createMyceliumProfile } = await import("./mycelium-profile.mjs");
       e.runtime.profiles = [createMyceliumProfile(e.input.metadata).profile];
-      if (start)
-        e.runtime = await createOperatorRuntimeBinding(e.input, e.access);
+      if (start) {
+        // Admit every configured grant without credentials/network first.
+        await authorizeOperatorRuntime(e.input, e.access);
+        // Startup's port/state-lock/identity checks precede gateway contact.
+        e.runtime = {
+          ...e.runtime,
+          async create(context) {
+            const live = await createOperatorRuntimeBinding(e.input, e.access);
+            return live.create(context);
+          },
+        };
+      }
     }
   const bindings = {
     ...(x.history ? { history: x.history } : {}),

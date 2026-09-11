@@ -11,6 +11,7 @@ import {
   readPrivateFile,
   writePrivateExclusive,
 } from "../operations/src/private-files.mjs";
+import { initializeNativeApplication } from "./application-native-import.mjs";
 const fields = {
   "--data-dir": "dataDir",
   "--config": "configFile",
@@ -64,7 +65,17 @@ try {
     );
   } else {
     if (providerIds.length) fail();
-    if (action === "doctor" || action === "start") {
+    if (action === "plan-native" || action === "init-native") {
+      requireOptions(options, ["configFile", "dataDir"]);
+      console.log(
+        JSON.stringify(
+          await initializeNativeApplication({
+            ...options,
+            dryRun: action === "plan-native",
+          }),
+        ),
+      );
+    } else if (action === "doctor" || action === "start") {
       requireOptions(options, ["configFile"]);
       if (action === "doctor")
         console.log(JSON.stringify(await doctorApplication(options)));

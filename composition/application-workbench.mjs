@@ -427,7 +427,7 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       mkdirSync(childDir, { recursive: true, mode: 0o700 });
       const child = createStore({ path: join(childDir, "runtime.sqlite") });
       stores.push(child);
-      const r = e.binding.runtime.create({
+      const r = await e.binding.runtime.create({
         store: child,
         providerPins: { [e.config.providerId]: e.pins },
         async loadEvidence(ref) {

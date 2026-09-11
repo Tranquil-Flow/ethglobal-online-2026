@@ -31,6 +31,12 @@ export async function createMyceliumRuntimeBinding({
 } = {}) {
   const v3 = protocol === REQUEST_GATEWAY_PROTOCOL_V3;
   if (
+    (profileMetadata?.version === "2" ||
+      profilePolicy?.metadata?.version === "2") &&
+    !v3
+  )
+    throw Error("UNSUPPORTED_METADATA_PROTOCOL");
+  if (
     !["live", "development"].includes(mode) ||
     (!v3 && protocol !== "workbench.mycelium_gateway_candidate.v1")
   )

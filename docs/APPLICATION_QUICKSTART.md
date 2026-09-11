@@ -98,3 +98,25 @@ The proxy enforces allowed host/origin, strips forwarded/spoofable headers, boun
 Publish records through the existing separately authorized ENS operator workflow: `ethonline.endpoint` is the application's origin; profiles match the configured offer; network/asset are `non-economic`/`none`; receiver is that provider ID; history points to the application's `/v1/providers/<encoded-provider-id>/history` gateway. Names must be valid ENS names supported by the existing resolver. The application checks resolved records against its configured offer and checks canonical provenance again at selection. Changed/missing/mismatched ENS records cannot redirect execution: they yield an explicit error rather than direct-discovery fallback.
 
 Omitting `discovery` retains direct configured discovery without ENS contact. With ENS enabled, authenticated `/v2/offers` and direct OpenAI access remain available independently, but an explicitly requested ENS selection does not fall back. The local `application-ens.test.mjs` uses official contract fixtures, changes a real record, proves rejection and verifies offline doctor after chain shutdown. Public ENS qualification remains separate.
+
+## Native configuration import (successor 03)
+
+Prepare a private plan beside the owner's existing native operator-input files. This is an application import format, not a replacement producer contract or a grant:
+
+```json
+{"schema":"mycelium.application.native-import.v1","providers":[{"inputFile":"alpha-input.json","aliases":["model"]},{"inputFile":"beta-input.json","aliases":["model"]}],"port":0}
+```
+
+`inputFile` is a relative regular owner-only file containing the existing closed `mycelium.workbench.operator.v1` or `.v2` input with exactly one provider. The plan also accepts the existing bounded `core` configuration and optional `publicOrigin`; other fields are rejected. Names/aliases, scopes and profile/key/runtime pins are validated before materialization. Primary-only operation uses operator v2 with no replay gateway and zero replay allowance.
+
+```sh
+npm run operator -- plan-native --config "$PRIVATE/import-plan.json" --data-dir "$PRIVATE/new-native-app"
+npm run operator -- init-native --config "$PRIVATE/import-plan.json" --data-dir "$PRIVATE/new-native-app"
+npm run operator -- doctor --config "$PRIVATE/new-native-app/application.json"
+```
+
+`plan-native` writes nothing. `init-native` reserves a new private target, generates separate application receipt identities, copies the exact validated input bytes and derives profiles/aliases/limits. It does **not** create a runtime grant, copy a credential, load a model, query a gateway or start a service. Existing destinations are never overwritten. Inspect the generated `operator.json` for each provider's expected grant and credential file paths; provision them privately only after the actual owner grants authority. No native seed/node identity is created by this command. Missing authority makes start fail before gateway contact or job-store creation.
+
+All native grants are checked before any provider contact; each is rechecked before credential retrieval. Gateway readiness occurs only after application port/state-lock/identity preflight. This fixes the earlier managed-start ordering, whose synthetic-only preflight cases did not cover native readiness.
+
+Native metadata version `1` retains its quantized-greedy selector and exact profile bytes. Additive metadata version `2` declares `selector:{"algorithm":"raw-logit-greedy","tieBreak":"lowest-token-id","nonfinite":"reject"}` without a quantum/rounding field. Its manifest artifact is `mycelium-profile-manifest-v2`. Other metadata requirements remain explicit; live qualification is still owner-declared-unqualified. Raw metadata is refused by the legacy candidate protocol and must use the v3 binding. These fields represent an owner's declared policy; they neither prove the implementation follows it nor make A's historical experimental stdio adapter a production gateway.
