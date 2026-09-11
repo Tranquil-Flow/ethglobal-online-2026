@@ -1,21 +1,21 @@
 {
   "lane": "access",
   "status": "local_ready",
-  "codeRevision": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+  "codeRevision": "17a0d5721c0bc5a27c2febfa804a5efe4d34a9c3",
   "historicalLaneCodeRevision": "4e15d0c4abc501a3cdb235c787352bba7023ba01",
   "integrationEvidence": "docs/handoffs/foundation-verification.json",
   "commands": [
     {
-      "id": "integration09-frozen-access-check",
+      "id": "step1-access-check",
       "command": "npm --prefix packages/access run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/integration09-component-evidence.json"
+      "evidence": "docs/handoffs/wave5-step1.json"
     },
     {
-      "id": "integration09-frozen-access-smoke",
+      "id": "step1-access-smoke",
       "command": "npm --prefix packages/access run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/integration09-component-evidence.json"
+      "evidence": "docs/handoffs/wave5-step1.json"
     }
   ],
   "acceptance": [
@@ -143,7 +143,7 @@
   ],
   "contractRequests": [],
   "evidencePrivacy": "Foundation handoff uses synthetic/local conformance evidence only; no bearer, wallet secret, Graph credential, private live prompt, or payment proof is included in tracked metadata.",
-  "documentationRevisionNote": "Current component evidence binds implementation commit 59c5cb141f951d402e047e818920ef5eb24a6a3a. Historical evidence remains at integrationPriorHandoffCommit. Final whole-application/native/public disposition is in the adjacent NONVERIFICATION-INTEGRATION-HANDOFF.json; no selected checker or protected finance is inferred.",
+  "documentationRevisionNote": "Wave 5 Step 1 binds 17a0d5721c0bc5a27c2febfa804a5efe4d34a9c3. Source diff equality checked against observed access check/smoke; historical integration evidence preserved in verificationHistory. Root gate passed in wave5-step1.json; only evidence/docs changed after the tested source commit.",
   "reviewTag": {
     "name": "handoff-review-v1",
     "revision": "74ae66f6bd895b13a9ce9de083357c0fcb88e564",
@@ -154,67 +154,67 @@
       "id": "sdk-http-errors",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-access-check",
-        "integration09-frozen-access-smoke"
+        "step1-access-check",
+        "step1-access-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step1.json",
       "details": "All HTTP methods; exact shared DTOs and envelopes; malformed JSON/DTOs; safe errors; bounded 429/network retries; AbortSignal/deadline;409 conflict; unsupported/expired quote; request/profile/budget binding.",
-      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+      "note": "Wave 5 full access check/smoke passed on bytes proven equal to the new source commit; live qualification remains separate."
     },
     {
       "id": "session-payment-consent",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-access-check",
-        "integration09-frozen-access-smoke"
+        "step1-access-check",
+        "step1-access-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step1.json",
       "details": "Explicit sessions; expiry/revocation no auto-renew or repay; default no spending; bounded consent; native x402 402 bytes; callback bearer/cookie/header isolation; rejected authorizer header injection; concurrency/replay/ambiguous-paid-outcome controls.",
-      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+      "note": "Wave 5 full access check/smoke passed on bytes proven equal to the new source commit; live qualification remains separate."
     },
     {
       "id": "sse-reconnect-cancel",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-access-check",
-        "integration09-frozen-access-smoke"
+        "step1-access-check",
+        "step1-access-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step1.json",
       "details": "Actual fetch SSE resume with Last-Event-ID; no duplicate deltas/paid resubmission; expired cursor409; stream disconnection not cancel; SDK/real-browser explicit cancellation; paid_but_failed remains separate; bounded output.",
-      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+      "note": "Wave 5 full access check/smoke passed on bytes proven equal to the new source commit; live qualification remains separate."
     },
     {
       "id": "cli-mcp",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-access-check",
-        "integration09-frozen-access-smoke"
+        "step1-access-check",
+        "step1-access-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step1.json",
       "details": "CLI providers/select/profile/quote/submit/stream/inspect/cancel/receipt-integrity/assess/export/history/revoke; official MCP stdio connect/history/quote/select/submit/watch; host and caller authorization; no-quote refusal and stale Graph-derived history veto.",
-      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+      "note": "Wave 5 full access check/smoke passed on bytes proven equal to the new source commit; live qualification remains separate."
     },
     {
       "id": "browser-accessibility-xss",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-access-check",
-        "integration09-frozen-access-smoke"
+        "step1-access-check",
+        "step1-access-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step1.json",
       "details": "Actual Chromium desktop/mobile; Tab/Enter; loading/empty/error/unavailable/development/cancelled paths; accessible alerts/status; CSP/text-only XSS; no page errors/dialogs/horizontal overflow; separate states; consent invalidation; evidence download.",
-      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+      "note": "Wave 5 full access check/smoke passed on bytes proven equal to the new source commit; live qualification remains separate."
     },
     {
       "id": "privacy-export",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-access-check",
-        "integration09-frozen-access-smoke"
+        "step1-access-check",
+        "step1-access-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step1.json",
       "details": "Permission-restricted CLI files; memory-only browser capability; no bearer in URL/authorizer; no private normal SDK logs; no wallet/Graph secrets; hash/association/signature-validated private export/import; corruption/pin mismatch rejection; evidence deletion yields unavailable assessment; integrity is not execution verification.",
-      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+      "note": "Wave 5 full access check/smoke passed on bytes proven equal to the new source commit; live qualification remains separate."
     }
   ],
   "lateReview": {
@@ -615,6 +615,92 @@
           "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
         }
       ]
+    },
+    {
+      "codeRevision": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+      "commands": [
+        {
+          "id": "integration09-frozen-access-check",
+          "command": "npm --prefix packages/access run check",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/integration09-component-evidence.json"
+        },
+        {
+          "id": "integration09-frozen-access-smoke",
+          "command": "npm --prefix packages/access run smoke",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/integration09-component-evidence.json"
+        }
+      ],
+      "acceptanceCases": [
+        {
+          "id": "sdk-http-errors",
+          "status": "passed",
+          "commandIds": [
+            "integration09-frozen-access-check",
+            "integration09-frozen-access-smoke"
+          ],
+          "evidence": "docs/handoffs/integration09-component-evidence.json",
+          "details": "All HTTP methods; exact shared DTOs and envelopes; malformed JSON/DTOs; safe errors; bounded 429/network retries; AbortSignal/deadline;409 conflict; unsupported/expired quote; request/profile/budget binding.",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        },
+        {
+          "id": "session-payment-consent",
+          "status": "passed",
+          "commandIds": [
+            "integration09-frozen-access-check",
+            "integration09-frozen-access-smoke"
+          ],
+          "evidence": "docs/handoffs/integration09-component-evidence.json",
+          "details": "Explicit sessions; expiry/revocation no auto-renew or repay; default no spending; bounded consent; native x402 402 bytes; callback bearer/cookie/header isolation; rejected authorizer header injection; concurrency/replay/ambiguous-paid-outcome controls.",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        },
+        {
+          "id": "sse-reconnect-cancel",
+          "status": "passed",
+          "commandIds": [
+            "integration09-frozen-access-check",
+            "integration09-frozen-access-smoke"
+          ],
+          "evidence": "docs/handoffs/integration09-component-evidence.json",
+          "details": "Actual fetch SSE resume with Last-Event-ID; no duplicate deltas/paid resubmission; expired cursor409; stream disconnection not cancel; SDK/real-browser explicit cancellation; paid_but_failed remains separate; bounded output.",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        },
+        {
+          "id": "cli-mcp",
+          "status": "passed",
+          "commandIds": [
+            "integration09-frozen-access-check",
+            "integration09-frozen-access-smoke"
+          ],
+          "evidence": "docs/handoffs/integration09-component-evidence.json",
+          "details": "CLI providers/select/profile/quote/submit/stream/inspect/cancel/receipt-integrity/assess/export/history/revoke; official MCP stdio connect/history/quote/select/submit/watch; host and caller authorization; no-quote refusal and stale Graph-derived history veto.",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        },
+        {
+          "id": "browser-accessibility-xss",
+          "status": "passed",
+          "commandIds": [
+            "integration09-frozen-access-check",
+            "integration09-frozen-access-smoke"
+          ],
+          "evidence": "docs/handoffs/integration09-component-evidence.json",
+          "details": "Actual Chromium desktop/mobile; Tab/Enter; loading/empty/error/unavailable/development/cancelled paths; accessible alerts/status; CSP/text-only XSS; no page errors/dialogs/horizontal overflow; separate states; consent invalidation; evidence download.",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        },
+        {
+          "id": "privacy-export",
+          "status": "passed",
+          "commandIds": [
+            "integration09-frozen-access-check",
+            "integration09-frozen-access-smoke"
+          ],
+          "evidence": "docs/handoffs/integration09-component-evidence.json",
+          "details": "Permission-restricted CLI files; memory-only browser capability; no bearer in URL/authorizer; no private normal SDK logs; no wallet/Graph secrets; hash/association/signature-validated private export/import; corruption/pin mismatch rejection; evidence deletion yields unavailable assessment; integrity is not execution verification.",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        }
+      ],
+      "documentationRevisionNote": "Current component evidence binds implementation commit 59c5cb141f951d402e047e818920ef5eb24a6a3a. Historical evidence remains at integrationPriorHandoffCommit. Final whole-application/native/public disposition is in the adjacent NONVERIFICATION-INTEGRATION-HANDOFF.json; no selected checker or protected finance is inferred."
     }
   ],
   "foundationPriorCodeRevision": "5c76af329661fab1a2e237c2b9b328db49c4b131",

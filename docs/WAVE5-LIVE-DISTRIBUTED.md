@@ -45,6 +45,8 @@ Make the viewer display every sponsor-specific identifier the server already ret
 - `packages/access/viewer/style.css` — small style for `.sponsor-link` (monospace, dim).
 - `packages/access/test/viewer.test.mjs` and `viewer-cancel.test.mjs` — extend to assert the new fields render when the response carries them.
 
+**Owner clarification (2026-09-11):** The frozen Payment DTO does not supply a facilitator URL, and History does not supply a receipt count. Render “Not supplied by server” for those missing values; use `Provider.historyEndpoint` for the Graph URL and the existing fields for all other identifiers and links. No contract extension is authorized.
+
 **Acceptance:**
 - `npm --prefix packages/access run check` passes (syntax + existing tests).
 - New assertions in viewer tests pass.
