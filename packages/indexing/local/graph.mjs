@@ -5,6 +5,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import YAML from "yaml";
 import { keccak256 } from "ethers";
 import { startLocalEvm as localEvm } from "./evm.mjs";
+import { recoverInitialGraphIndex } from "./startup.mjs";
 import { createGraphClient } from "../src/index.mjs";
 import { validateManifest } from "../src/manifest.mjs";
 export async function startLocalGraph() {
@@ -232,13 +233,19 @@ export async function startLocalGraph() {
       "ingestion-deploy",
     );
     const client = createGraphClient({ endpoint, allowLocal: true });
-    const meta = await waitFor(async () => {
+    const readIndex = () => waitFor(async () => {
       const d = await client.query({
         query:
           "{ _meta { deployment hasIndexingErrors block { number hash timestamp } } }",
       });
       return d._meta?.block?.number >= 1 ? d._meta : null;
     }, "initial registry index");
+    const meta = await recoverInitialGraphIndex({
+      readIndex,
+      readLogs: () => run(["logs", names.graph], true),
+      record: text => writeFileSync(logs + id + "-startup-recovery.log", text),
+      restart: () => run(["restart", names.graph]),
+    });
     return {
       evm,
       endpoint,

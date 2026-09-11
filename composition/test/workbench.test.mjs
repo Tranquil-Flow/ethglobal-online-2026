@@ -328,11 +328,13 @@ for (const runtimeMode of ["simulation", "conformance"])
         try {
           const page = await browser.newPage();
           await page.goto(app.url);
-          const sessionResponse = page.waitForResponse(
-            (r) => r.url().endsWith("/v1/sessions") && r.status() === 201,
-          );
+          const sessionResponse = page
+            .waitForResponse(
+              (r) => r.url().endsWith("/v1/sessions") && r.status() === 201,
+            )
+            .then((r) => r.json());
           await page.locator("#connect").click();
-          const browserSession = await (await sessionResponse).json();
+          const browserSession = await sessionResponse;
           await page.locator("#provider").fill("beta.example.eth");
           await page.locator("#find").click();
           await page.waitForFunction(() =>
@@ -347,11 +349,13 @@ for (const runtimeMode of ["simulation", "conformance"])
             document.querySelector("#quote").textContent.includes("base units"),
           );
           await page.locator("#consent").check();
-          const submittedResponse = page.waitForResponse(
-            (r) => r.url().endsWith("/v1/jobs") && r.status() === 202,
-          );
+          const submittedResponse = page
+            .waitForResponse(
+              (r) => r.url().endsWith("/v1/jobs") && r.status() === 202,
+            )
+            .then((r) => r.json());
           await page.locator("#submit").click();
-          const browserJob = (await (await submittedResponse).json()).job;
+          const browserJob = (await submittedResponse).job;
           await page.waitForFunction(
             () =>
               document.querySelector("#job-state").textContent === "Completed",

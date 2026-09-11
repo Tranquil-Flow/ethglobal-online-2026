@@ -5,7 +5,10 @@ import { digestOf } from "../../packages/contracts/index.mjs";
 import { simulatorProfile as profile } from "../runtime.mjs";
 import { createGatewayTransport } from "../mycelium-gateway.mjs";
 import { createGatewayNativeSessionFactory } from "../mycelium-bridge.mjs";
-import { createNativeExecutionAdapter } from "../mycelium-native.mjs";
+import {
+  createNativeExecutionAdapter,
+  nativeConfigDigest,
+} from "../mycelium-native.mjs";
 import { startConformanceGateway } from "../conformance-gateway.mjs";
 
 test("native cleanup aborts the underlying authenticated DELETE", async (t) => {
@@ -20,7 +23,15 @@ test("native cleanup aborts the underlying authenticated DELETE", async (t) => {
     nativeProposal: true,
     timeoutMs: 5000,
     fetchImpl: async (url, options) => {
-      if (options.method !== "DELETE") return fetch(url, options);
+      if (options.method !== "DELETE") {
+        await delay(120);
+        return fetch(url, options);
+      }
+      assert.equal(
+        new Headers(options.headers).get("authorization") ===
+          "Bearer " + peer.bearerToken,
+        true,
+      );
       deleteSignal = options.signal;
       return new Promise((_, reject) =>
         options.signal.addEventListener(
@@ -40,13 +51,6 @@ test("native cleanup aborts the underlying authenticated DELETE", async (t) => {
     qualification: peer.binding,
     mode: "development",
   });
-  const executor = createNativeExecutionAdapter({
-    profile,
-    mode: "development",
-    validateRequest: () => {},
-    openSession,
-    timeoutMs: 100,
-  });
   const request = {
     version: "1",
     nonce: "e".repeat(64),
@@ -58,14 +62,53 @@ test("native cleanup aborts the underlying authenticated DELETE", async (t) => {
     sampling: "greedy",
     publishConsent: false,
   };
-  await assert.rejects(async () => {
-    for await (const event of executor.execute({
-      jobId: "cancel-test",
-      request,
-      profile,
-    }))
-      void event;
+  // Establish and read the actual conformance session before starting the
+  // 100 ms execution/cleanup budget. Deliberately slow HTTP setup is not the
+  // cancellation property under test, and must not mask the policy rejection.
+  const setupController = new AbortController();
+  t.after(() => setupController.abort());
+  const realSession = await openSession({
+    jobId: "cancel-test",
+    request,
+    requestHash: digestOf(request),
+    profileId,
+    configDigest: nativeConfigDigest(request),
+    signal: setupController.signal,
   });
+  const realEvents = realSession
+    .events({ signal: setupController.signal })
+    [Symbol.asyncIterator]();
+  const first = await realEvents.next();
+  assert.equal(first.value.type, "accepted");
+  assert.equal(first.value.executionKind, "policy_response");
+  const executor = createNativeExecutionAdapter({
+    profile,
+    mode: "development",
+    validateRequest: () => {},
+    timeoutMs: 100,
+    openSession: async () => ({
+      ...realSession,
+      async *events() {
+        try {
+          yield first.value;
+          for await (const event of realEvents) yield event;
+        } finally {
+          await realEvents.return?.();
+        }
+      },
+    }),
+  });
+  await assert.rejects(
+    async () => {
+      for await (const event of executor.execute({
+        jobId: "cancel-test",
+        request,
+        profile,
+      }))
+        void event;
+    },
+    (e) => e.code === "NON_MODEL_EXECUTION",
+  );
   await delay(20);
   assert.ok(deleteSignal, "DELETE attempted");
   assert.equal(

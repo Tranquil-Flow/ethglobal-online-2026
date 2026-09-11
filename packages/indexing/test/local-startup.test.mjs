@@ -1,0 +1,6 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { recoverInitialGraphIndex } from "../local/startup.mjs";
+const timeout=()=>Error("LOCAL_READINESS_TIMEOUT: initial registry index");
+test("one owned Graph restart recovers a diagnosed database-pool startup failure",async()=>{let calls=0,restarts=0,recorded=false;const meta={deployment:"test",block:{number:1}};const result=await recoverInitialGraphIndex({readIndex:async()=>{if(!calls++)throw timeout();return meta;},readLogs:()=>"Connection checkout timed out\nSubgraph failed to start: database unavailable",restart:async()=>{restarts++;},record:()=>{recorded=true;}});assert.equal(result,meta);assert.equal(calls,2);assert.equal(restarts,1);assert.equal(recorded,true);});
+test("unrelated failures and a failed recovery stay failures, never synthetic readiness",async()=>{let restarts=0;await assert.rejects(recoverInitialGraphIndex({readIndex:async()=>{throw timeout();},readLogs:()=>"unrelated mapping error",restart:async()=>{restarts++;},record:()=>{}}));assert.equal(restarts,0);let calls=0;await assert.rejects(recoverInitialGraphIndex({readIndex:async()=>{calls++;throw timeout();},readLogs:()=>"Subgraph failed to start: database unavailable",restart:async()=>{restarts++;},record:()=>{}}));assert.equal(calls,2);assert.equal(restarts,1);});
