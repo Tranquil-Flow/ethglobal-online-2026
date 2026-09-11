@@ -88,6 +88,60 @@ node --test conformance/executor-port.test.mjs composition/test/executor.test.mj
 request once and that its retained receipt stays labelled development. The application
 owns job persistence/reconnect; the adapter owns upstream cancellation and cleanup.
 
+## Wave 5 application-owned Ollama adapter
+
+`composition/mycelium-adapter-ollama.mjs` is a separate application-owned
+ExecutionPort, not a change to the Mycelium v3 gateway. Its factory is
+`createOllamaAdapter({endpoint, model, providerId, profileId, profileDigest, options})`.
+The profile digest arguments must both equal `digestOf(Profile)`. Only this wave's
+`qwen2.5:7b` and `qwen2.5:7b-64k` names are admitted. No model is downloaded, and
+construction makes no network call. Plain HTTP is loopback-only; remote serving
+uses an operator-owned SSH tunnel. HTTPS endpoints remain explicit operator inputs.
+
+The owner selected a **raw-prompt** profile: no Ollama chat template is applied,
+and the original prompt is preserved. This is not the older chat-template profile.
+The closed options, with defaults, are `maxPromptTokens:2048`,
+`maxOutputTokens:4096`, `contextTokens:8192`, `timeoutMs:60000`,
+`maxOutputBytes:65536`. Prompt UTF-8 bytes plus one reserved framing token must
+fit the prompt allowance; this conservative byte-BPE admission rule is not an
+exact reported token count. Context must cover both configured token allowances.
+The original request is snapshotted before asynchronous work. Greedy sampling,
+seed and requested output ceiling are explicitly sent, with `keep_alive:0`.
+
+The existing Profile `artifacts` array binds the full Ollama manifest digest
+(`ollama-manifest`), GGUF container digest (`ollama-model-gguf`),
+`digestOf(adapterSourceText)` (`ollama-adapter`), and `digestOf(optionsWithDefaults)`
+(`ollama-policy`). `tokenizerDigest` binds the GGUF container holding the tokenizer;
+`templateDigest` is `digestOf({raw:true})`; `runtimeRevision` is `ollama:<version>`.
+These are source and operator/server-reported identities, not independent model
+verification or attestation. The exact model tag/manifest is checked before and
+after each generation; the version is checked before dispatch.
+
+Ollama streams **NDJSON**, not SSE. The adapter emits actual text increments with
+`tokenIds:[]`, never synthetic token IDs. It bounds bytes/frames/deadline and checks
+Ollama's terminal `eval_count`/`prompt_eval_count` against the request/policy.
+Exactly one `completed` event is emitted only after clean EOF, a valid stop/length
+terminal, matching identity and no cancellation. Abort or iterator return tears
+down the fetch; errors never include prompt/output/provider bodies. Core still
+owns actual application receipt signing. The plan's unspecified `signature`
+argument is rejected (`OLLAMA_SIGNATURE_UNSUPPORTED`), never treated as invented
+model authentication. No assessor is installed.
+
+The real local gate requires explicit `WAVE5_OLLAMA_LIVE_APPROVED=1`; without it,
+the test fails before model access rather than skipping into a false pass:
+
+```sh
+export WAVE5_OLLAMA_LIVE_APPROVED=1
+node --test composition/test/ollama-adapter.test.mjs composition/test/ollama-adapter-privacy.test.mjs composition/test/application-ollama-adapter.test.mjs
+```
+
+It makes one bounded 32-token request and one 200 ms cancellation per invocation,
+retains exclusive private artifacts under the continuation's `.private/wave5/`,
+and checks model unload without stopping the pre-existing Ollama service.
+Existing root tests also require the documented `C_UC1_PYTHON` and
+`MYCELIUM_C_UC1_SOURCE` model-free test setup. Live port acceptance is not a paid
+application receipt, physical distributed run, public journey or verification result.
+
 ## Still required for actual compatibility
 
 The source inspection and local adapter machinery exist; the remaining gate is upstream acceptance/implementation of the native evidence contract plus one actual sanitized deployment metadata packet and separately authorized real qualification. `createMyceliumRuntimeBinding({mode:'live',profileMetadata,providers,replayGateway,timeoutMs})` performs authenticated qualification reads during explicit startup, never model submission. Pass its returned definition as `runtime` to `startLiveWorkbench`/`startWorkbench`; the host injects its own private evidence store and provider signing pins through `runtime.create`. Unsupported legacy readiness rejects before a payable provider is advertised. Execution rechecks readiness before dispatch and after stream EOF.

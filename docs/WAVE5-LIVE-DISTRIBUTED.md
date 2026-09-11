@@ -78,6 +78,8 @@ Implement a real `live` adapter that talks to Ollama's `/api/generate` (stream=t
 - Bound input ≤ profile.maxPromptTokens; bound output ≤ profile.maxOutputTokens; reject with a clear adapter-internal error code if exceeded.
 - No download of models, no construction-time network calls (deferred to first execute).
 
+**Owner clarification (2026-09-11):** The frozen Profile DTO has no token-limit fields. Limits are supplied as adapter options and bound through an existing `Profile.artifacts` entry. This wave uses an explicitly labeled raw-prompt profile (`raw:true`, no Ollama chat-template expansion) with conservative UTF-8-byte input admission. Token IDs remain unavailable; this is not an exact-tokenizer or verification claim.
+
 **Acceptance:**
 - All three new test files pass with `node --test`.
 - `npm run check:all` still passes.
