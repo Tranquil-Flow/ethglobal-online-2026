@@ -231,6 +231,14 @@ $("find").onclick = () =>
       const { offers } = await selectedClient.listOffers();
       const o = offers[0];
       p = { ...o.payload, name: o.payload.providerId, signedOffer: o };
+      const records = await selectedClient.listProviders([name]);
+      const record = records.providers.find(
+        (x) =>
+          x.providerId === p.providerId &&
+          x.mode === p.mode &&
+          x.profileIds.includes(profileId),
+      );
+      if (record?.historyEndpoint) p.historyEndpoint = record.historyEndpoint;
     } else {
       const list = await selectedClient.listProviders([name]);
       p = list.providers.find((p) => p.providerId === name);

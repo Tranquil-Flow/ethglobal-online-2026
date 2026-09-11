@@ -66,6 +66,8 @@ Optional `operator.json.history` uses:
 }
 ```
 
+`publicEndpoint` is an optional, explicit HTTPS publication of the informational Graph URL. It is not inferred from the transport endpoint, so private endpoint configuration is not automatically advertised. The managed provider DTO uses this field when present; otherwise its existing application History route remains the public reference. Receipt observations in the internal History report are separate from assessment observations. Selection may emit `INDEXED_RECEIPT_OBSERVED_NOT_PROOF` while retaining `HISTORY_UNKNOWN`; receipt existence never becomes an assessment pass.
+
 `rpcUrl` is additive for compatibility. The current hosted Graph route needs it: numeric historical `_meta` does not provide sufficient provenance. RPC checks the chain and current/stable block, and Graph is queried by the stable hash without reducing confirmations. Construction stays offline; transports are created on first use and closed with the app. Both `getHistory` and `getReport` are preserved so unlinked claims and their explanations are not lost. Missing/bad/stale data is unavailable/unknown, never a pass.
 
 The current extension has read the actual hosted index through this managed loader and observed fresh `HISTORY_UNKNOWN`. That does not prove a complete native/public customer journey or checker efficacy.

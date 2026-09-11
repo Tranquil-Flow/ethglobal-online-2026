@@ -26,11 +26,29 @@ export function createManagedHistory({ spec: input, mode }) {
         "deployment",
         "deploymentId",
         ...(spec.rpcUrl === undefined ? [] : ["rpcUrl"]),
+        ...(spec.publicEndpoint === undefined ? [] : ["publicEndpoint"]),
       ]
         .sort()
         .join()
   )
     fail("INVALID_MANAGED_HISTORY");
+  if (spec.publicEndpoint !== undefined) {
+    let u;
+    try {
+      u = new URL(spec.publicEndpoint);
+    } catch {
+      fail("INVALID_PUBLIC_HISTORY_ENDPOINT");
+    }
+    if (
+      u.protocol !== "https:" ||
+      u.username ||
+      u.password ||
+      u.search ||
+      u.hash ||
+      spec.publicEndpoint.length > 2048
+    )
+      fail("INVALID_PUBLIC_HISTORY_ENDPOINT");
+  }
   const deployment = validateDeployment(spec.deployment);
   if (deployment.mode !== mode) fail("HISTORY_MODE_MISMATCH");
   if (
@@ -74,6 +92,9 @@ export function createManagedHistory({ spec: input, mode }) {
     return history;
   }
   return {
+    ...(spec.publicEndpoint === undefined
+      ? {}
+      : { publicEndpoint: spec.publicEndpoint }),
     async getHistory(args) {
       return port().getHistory(args);
     },

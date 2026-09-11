@@ -1,0 +1,9 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {queryProviderHistory} from "../src/index.mjs";
+import {digestOf} from "../../contracts/index.mjs";
+const hash="0x"+"a".repeat(64), address="0x"+"1".repeat(40), providerId="receipt.example.eth";
+const config={mode:"development",chainId:"31337",deploymentId:"receipt-fixture",deployment:{mode:"development",chainId:31337,network:"localhost",address,publisher:address,startBlock:1,confirmations:1,codeHash:hash}};
+function data(){return {_meta:{deployment:config.deploymentId,hasIndexingErrors:false,block:{number:10,hash,timestamp:Math.floor(Date.now()/1000)}},assessmentClaims:[],openAssessmentClaims:[],receiptClaims:[{id:"receipt-log",objectDigest:hash,providerKey:"0x"+digestOf(providerId).slice(7),mode:0,chainId:"31337",contractAddress:address,publisher:address,transactionHash:hash,blockNumber:"9",blockHash:hash,logIndex:"0"}]};}
+test("indexed receipts are separate observed commitments, never assessment passes",async()=>{const snapshot=data();const report=await queryProviderHistory({config,providerId,client:{async query(){return snapshot;}}});assert.equal(report.history.freshness,"fresh");assert.deepEqual(report.history.observations,[]);assert.deepEqual(report.reasons,["HISTORY_UNKNOWN"]);assert.equal(report.receiptObservations.length,1);assert.equal(report.receiptObservations[0].receiptDigest,"sha256:"+"a".repeat(64));});
+test("receipt provenance rejects wrong chain, provider, publisher and malformed digests",async()=>{for(const [key,value] of [["chainId","1"],["providerKey","0x"+"b".repeat(64)],["publisher","0x"+"2".repeat(40)],["objectDigest","guessed"]]){const snapshot=data();snapshot.receiptClaims[0][key]=value;const r=await queryProviderHistory({config,providerId,client:{async query(){return snapshot;}}});assert.equal(r.history.freshness,"unavailable",key);assert.deepEqual(r.receiptObservations,[]);}});

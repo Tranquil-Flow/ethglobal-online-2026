@@ -14,6 +14,9 @@ import { validateDeployment } from "./config.mjs";
 const META = `query IndexHead { _meta { deployment hasIndexingErrors block { number hash timestamp } } }`;
 const STABLE_META = `query StableHead($block: Bytes!) { _meta(block: {hash: $block}) { deployment hasIndexingErrors block { number hash timestamp } } }`;
 export const PROVIDER_QUERY = `query ProviderHistory($provider: Bytes!, $block: Bytes!, $limit: Int!) {
+ receiptClaims(first: $limit, orderBy: blockNumber, orderDirection: desc, where: {providerKey: $provider}, block: {hash: $block}) {
+  id objectDigest providerKey mode chainId contractAddress publisher transactionHash blockNumber blockHash logIndex
+ }
  _meta(block: {hash: $block}) { deployment hasIndexingErrors block { number hash timestamp } }
  assessmentClaims(first: $limit, orderBy: blockNumber, orderDirection: desc, where: {providerKey: $provider}, block: {hash: $block}) {
   id objectDigest receiptDigest providerKey verifierKey methodKey outcome mode publicMetadata valid
@@ -332,6 +335,7 @@ export async function queryProviderHistory({
     counts: {},
     provenance: [],
     unlinkedClaims: [],
+    receiptObservations: [],
     truncated: false,
   };
   if (client && c.deployment) {
@@ -491,6 +495,47 @@ export async function queryProviderHistory({
         ]);
         counts[key] = (counts[key] || 0) + 1;
       }
+      const receiptRows = data.receiptClaims ?? [];
+      if (!Array.isArray(receiptRows) || receiptRows.length > c.limit)
+        throw failure("INVALID_RECEIPT_OBSERVATION");
+      const receiptObservations = receiptRows.map((row) => {
+        if (
+          typeof row.chainId !== "string" ||
+          row.chainId !== String(c.chainId) ||
+          row.mode !== modes.indexOf(c.mode) ||
+          row.providerKey?.toLowerCase() !== providerKey ||
+          row.contractAddress?.toLowerCase() !==
+            c.deployment.address.toLowerCase() ||
+          row.publisher?.toLowerCase() !==
+            c.deployment.publisher.toLowerCase() ||
+          ![row.objectDigest, row.transactionHash, row.blockHash].every((x) =>
+            /^0x[0-9a-f]{64}$/i.test(x),
+          ) ||
+          typeof row.blockNumber !== "string" ||
+          !/^\d+$/.test(row.blockNumber) ||
+          !Number.isSafeInteger(Number(row.blockNumber)) ||
+          Number(row.blockNumber) < c.deployment.startBlock ||
+          Number(row.blockNumber) > meta.block.number ||
+          typeof row.logIndex !== "string" ||
+          !/^\d+$/.test(row.logIndex) ||
+          !Number.isSafeInteger(Number(row.logIndex))
+        )
+          throw failure("INVALID_RECEIPT_OBSERVATION");
+        return {
+          receiptDigest: digest(row.objectDigest),
+          providerId,
+          transactionHash: row.transactionHash,
+          blockNumber: Number(row.blockNumber),
+          blockHash: row.blockHash,
+          logIndex: Number(row.logIndex),
+          mode: c.mode,
+          chainId: row.chainId,
+          contractAddress: row.contractAddress,
+          publisher: row.publisher,
+        };
+      });
+      if (receiptRows.length === c.limit) report.truncated = true;
+      report.receiptObservations = receiptObservations;
       history.observations = observations;
       history.indexedBlock = meta.block.number;
       history.indexedBlockHash = meta.block.hash;

@@ -219,6 +219,23 @@ export function preflightApplication({ config: input, bindings }) {
     )
   )
     fail("RUNTIME_PROVIDER_CATALOG_MISMATCH");
+  if (bindings.publicHistoryEndpoint !== undefined) {
+    let u;
+    try {
+      u = new URL(bindings.publicHistoryEndpoint);
+    } catch {
+      fail("INVALID_PUBLIC_HISTORY_ENDPOINT");
+    }
+    if (
+      u.protocol !== "https:" ||
+      u.username ||
+      u.password ||
+      u.search ||
+      u.hash ||
+      bindings.publicHistoryEndpoint.length > 2048
+    )
+      fail("INVALID_PUBLIC_HISTORY_ENDPOINT");
+  }
   const keys = new Set(),
     publicKeys = new Set();
   const entries = config.providers.map((p) => {
@@ -700,10 +717,11 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
           expiresAt: new Date(Date.now() + 60000).toISOString(),
         },
         historyEndpoint:
+          bindings.publicHistoryEndpoint ??
           (config.publicOrigin ?? viewer.url) +
-          "/v1/providers/" +
-          encodeURIComponent(entry.config.providerId) +
-          "/history",
+            "/v1/providers/" +
+            encodeURIComponent(entry.config.providerId) +
+            "/history",
       };
       validate("Provider", record);
       return record;
@@ -842,6 +860,8 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
                       ? "HISTORY_STALE"
                       : "HISTORY_UNKNOWN";
                 else {
+                  if (report?.receiptObservations?.length)
+                    codes.push("INDEXED_RECEIPT_OBSERVED_NOT_PROOF");
                   if (report?.unlinkedClaims?.length)
                     codes.push("UNLINKED_CHECKER_CLAIM_NOT_PROOF");
                   const observations = h.observations.filter(

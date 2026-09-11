@@ -17,6 +17,7 @@ test(
     let app, browser;
     try {
       const f = setup(dir);
+      f.bindings.publicHistoryEndpoint = "https://graph.example/query/public";
       app = await startWorkbench({ config: f.config, bindings: f.bindings });
       browser = await chromium.launch({ headless: true });
       const page = await browser.newPage();
@@ -44,6 +45,11 @@ test(
       assert.match(
         await page.locator("#profile-info").textContent(),
         /explicit-synthetic-1/,
+      );
+      assert.equal(await page.locator("#history-url a").count(), 1);
+      assert.equal(
+        await page.locator("#history-url a").getAttribute("href"),
+        "https://graph.example/query/public",
       );
       await page.fill("#prompt", "public browser input");
       await page.click("#quote-button");

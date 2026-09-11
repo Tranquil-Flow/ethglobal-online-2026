@@ -486,6 +486,9 @@ async function prepare(options, { start = false } = {}) {
   const bindings = {
     ...(x.publication ? { createEventSink: x.publication.create } : {}),
     ...(x.history ? { history: x.history } : {}),
+    ...(x.history?.publicEndpoint
+      ? { publicHistoryEndpoint: x.history.publicEndpoint }
+      : {}),
     ...(x.discovery ? { discovery: x.discovery } : {}),
     ...(options.eventSink !== undefined
       ? { eventSink: options.eventSink }
