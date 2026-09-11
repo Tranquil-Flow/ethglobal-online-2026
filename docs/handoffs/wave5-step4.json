@@ -1,0 +1,59 @@
+{
+  "step": 4,
+  "status": "PASSED",
+  "codeRevision": "42d432d9091e851dee1703f9cce039046ac9902b",
+  "acceptance": {
+    "laptopServesRealQwen": "passed: real browser -> application -> owned SSH tunnel -> laptop Ollama 0.20.0",
+    "browserBothPhysicalProviders": "passed: distinct actual outputs and private evidence downloads",
+    "distinctProviderAndNodeIdentity": "passed: different provider keys, receipt digests and execution-node profile artifacts",
+    "checkAll": "passed: 231/231 composition tests, no skips; all lane gates green"
+  },
+  "privateRun": "step4-distributed-HALVMn/result.json",
+  "jobs": [
+    {
+      "providerId": "service.ethonline-node-a.eth",
+      "nodeId": "m4pro",
+      "providerKey": "sha256:75a861f53853102fc6b809fb4606718ed4649d09c14d2b7e3fe0bb2f10ce06bd",
+      "receiptDigest": "sha256:ebadeca7046c06db3ed51595bdacda6bd0dedbbc6092f3a2e2f323f37ae0c6f9",
+      "profileId": "sha256:7b75d6bced105f508c91d760429d054fd2faaea6b07e97b2003c75db904ec330",
+      "outputBytes": 74,
+      "finishReason": "length"
+    },
+    {
+      "providerId": "service.ethonline-node-b.eth",
+      "nodeId": "evis-macbook-pro-1",
+      "providerKey": "sha256:0e3784695993340af930772b748c5bb6e9d1a0eceaadf1788c962535555b3667",
+      "receiptDigest": "sha256:87ecffe6530c4896db3eefa53d377d44132765c9f09b5ce45f467c6a2ab49b0d",
+      "profileId": "sha256:c12e0960de8f644d43729cfae5bdfc9f632390ec576fbb351243c54f23d36a68",
+      "outputBytes": 81,
+      "finishReason": "length"
+    }
+  ],
+  "cleanup": {
+    "testTunnelClosed": true,
+    "remoteModelsAfter": [],
+    "serviceDisposition": "Owned bounded laptop server retained for the remaining wave; separate pre-existing loopback service untouched"
+  },
+  "ens": "docs/handoffs/ens-wave5-node-update.json",
+  "ensUpdateTransactions": [
+    {
+      "name": "service.ethonline-node-a.eth",
+      "hash": "0x71a0ca30d2fe658d0c51c4d35771a37967542b83b23141decc94eb2ac7047e0b",
+      "confirmations": 145,
+      "feeWei": "69531999973401"
+    },
+    {
+      "name": "service.ethonline-node-b.eth",
+      "hash": "0x04d398e191e8e3f49850022f4120051f7c231c362fa2459af7d5ffa07a1488ca",
+      "confirmations": 144,
+      "feeWei": "78211676312901"
+    }
+  ],
+  "rootLogSha256": "b72fa533a893f5c393b155ea05bfa0f8cf05193b9b6815e4d19df393d557459a",
+  "retainedFailures": [
+    "Initial physical-browser wait timed out after backend completion; diagnostic successor and final root browser gate passed without production relabeling.",
+    "First root gate: hosted History returned unavailable. Separate live recheck was fresh for both providers; full revalidation passed without lowering freshness/confirmation guards.",
+    "Long-lived SSH session dropped while bounded server remained healthy. Existing keepalives were confirmed, proposed change discarded; exact owned controller retired and renewed."
+  ],
+  "claimBoundary": "Physical two-host provider routing, not layer-split inference or hardware attestation. No verifier selected; output remains provisional. No public serving or new Hedera payment claimed by this step."
+}

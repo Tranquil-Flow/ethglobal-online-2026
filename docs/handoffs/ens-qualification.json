@@ -127,6 +127,12 @@
       "evidence": "docs/handoffs/ens-wave5-qualification.json",
       "sourceRevision": "f5cf38d8c0bd4d30acb9850a7fea4e1ed3a9629a",
       "independentReadbackLogSha256": "3017901cf55f61e3c4991d499d54448092ea1a0c5a37bc0b542bfd70b64b126f"
+    },
+    {
+      "step": 4,
+      "sourceRevision": "42d432d9091e851dee1703f9cce039046ac9902b",
+      "evidence": "docs/handoffs/ens-wave5-node-update.json",
+      "independentReadbackLogSha256": "79d2e37c255472e828ad5b6c1ee68bafc4e6b21110e663faff3d4932cd2ebaca"
     }
   ]
 }

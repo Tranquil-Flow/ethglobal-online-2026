@@ -1,6 +1,6 @@
 # WAVE 5 — Live demo qualification, distributed Mycelium, public HTTPS, live Hedera paid call
 
-**Status:** Steps 1–3 passed; Steps 4–6 remain. Per-step evidence: `docs/handoffs/wave5-step1.json`, `wave5-step2.json`, `wave5-step3.json`.
+**Status:** Steps 1–4 passed; Steps 5–6 remain. Per-step evidence: `docs/handoffs/wave5-step1.json`, `wave5-step2.json`, `wave5-step3.json`, `wave5-step4.json`.
 **Branch baseline:** `b08b27a42bb37795056ccc61a911873211eeb7f3`
 **Workbench:** `workbench/` in this directory
 **Inheritance:** continues the application-owned runtime (OWNED10) and managed integration (INTEGRATION09) work. Leaves A/B/C research untouched.
@@ -152,6 +152,8 @@ Start a Tailscale Funnel/Serve on this host, then run the full end-to-end agains
 - All four sponsor integrations show real artifacts in the run output.
 
 ### Step 6 — Live Hedera paid call (testnet, 1 tinybar)
+
+**Owner clarification:** Use the native x402 partially signed transfer. Blocky402 co-signs with its fee-payer account and submits; the payer wallet does not broadcast a separate transaction. Preserve an exact one-tinybar payer debit, the preflight, and the existing `live-smoke.mjs --execute --approved` gate.
 
 This is the actual sponsor qualification for the Hedera track. Use `packages/payments/scripts/live-smoke.mjs` in execute mode with a real wallet adapter.
 

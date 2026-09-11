@@ -1,0 +1,79 @@
+{
+  "status": "passed",
+  "observedAt": "2026-09-11T20:39:27.636Z",
+  "chainId": 11155111,
+  "confirmedAtLeast": 12,
+  "records": {
+    "providers": [
+      {
+        "version": "1",
+        "providerId": "service.ethonline-node-a.eth",
+        "name": "service.ethonline-node-a.eth",
+        "endpoint": "https://m4pro.tail53d0d3.ts.net",
+        "profileIds": [
+          "sha256:7b75d6bced105f508c91d760429d054fd2faaea6b07e97b2003c75db904ec330"
+        ],
+        "paymentNetwork": "non-economic",
+        "paymentAsset": "none",
+        "paymentReceiver": "service.ethonline-node-a.eth",
+        "mode": "live",
+        "source": {
+          "chainId": "11155111",
+          "blockNumber": 11684304,
+          "blockHash": "0x52050dd65e8e901ccc7fd31d254b752679f9a435e260039e54dc3c5ea5dd04f6",
+          "resolvedAt": "2026-09-11T20:39:15.694Z",
+          "expiresAt": "2026-09-11T20:39:45.694Z"
+        },
+        "historyEndpoint": "https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.2.0-unchecked-20260911"
+      },
+      {
+        "version": "1",
+        "providerId": "service.ethonline-node-b.eth",
+        "name": "service.ethonline-node-b.eth",
+        "endpoint": "https://m4pro.tail53d0d3.ts.net",
+        "profileIds": [
+          "sha256:c12e0960de8f644d43729cfae5bdfc9f632390ec576fbb351243c54f23d36a68"
+        ],
+        "paymentNetwork": "non-economic",
+        "paymentAsset": "none",
+        "paymentReceiver": "service.ethonline-node-b.eth",
+        "mode": "live",
+        "source": {
+          "chainId": "11155111",
+          "blockNumber": 11684304,
+          "blockHash": "0x52050dd65e8e901ccc7fd31d254b752679f9a435e260039e54dc3c5ea5dd04f6",
+          "resolvedAt": "2026-09-11T20:39:21.888Z",
+          "expiresAt": "2026-09-11T20:39:51.888Z"
+        },
+        "historyEndpoint": "https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.2.0-unchecked-20260911"
+      }
+    ],
+    "errors": []
+  },
+  "transactions": [
+    {
+      "name": "service.ethonline-node-a.eth",
+      "to": "0x04f8aD7e0B7cfBb02EE7D756c09c36951604FdB1",
+      "hash": "0x71a0ca30d2fe658d0c51c4d35771a37967542b83b23141decc94eb2ac7047e0b",
+      "maximumFeeWei": "85674861207999",
+      "nonce": 27,
+      "status": 1,
+      "blockNumber": 11684292,
+      "blockHash": "0xfe70148606d57ed4ad14035fae63bb3bcf774f50b907e59ab4b717bf64f7c007",
+      "feeWei": "69531999973401"
+    },
+    {
+      "name": "service.ethonline-node-b.eth",
+      "to": "0xC3dDa786E6eDA5cAe63Cd3246b5704558E76eb01",
+      "hash": "0x04d398e191e8e3f49850022f4120051f7c231c362fa2459af7d5ffa07a1488ca",
+      "maximumFeeWei": "96369650168499",
+      "nonce": 28,
+      "status": 1,
+      "blockNumber": 11684293,
+      "blockHash": "0x275029af534608b47f09a801ff9fdd314d2b5fc13fedea75ae9a1dd05f44809c",
+      "feeWei": "78211676312901"
+    }
+  ],
+  "inferenceVerified": false,
+  "endpointPolicy": "Shared HTTPS gateway; laptop execution is profile-bound, not a private-IP public URL"
+}
