@@ -119,6 +119,10 @@ Run the application with two providers, both pointing at this host's Ollama on d
 - `service.ethonline-node-B.eth` resolver record updated to point at `100.126.111.123:4370` (the application's public origin for that node).
 - New tx to Sepolia, recorded in `docs/handoffs/ens-qualification.json` (appended).
 
+**Operational commands (implemented):** `WAVE5_LAPTOP_BOOTSTRAP_APPROVED=1 bash composition/distributed-node-bootstrap.sh install|serve|pull|inspect|stop`. The host, SSH identity and model are fixed; no node-2 override exists. Installation uses the official hash-pinned Ollama 0.20.0 archive under the laptop’s `.private/wave5/`, with a non-overwriting user-PATH link. `serve` is a foreground controller to be held by one tracked background SSH session, bound to `100.126.111.123:11434`, with a one-hour ceiling and owned-child cleanup. Model files/logs/receipts remain private. The separate pre-existing loopback Ollama server is not changed. `pull` is only `qwen2.5:7b`.
+
+The physical browser gate additionally requires `WAVE5_DISTRIBUTED_APPROVED=1` and `WAVE5_OLLAMA_LIVE_APPROVED=1`. It uses a private SSH tunnel, 1,024-token context and bounded 16-token requests; records two real browser outputs and receipts; and checks model unload and tunnel retirement. `execution-node` profile artifacts bind the observed host aliases, architectures and memory sizes. This is real two-host provider routing, not layer-split inference or a hardware attestation. `composition/ens-update-node.mjs` performs only explicit, journaled profile-record updates and readback; the public HTTPS gateway stays shared.
+
 **Acceptance:**
 - Provider B serves real `qwen2.5:7b` from the laptop.
 - The browser viewer can submit to both A and B and see different physical output.
