@@ -173,6 +173,7 @@ export async function initializeApplication({
 import { inspectStdioRuntime } from "./application-stdio.mjs";
 import { inspectManagedPublication } from "./application-publication-config.mjs";
 import { inspectOwnedNativeRuntime } from "./application-owned-native.mjs";
+import { inspectOllamaRuntime } from "./application-ollama.mjs";
 import { inspectManagedAssessor } from "./application-assessor.mjs";
 import { inspectManagedPayments } from "./application-payments.mjs";
 
@@ -299,6 +300,12 @@ export function loadManagedApplication({ configFile, nativeHostBindings }) {
         providerId: p.providerId,
         resolvePath: (path) => managedPath(root, path),
       });
+    } else if (spec.runtime.kind === "ollama") {
+      runtime = inspectOllamaRuntime({
+        spec: spec.runtime,
+        mode: config.mode,
+        providerId: p.providerId,
+      });
     } else if (spec.runtime.kind === "application-native") {
       runtime = inspectOwnedNativeRuntime({
         root,
@@ -423,7 +430,11 @@ async function prepare(options, { start = false } = {}) {
     fail("ORDINARY_PAID_AUTHORITY_REQUIRED");
   if (start)
     for (const e of x.entries)
-      if (["native-stdio", "application-native"].includes(e.runtime.kind))
+      if (
+        ["native-stdio", "application-native", "ollama"].includes(
+          e.runtime.kind,
+        )
+      )
         e.runtime.authorize();
   for (const e of x.entries)
     if (e.input) {

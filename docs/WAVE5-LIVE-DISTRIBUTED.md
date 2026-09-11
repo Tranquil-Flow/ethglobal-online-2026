@@ -94,6 +94,8 @@ Run the application with two providers, both pointing at this host's Ollama on d
 - `composition/test/two-node-application.test.mjs` (new) — integration: instantiate the workbench with two provider entries (one for `qwen2.5:7b-64k`, one for `qwen2.5:7b`), exercise `select` against a real local Graph, exercise `submit` for both, assert distinct receipts, distinct receipt digests, distinct providerKeys.
 - `composition/ens-register-second-node.mjs` (new, run-once script) — registers `service.ethonline-node-B.eth` as a parallel subregistry pointing at this host. Mirrors the existing `service.ethonline-provider-2026.eth` registration (`ens-qualification.json`).
 
+**Owner clarifications:** Necessary Sepolia writes are explicitly authorized. Use the existing live hosted Graph for this live-mode selection test; retain separate local Graph coverage and do not weaken mode separation. Private operator/model/journal files belong under the continuation’s `.private/wave5/`, never inside the workbench.
+
 **Acceptance:**
 - One operator.json, two providers, both serve real `qwen2.5:7b` requests.
 - Both providers visible to the application selection.

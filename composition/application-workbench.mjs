@@ -227,7 +227,7 @@ export function preflightApplication({ config: input, bindings }) {
     if (
       runtime?.mode !== config.mode ||
       (config.mode === "live" &&
-        !["mycelium", "native-stdio", "application-native"].includes(
+        !["mycelium", "native-stdio", "application-native", "ollama"].includes(
           runtime.kind,
         )) ||
       (config.mode === "development" &&
