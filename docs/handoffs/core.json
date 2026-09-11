@@ -1,24 +1,20 @@
 {
   "lane": "core",
   "status": "local_ready",
-  "codeRevision": "e1960b77b448bb050b2eb431255e9343975bfe8b",
+  "codeRevision": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
   "reviewContract": "handoff-review-v1",
   "commands": [
     {
-      "id": "nonverify01-core-check",
+      "id": "integration09-frozen-core-check",
       "command": "npm --prefix packages/core run check",
       "exitCode": 0,
-      "observedViaParent": "nonverify01-all",
-      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt.",
-      "evidence": "docs/handoffs/nonverification-component-evidence.json"
+      "evidence": "docs/handoffs/integration09-component-evidence.json"
     },
     {
-      "id": "nonverify01-core-smoke",
+      "id": "integration09-frozen-core-smoke",
       "command": "npm --prefix packages/core run smoke",
       "exitCode": 0,
-      "observedViaParent": "nonverify01-all",
-      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt.",
-      "evidence": "docs/handoffs/nonverification-component-evidence.json"
+      "evidence": "docs/handoffs/integration09-component-evidence.json"
     }
   ],
   "acceptanceCases": [
@@ -26,61 +22,61 @@
       "id": "http-lifecycle",
       "status": "passed",
       "commandIds": [
-        "nonverify01-core-check",
-        "nonverify01-core-smoke"
+        "integration09-frozen-core-check",
+        "integration09-frozen-core-smoke"
       ],
-      "evidence": "docs/handoffs/nonverification-component-evidence.json",
-      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "restart-idempotency",
       "status": "passed",
       "commandIds": [
-        "nonverify01-core-check",
-        "nonverify01-core-smoke"
+        "integration09-frozen-core-check",
+        "integration09-frozen-core-smoke"
       ],
-      "evidence": "docs/handoffs/nonverification-component-evidence.json",
-      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "private-capabilities",
       "status": "passed",
       "commandIds": [
-        "nonverify01-core-check",
-        "nonverify01-core-smoke"
+        "integration09-frozen-core-check",
+        "integration09-frozen-core-smoke"
       ],
-      "evidence": "docs/handoffs/nonverification-component-evidence.json",
-      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "receipt-integrity-export",
       "status": "passed",
       "commandIds": [
-        "nonverify01-core-check",
-        "nonverify01-core-smoke"
+        "integration09-frozen-core-check",
+        "integration09-frozen-core-smoke"
       ],
-      "evidence": "docs/handoffs/nonverification-component-evidence.json",
-      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "payment-outbox-failures",
       "status": "passed",
       "commandIds": [
-        "nonverify01-core-check",
-        "nonverify01-core-smoke"
+        "integration09-frozen-core-check",
+        "integration09-frozen-core-smoke"
       ],
-      "evidence": "docs/handoffs/nonverification-component-evidence.json",
-      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "assessment-unavailable",
       "status": "passed",
       "commandIds": [
-        "nonverify01-core-check",
-        "nonverify01-core-smoke"
+        "integration09-frozen-core-check",
+        "integration09-frozen-core-smoke"
       ],
-      "evidence": "docs/handoffs/nonverification-component-evidence.json",
-      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     }
   ],
   "externalGates": [
@@ -122,7 +118,7 @@
     "platform": "darwin",
     "arch": "arm64"
   },
-  "documentationRevisionNote": "Non-verification local component handoff refreshed from observed e1960b7 results. Parent aggregate exit 1 is retained and not relabeled; root gate must be rerun. Package bytes pinned by codeRevision; this update changes docs only.",
+  "documentationRevisionNote": "Current component evidence binds implementation commit 59c5cb141f951d402e047e818920ef5eb24a6a3a. Historical evidence remains at integrationPriorHandoffCommit. Final whole-application/native/public disposition is in the adjacent NONVERIFICATION-INTEGRATION-HANDOFF.json; no selected checker or protected finance is inferred.",
   "verificationHistory": [
     {
       "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
@@ -477,5 +473,7 @@
       ]
     }
   ],
-  "foundationPriorCodeRevision": "5697576298491efbd1a2285def50d49baad27ebd"
+  "foundationPriorCodeRevision": "5697576298491efbd1a2285def50d49baad27ebd",
+  "integrationPriorHandoffCommit": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+  "integrationPriorCodeRevision": "e1960b77b448bb050b2eb431255e9343975bfe8b"
 }

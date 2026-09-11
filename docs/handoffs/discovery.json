@@ -1,27 +1,23 @@
 {
   "lane": "discovery",
   "status": "local_ready",
-  "codeRevision": "e1960b77b448bb050b2eb431255e9343975bfe8b",
+  "codeRevision": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
   "historicalLaneCodeRevision": "4842acb92b278ca8228946d086b544f22652eab9",
   "integrationEvidence": "docs/handoffs/integration.md",
   "branch": "lane/discovery",
   "bootstrapRevision": "13f5e295bdeb833b9977a84edc97b2ee64147579",
   "commands": [
     {
-      "id": "nonverify01-discovery-check",
+      "id": "integration09-frozen-discovery-check",
       "command": "npm --prefix packages/discovery run check",
       "exitCode": 0,
-      "observedViaParent": "nonverify01-all",
-      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt.",
-      "evidence": "docs/handoffs/nonverification-component-evidence.json"
+      "evidence": "docs/handoffs/integration09-component-evidence.json"
     },
     {
-      "id": "nonverify01-discovery-smoke",
+      "id": "integration09-frozen-discovery-smoke",
       "command": "npm --prefix packages/discovery run smoke",
       "exitCode": 0,
-      "observedViaParent": "nonverify01-all",
-      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt.",
-      "evidence": "docs/handoffs/nonverification-component-evidence.json"
+      "evidence": "docs/handoffs/integration09-component-evidence.json"
     }
   ],
   "externalGates": [
@@ -262,69 +258,69 @@
       "id": "ensv2-contract-resolution",
       "status": "passed",
       "commandIds": [
-        "nonverify01-discovery-check",
-        "nonverify01-discovery-smoke"
+        "integration09-frozen-discovery-check",
+        "integration09-frozen-discovery-smoke"
       ],
-      "evidence": "docs/handoffs/nonverification-component-evidence.json",
+      "evidence": "docs/handoffs/integration09-component-evidence.json",
       "detailedCases": [
         "Official ENSv2 deployment, resolver APIs and provenance",
         "Actual ENSv2 resolver SDK/RPC through canonical hierarchy",
         "Standalone CLI, operator provisioning/update/revocation dry-run and bounded smoke"
       ],
-      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "delegation-revocation",
       "status": "passed",
       "commandIds": [
-        "nonverify01-discovery-check",
-        "nonverify01-discovery-smoke"
+        "integration09-frozen-discovery-check",
+        "integration09-frozen-discovery-smoke"
       ],
-      "evidence": "docs/handoffs/nonverification-component-evidence.json",
+      "evidence": "docs/handoffs/integration09-component-evidence.json",
       "detailedCases": [
         "Record-scoped delegated service edits, payment isolation and revocation",
         "Standalone CLI, operator provisioning/update/revocation dry-run and bounded smoke"
       ],
-      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "freshness-provenance",
       "status": "passed",
       "commandIds": [
-        "nonverify01-discovery-check",
-        "nonverify01-discovery-smoke"
+        "integration09-frozen-discovery-check",
+        "integration09-frozen-discovery-smoke"
       ],
-      "evidence": "docs/handoffs/nonverification-component-evidence.json",
+      "evidence": "docs/handoffs/integration09-component-evidence.json",
       "detailedCases": [
         "Normalization, malformed/stale/unknown records, TTL, block provenance, expiry and reorg invalidation"
       ],
-      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "ssrf-boundary",
       "status": "passed",
       "commandIds": [
-        "nonverify01-discovery-check",
-        "nonverify01-discovery-smoke"
+        "integration09-frozen-discovery-check",
+        "integration09-frozen-discovery-smoke"
       ],
-      "evidence": "docs/handoffs/nonverification-component-evidence.json",
+      "evidence": "docs/handoffs/integration09-component-evidence.json",
       "detailedCases": [
         "SSRF at resolver and consuming boundaries, redirect/DNS/body/abort/deadline controls"
       ],
-      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "quote-history-selection",
       "status": "passed",
       "commandIds": [
-        "nonverify01-discovery-check",
-        "nonverify01-discovery-smoke"
+        "integration09-frozen-discovery-check",
+        "integration09-frozen-discovery-smoke"
       ],
-      "evidence": "docs/handoffs/nonverification-component-evidence.json",
+      "evidence": "docs/handoffs/integration09-component-evidence.json",
       "detailedCases": [
         "Compatible provider selection changes after real record mutation and observed History changes"
       ],
-      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     }
   ],
   "externalGateDetails": [
@@ -367,7 +363,7 @@
     "validationBefore": "Tagged validator rejected old handoff: Invalid command ID.",
     "validationAfter": "passed: exact tagged validator executed in memory, all 5 acceptance IDs and 4 required external gates covered; command evidence paths tracked; lane gate passed again with 14 discovery tests and actual smoke."
   },
-  "documentationRevisionNote": "Non-verification local component handoff refreshed from observed e1960b7 results. Parent aggregate exit 1 is retained and not relabeled; root gate must be rerun. Package bytes pinned by codeRevision; this update changes docs only.",
+  "documentationRevisionNote": "Current component evidence binds implementation commit 59c5cb141f951d402e047e818920ef5eb24a6a3a. Historical evidence remains at integrationPriorHandoffCommit. Final whole-application/native/public disposition is in the adjacent NONVERIFICATION-INTEGRATION-HANDOFF.json; no selected checker or protected finance is inferred.",
   "verificationHistory": [
     {
       "codeRevision": "04391f596e9a3cdeae48fc0f2f70edd65f7a6a77",
@@ -773,5 +769,7 @@
         }
       ]
     }
-  ]
+  ],
+  "integrationPriorHandoffCommit": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+  "integrationPriorCodeRevision": "e1960b77b448bb050b2eb431255e9343975bfe8b"
 }

@@ -1,0 +1,233 @@
+{
+  "schema": "mycelium.integration09.component-evidence.v1",
+  "codeRevision": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+  "scope": "Current package checks/smokes; not native/public/financial qualification",
+  "commands": [
+    {
+      "id": "integration09-frozen-core-check",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/core",
+        "run",
+        "check"
+      ],
+      "startedAt": "2026-09-11T13:33:08.764177+00:00",
+      "finishedAt": "2026-09-11T13:33:11.885202+00:00",
+      "head": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "exitCode": 0,
+      "sha256": "0065ea8465d4bc881d4effb4deed3a8c33b08f88a6a781891e07c263bb3a7c1e",
+      "tapSummaries": [
+        "# tests 44",
+        "# pass 44",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0"
+      ]
+    },
+    {
+      "id": "integration09-frozen-core-smoke",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/core",
+        "run",
+        "smoke"
+      ],
+      "startedAt": "2026-09-11T13:33:11.938802+00:00",
+      "finishedAt": "2026-09-11T13:33:13.453142+00:00",
+      "head": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "exitCode": 0,
+      "sha256": "66ab5de7add8a9351fc1d4a5d50143f676021d6f9ce9df02a86186173588dfc6",
+      "tapSummaries": []
+    },
+    {
+      "id": "integration09-frozen-payments-check",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/payments",
+        "run",
+        "check"
+      ],
+      "startedAt": "2026-09-11T13:33:13.514783+00:00",
+      "finishedAt": "2026-09-11T13:33:16.418615+00:00",
+      "head": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "exitCode": 0,
+      "sha256": "1f2a803e7cf6a7331ed703a79cae45e81b94c1f3b11efdc1601d8c80fd4370d7",
+      "tapSummaries": [
+        "# tests 43",
+        "# pass 43",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0"
+      ]
+    },
+    {
+      "id": "integration09-frozen-payments-smoke",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/payments",
+        "run",
+        "smoke"
+      ],
+      "startedAt": "2026-09-11T13:33:16.467501+00:00",
+      "finishedAt": "2026-09-11T13:33:18.358042+00:00",
+      "head": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "exitCode": 0,
+      "sha256": "dfb22d7d960ba88c12814d3a5b7e44f76a5c44d11f32ca4c3b99b5a7dc567d0f",
+      "tapSummaries": []
+    },
+    {
+      "id": "integration09-frozen-discovery-check",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/discovery",
+        "run",
+        "check"
+      ],
+      "startedAt": "2026-09-11T13:33:18.407153+00:00",
+      "finishedAt": "2026-09-11T13:33:22.861199+00:00",
+      "head": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "exitCode": 0,
+      "sha256": "9744b9c7ab06f8e07b8c6df09ff247661849b8a6c8e83d946d0e0702c4b9192d",
+      "tapSummaries": [
+        "# tests 17",
+        "# pass 17",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0"
+      ]
+    },
+    {
+      "id": "integration09-frozen-discovery-smoke",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/discovery",
+        "run",
+        "smoke"
+      ],
+      "startedAt": "2026-09-11T13:33:22.912035+00:00",
+      "finishedAt": "2026-09-11T13:33:23.999606+00:00",
+      "head": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "exitCode": 0,
+      "sha256": "b7bb487352176a2e2e38aaa9cd290767347984f5cdebe05ff5425d202d50b3c7",
+      "tapSummaries": []
+    },
+    {
+      "id": "integration09-frozen-indexing-check",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/indexing",
+        "run",
+        "check"
+      ],
+      "startedAt": "2026-09-11T13:33:24.050081+00:00",
+      "finishedAt": "2026-09-11T13:34:02.939150+00:00",
+      "head": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "exitCode": 0,
+      "sha256": "32594cdee5c9118f5660a824e411de700b58f666893aadfc21639493bc935c89",
+      "tapSummaries": [
+        "# tests 42",
+        "# pass 42",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0"
+      ]
+    },
+    {
+      "id": "integration09-frozen-indexing-smoke",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/indexing",
+        "run",
+        "smoke"
+      ],
+      "startedAt": "2026-09-11T13:34:02.989272+00:00",
+      "finishedAt": "2026-09-11T13:34:05.428394+00:00",
+      "head": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "exitCode": 0,
+      "sha256": "6345a6c1f9a001cead43f8927d0b71ef4f32712e856bc9ee377d427bc20bb6e5",
+      "tapSummaries": []
+    },
+    {
+      "id": "integration09-frozen-access-check",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/access",
+        "run",
+        "check"
+      ],
+      "startedAt": "2026-09-11T13:34:05.482301+00:00",
+      "finishedAt": "2026-09-11T13:34:16.325384+00:00",
+      "head": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "exitCode": 0,
+      "sha256": "2610d575c2a83d115ba4ab7625c6fe43d70ef6568339bbb55474c01a6d7a911b",
+      "tapSummaries": [
+        "# tests 32",
+        "# pass 32",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0"
+      ]
+    },
+    {
+      "id": "integration09-frozen-access-smoke",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/access",
+        "run",
+        "smoke"
+      ],
+      "startedAt": "2026-09-11T13:34:16.377525+00:00",
+      "finishedAt": "2026-09-11T13:34:25.217316+00:00",
+      "head": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "exitCode": 0,
+      "sha256": "3b58e1ec6982d471b548d5fc873b7b3458bc578fe3bc99f828eddaa27394a2d8",
+      "tapSummaries": [
+        "# tests 3",
+        "# pass 3",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# tests 1",
+        "# pass 1",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# tests 3",
+        "# pass 3",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0"
+      ]
+    }
+  ]
+}

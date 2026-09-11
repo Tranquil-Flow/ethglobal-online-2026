@@ -1,25 +1,21 @@
 {
   "lane": "access",
   "status": "local_ready",
-  "codeRevision": "e1960b77b448bb050b2eb431255e9343975bfe8b",
+  "codeRevision": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
   "historicalLaneCodeRevision": "4e15d0c4abc501a3cdb235c787352bba7023ba01",
   "integrationEvidence": "docs/handoffs/foundation-verification.json",
   "commands": [
     {
-      "id": "nonverify01-access-check",
+      "id": "integration09-frozen-access-check",
       "command": "npm --prefix packages/access run check",
       "exitCode": 0,
-      "observedViaParent": "nonverify01-all",
-      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt.",
-      "evidence": "docs/handoffs/nonverification-component-evidence.json"
+      "evidence": "docs/handoffs/integration09-component-evidence.json"
     },
     {
-      "id": "nonverify01-access-smoke",
+      "id": "integration09-frozen-access-smoke",
       "command": "npm --prefix packages/access run smoke",
       "exitCode": 0,
-      "observedViaParent": "nonverify01-all",
-      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt.",
-      "evidence": "docs/handoffs/nonverification-component-evidence.json"
+      "evidence": "docs/handoffs/integration09-component-evidence.json"
     }
   ],
   "acceptance": [
@@ -147,7 +143,7 @@
   ],
   "contractRequests": [],
   "evidencePrivacy": "Foundation handoff uses synthetic/local conformance evidence only; no bearer, wallet secret, Graph credential, private live prompt, or payment proof is included in tracked metadata.",
-  "documentationRevisionNote": "Non-verification local component handoff refreshed from observed e1960b7 results. Parent aggregate exit 1 is retained and not relabeled; root gate must be rerun. Package bytes pinned by codeRevision; this update changes docs only.",
+  "documentationRevisionNote": "Current component evidence binds implementation commit 59c5cb141f951d402e047e818920ef5eb24a6a3a. Historical evidence remains at integrationPriorHandoffCommit. Final whole-application/native/public disposition is in the adjacent NONVERIFICATION-INTEGRATION-HANDOFF.json; no selected checker or protected finance is inferred.",
   "reviewTag": {
     "name": "handoff-review-v1",
     "revision": "74ae66f6bd895b13a9ce9de083357c0fcb88e564",
@@ -158,67 +154,67 @@
       "id": "sdk-http-errors",
       "status": "passed",
       "commandIds": [
-        "nonverify01-access-check",
-        "nonverify01-access-smoke"
+        "integration09-frozen-access-check",
+        "integration09-frozen-access-smoke"
       ],
-      "evidence": "docs/handoffs/nonverification-component-evidence.json",
+      "evidence": "docs/handoffs/integration09-component-evidence.json",
       "details": "All HTTP methods; exact shared DTOs and envelopes; malformed JSON/DTOs; safe errors; bounded 429/network retries; AbortSignal/deadline;409 conflict; unsupported/expired quote; request/profile/budget binding.",
-      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "session-payment-consent",
       "status": "passed",
       "commandIds": [
-        "nonverify01-access-check",
-        "nonverify01-access-smoke"
+        "integration09-frozen-access-check",
+        "integration09-frozen-access-smoke"
       ],
-      "evidence": "docs/handoffs/nonverification-component-evidence.json",
+      "evidence": "docs/handoffs/integration09-component-evidence.json",
       "details": "Explicit sessions; expiry/revocation no auto-renew or repay; default no spending; bounded consent; native x402 402 bytes; callback bearer/cookie/header isolation; rejected authorizer header injection; concurrency/replay/ambiguous-paid-outcome controls.",
-      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "sse-reconnect-cancel",
       "status": "passed",
       "commandIds": [
-        "nonverify01-access-check",
-        "nonverify01-access-smoke"
+        "integration09-frozen-access-check",
+        "integration09-frozen-access-smoke"
       ],
-      "evidence": "docs/handoffs/nonverification-component-evidence.json",
+      "evidence": "docs/handoffs/integration09-component-evidence.json",
       "details": "Actual fetch SSE resume with Last-Event-ID; no duplicate deltas/paid resubmission; expired cursor409; stream disconnection not cancel; SDK/real-browser explicit cancellation; paid_but_failed remains separate; bounded output.",
-      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "cli-mcp",
       "status": "passed",
       "commandIds": [
-        "nonverify01-access-check",
-        "nonverify01-access-smoke"
+        "integration09-frozen-access-check",
+        "integration09-frozen-access-smoke"
       ],
-      "evidence": "docs/handoffs/nonverification-component-evidence.json",
+      "evidence": "docs/handoffs/integration09-component-evidence.json",
       "details": "CLI providers/select/profile/quote/submit/stream/inspect/cancel/receipt-integrity/assess/export/history/revoke; official MCP stdio connect/history/quote/select/submit/watch; host and caller authorization; no-quote refusal and stale Graph-derived history veto.",
-      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "browser-accessibility-xss",
       "status": "passed",
       "commandIds": [
-        "nonverify01-access-check",
-        "nonverify01-access-smoke"
+        "integration09-frozen-access-check",
+        "integration09-frozen-access-smoke"
       ],
-      "evidence": "docs/handoffs/nonverification-component-evidence.json",
+      "evidence": "docs/handoffs/integration09-component-evidence.json",
       "details": "Actual Chromium desktop/mobile; Tab/Enter; loading/empty/error/unavailable/development/cancelled paths; accessible alerts/status; CSP/text-only XSS; no page errors/dialogs/horizontal overflow; separate states; consent invalidation; evidence download.",
-      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "privacy-export",
       "status": "passed",
       "commandIds": [
-        "nonverify01-access-check",
-        "nonverify01-access-smoke"
+        "integration09-frozen-access-check",
+        "integration09-frozen-access-smoke"
       ],
-      "evidence": "docs/handoffs/nonverification-component-evidence.json",
+      "evidence": "docs/handoffs/integration09-component-evidence.json",
       "details": "Permission-restricted CLI files; memory-only browser capability; no bearer in URL/authorizer; no private normal SDK logs; no wallet/Graph secrets; hash/association/signature-validated private export/import; corruption/pin mismatch rejection; evidence deletion yields unavailable assessment; integrity is not execution verification.",
-      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+      "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     }
   ],
   "lateReview": {
@@ -621,5 +617,7 @@
       ]
     }
   ],
-  "foundationPriorCodeRevision": "5c76af329661fab1a2e237c2b9b328db49c4b131"
+  "foundationPriorCodeRevision": "5c76af329661fab1a2e237c2b9b328db49c4b131",
+  "integrationPriorHandoffCommit": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+  "integrationPriorCodeRevision": "e1960b77b448bb050b2eb431255e9343975bfe8b"
 }
