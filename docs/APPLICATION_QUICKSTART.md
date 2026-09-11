@@ -1,5 +1,10 @@
 # Application v2 operator and developer quickstart
 
+## Integration successor update (2026-09-11)
+
+See `MANAGED_INTEGRATIONS.md` for the implemented managed publisher/budget/journal closure, hosted History RPC, private CLI/MCP pins and non-economic submission policy, provider payment factory, and method-neutral assessor/artifact lifecycle. These are exercised local integration paths, not a selected verifier or protected-finance release. Historical statements below about wholly missing adapters or wholly absent public deployments must not override this later source and its final receipt. The earlier native success and public Registry/Graph assets remain real; a new managed native start failed because A's advertised socket/processes were absent. Current real native/public qualification remains blocked on A's maintained binding/topology and any exact remaining activation authority. Do not infer completion until the adjacent `NONVERIFICATION-INTEGRATION-HANDOFF.json` binds final source and observed gates.
+
+
 This is the verification-independent **non-economic** application. It runs without a checker, registry, wallet or payment service. `development` is synthetic echo, not inference. `live` means a native runtime is configured, not qualified correctness. Neither mode offers protected payment. v1 launcher/config/backups remain separate and supported; they are not silently migrated.
 
 ## Clean install and finite demo

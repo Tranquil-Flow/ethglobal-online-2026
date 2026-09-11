@@ -13,6 +13,7 @@ import {
   writePrivateExclusive,
 } from "../operations/src/private-files.mjs";
 import { initializeNativeApplication } from "./application-native-import.mjs";
+import { initializeStdioApplication } from "./application-stdio-import.mjs";
 import { planApplicationDeployment } from "./application-deployment.mjs";
 const fields = {
   "--tls-config": "tlsConfigFile",
@@ -89,6 +90,9 @@ try {
           }),
         ),
       );
+    } else if (action === "init-stdio") {
+      requireOptions(options, ["configFile", "dataDir"]);
+      console.log(JSON.stringify(await initializeStdioApplication(options)));
     } else if (action === "plan-deployment") {
       requireOptions(options, ["configFile", "tlsConfigFile"]);
       console.log(JSON.stringify(await planApplicationDeployment(options)));
@@ -104,7 +108,10 @@ try {
             url: app.url,
             providerIds: app.providerIds,
             mode: app.mode,
-            payment: "non-monetary-no-settlement",
+            payment:
+              app.accessPolicy === "non-economic"
+                ? "non-monetary-no-settlement"
+                : "ordinary-x402-not-financial-protection",
             checking: "separate-observations-not-proof",
           }),
         );
@@ -151,7 +158,7 @@ try {
           JSON.stringify({ status: "restored-not-started", ...report }),
         );
       }
-    } else throw Error("USAGE_INIT_DOCTOR_START_BACKUP_RESTORE");
+    } else throw Error("USAGE_INIT_DOCTOR_START_BACKUP_RESTORE_STDIO");
   }
 } catch (e) {
   await app?.close();

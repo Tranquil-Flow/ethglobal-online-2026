@@ -47,5 +47,8 @@ note.textContent =
   (c.development
     ? "SYNTHETIC APPLICATION — not model inference. "
     : "LIVE RUNTIME CONFIGURED — not independently qualified. ") +
-  "Non-economic access: no charge, settlement or financial protection. Direct signed offers are not ENS records or computation proofs.";
+  (c.accessPolicy === "non-economic"
+    ? "Non-economic access: no charge or settlement. "
+    : "Ordinary x402 payment requires explicit authorization. ") +
+  "No verification-contingent financial protection. Direct signed offers are not ENS records or computation proofs.";
 document.querySelector("header").append(note);

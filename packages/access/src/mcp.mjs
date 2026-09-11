@@ -17,12 +17,36 @@ import { decideProvider } from "./decision.mjs";
 import { privateRead, privateWrite, readPrivatePassphrase } from "./cli.mjs";
 const text = z.string().min(1).max(256),
   amount = z.string().regex(/^(0|[1-9][0-9]{0,77})$/);
+export const NON_ECONOMIC_MCP_SUBMISSION_POLICY = Object.freeze({
+  accessPolicy: "non-economic",
+  maxAmountBaseUnits: "0",
+  asset: "none",
+  network: "non-economic",
+});
+function isNonEconomicPolicy(policy) {
+  return (
+    policy &&
+    !Array.isArray(policy) &&
+    Object.keys(policy).sort().join(",") ===
+      "accessPolicy,asset,maxAmountBaseUnits,network" &&
+    policy.accessPolicy === "non-economic" &&
+    policy.maxAmountBaseUnits === "0" &&
+    policy.asset === "none" &&
+    policy.network === "non-economic"
+  );
+}
 export function createAccessMcp({
   client,
   allowDevelopmentPayment = false,
+  hostSubmissionPolicy,
   recoveryPassphraseFile,
   recoveryDirectory,
 }) {
+  if (
+    hostSubmissionPolicy !== undefined &&
+    !isNonEconomicPolicy(hostSubmissionPolicy)
+  )
+    throw new AccessError("INVALID_HOST_SUBMISSION_POLICY");
   const server = new McpServer({ name: "ethonline-access", version: "0.1.0" });
   async function recoveryStore() {
     if (!recoveryPassphraseFile || !recoveryDirectory)
@@ -140,24 +164,50 @@ export function createAccessMcp({
   );
   register(
     "access_submit",
-    "Paid write requires separate host policy plus explicit bounded caller authorization. Tool/model data cannot grant host authority.",
+    "Submission requires separate host policy plus explicit bounded caller authorization. Non-economic means exactly zero value and is not payment settlement. Tool/model data cannot grant host authority.",
     {
       request: z.record(z.unknown()),
       quoteId: text,
       idempotencyKey: text,
       authorization: z
-        .object({
-          explicit: z.literal(true),
-          maxAmountBaseUnits: amount,
-          asset: text,
-          network: text,
-          developmentPayment: z.literal(true),
-        })
-        .strict()
+        .union([
+          z
+            .object({
+              explicit: z.literal(true),
+              maxAmountBaseUnits: amount,
+              asset: text,
+              network: text,
+              developmentPayment: z.literal(true),
+            })
+            .strict(),
+          z
+            .object({
+              explicit: z.literal(true),
+              maxAmountBaseUnits: amount,
+              asset: text,
+              network: text,
+              nonEconomic: z.literal(true),
+            })
+            .strict(),
+        ])
         .optional(),
     },
     async (a) => {
-      if (
+      if (a.authorization?.nonEconomic) {
+        if (!isNonEconomicPolicy(hostSubmissionPolicy))
+          throw new AccessError(
+            "explicit host non-economic submission policy required",
+          );
+        if (
+          a.authorization.maxAmountBaseUnits !==
+            hostSubmissionPolicy.maxAmountBaseUnits ||
+          a.authorization.asset !== hostSubmissionPolicy.asset ||
+          a.authorization.network !== hostSubmissionPolicy.network
+        )
+          throw new AccessError(
+            "exact zero-value non-economic caller authorization required",
+          );
+      } else if (
         !allowDevelopmentPayment ||
         !a.authorization?.explicit ||
         !a.authorization.developmentPayment
@@ -309,13 +359,23 @@ if (
 ) {
   try {
     const allow = process.env.ETHONLINE_DEVELOPMENT_PAYMENT === "1";
+    const allowNonEconomic =
+      process.env.ETHONLINE_MCP_ALLOW_NON_ECONOMIC === "1";
+    if (allow && allowNonEconomic)
+      throw new AccessError("SELECT_ONE_HOST_SUBMISSION_POLICY");
     const client = createClient({
       baseUrl: process.env.ETHONLINE_BASE_URL || "http://127.0.0.1:4350",
       paymentAuthorizer: allow ? developmentAuthorizer : undefined,
+      pins: process.env.ETHONLINE_PINS_FILE
+        ? await privateRead(process.env.ETHONLINE_PINS_FILE)
+        : undefined,
     });
     const server = createAccessMcp({
       client,
       allowDevelopmentPayment: allow,
+      hostSubmissionPolicy: allowNonEconomic
+        ? NON_ECONOMIC_MCP_SUBMISSION_POLICY
+        : undefined,
       recoveryPassphraseFile: process.env.ETHONLINE_RECOVERY_PASSPHRASE_FILE,
       recoveryDirectory: process.env.ETHONLINE_RECOVERY_DIRECTORY,
     });

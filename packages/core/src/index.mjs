@@ -589,6 +589,15 @@ export function createApp({
     }
   }
   function deleteEvidence(id) {
+    const owner = store.get("jobs", id);
+    if (owner && executor.deleteEvidence) {
+      const cleaned = executor.deleteEvidence({
+        jobId: id,
+        providerId: owner.providerId,
+      });
+      if (cleaned && typeof cleaned.then === "function")
+        throw Error("ASYNC_EVIDENCE_CLEANUP_UNSUPPORTED");
+    }
     store.transaction(() => {
       store.delete("private", id);
       const rec = store.get("jobs", id);

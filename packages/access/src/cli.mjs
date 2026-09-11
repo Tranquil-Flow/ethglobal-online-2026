@@ -61,6 +61,30 @@ export async function readPrivatePassphrase(path) {
     throw new AccessError("INVALID_RECOVERY_PASSPHRASE_FILE");
   return value.passphrase;
 }
+function validatePublicPins(pins) {
+  if (
+    !pins ||
+    Array.isArray(pins) ||
+    Object.keys(pins).some(
+      (key) =>
+        !["providerId", "keyId", "algorithm", "publicKeyJwk"].includes(key),
+    ) ||
+    typeof pins.providerId !== "string" ||
+    !pins.providerId ||
+    typeof pins.keyId !== "string" ||
+    !pins.keyId ||
+    (pins.algorithm !== undefined && pins.algorithm !== "Ed25519") ||
+    !pins.publicKeyJwk ||
+    Array.isArray(pins.publicKeyJwk) ||
+    pins.publicKeyJwk.kty !== "OKP" ||
+    pins.publicKeyJwk.crv !== "Ed25519" ||
+    typeof pins.publicKeyJwk.x !== "string" ||
+    !pins.publicKeyJwk.x ||
+    "d" in pins.publicKeyJwk
+  )
+    throw new AccessError("INVALID_PUBLIC_PINS");
+  return pins;
+}
 export async function runCli(argv) {
   const options = {},
     pos = [];
@@ -128,6 +152,11 @@ export async function runCli(argv) {
   }
   if (session && session.baseUrl !== base)
     throw new AccessError("SESSION_ORIGIN_MISMATCH");
+  const pins = options["pins-file"]
+    ? validatePublicPins(await privateRead(options["pins-file"]))
+    : session?.pins === undefined
+      ? undefined
+      : validatePublicPins(session.pins);
   if (options["development-payment"] && options["payment-authorizer"])
     throw new AccessError("SELECT_ONE_AUTHORIZER");
   const paymentAuthorizer = options["payment-authorizer"]
@@ -145,9 +174,7 @@ export async function runCli(argv) {
     baseUrl: base,
     capability: session?.capability,
     paymentAuthorizer,
-    pins: options["pins-file"]
-      ? await privateRead(options["pins-file"])
-      : undefined,
+    pins,
   });
   const save = (name, value) =>
     privateWrite(join(dir, name + "-" + random() + ".json"), value);
@@ -198,7 +225,11 @@ export async function runCli(argv) {
   if (command === "connect") {
     if (session) throw new AccessError("REVOKE_EXISTING_SESSION_FIRST");
     const s = await client.connect();
-    await privateWrite(sessionFile, { ...s, baseUrl: base });
+    await privateWrite(sessionFile, {
+      ...s,
+      baseUrl: base,
+      ...(pins === undefined ? {} : { pins }),
+    });
     return { connected: true, expiresAt: s.expiresAt };
   }
   if (command === "revoke") {

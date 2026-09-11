@@ -26,10 +26,7 @@ import {
 } from "./mycelium-operator.mjs";
 import { fileRuntimeAccess } from "./operator-files.mjs";
 import { createMyceliumProfile } from "./mycelium-profile.mjs";
-import {
-  createHistory,
-  createGraphClient,
-} from "../packages/indexing/src/index.mjs";
+import { createManagedHistory } from "./application-history.mjs";
 
 import {
   createEnsV2Discovery,
@@ -173,6 +170,11 @@ export async function initializeApplication({
     rmSync(stage, { recursive: true, force: true });
   }
 }
+import { inspectStdioRuntime } from "./application-stdio.mjs";
+import { inspectManagedPublication } from "./application-publication-config.mjs";
+import { inspectManagedAssessor } from "./application-assessor.mjs";
+import { inspectManagedPayments } from "./application-payments.mjs";
+
 export function loadManagedApplication({ configFile }) {
   const root = dirname(resolve(configFile));
   assertPrivateDirectory(root);
@@ -185,6 +187,7 @@ export function loadManagedApplication({ configFile }) {
     "providers",
     ...(manifest.history !== undefined ? ["history"] : []),
     ...(manifest.discovery !== undefined ? ["discovery"] : []),
+    ...(manifest.publication !== undefined ? ["publication"] : []),
     ...(manifest.historicalKeys !== undefined ? ["historicalKeys"] : []),
   ]);
   if (
@@ -194,7 +197,13 @@ export function loadManagedApplication({ configFile }) {
   )
     fail("INVALID_MANAGED_BINDING");
   const entries = manifest.providers.map((spec) => {
-    exact(spec, ["providerId", "keyFile", "runtime"]);
+    exact(spec, [
+      "providerId",
+      "keyFile",
+      "runtime",
+      ...(spec.assessor === undefined ? [] : ["assessor"]),
+      ...(spec.payment === undefined ? [] : ["payment"]),
+    ]);
     const p = config.providers.find((x) => x.providerId === spec.providerId);
     if (!p) fail("RUNTIME_PROVIDER_CATALOG_MISMATCH");
     const pem = readPrivateFile(managedPath(root, spec.keyFile), {
@@ -268,8 +277,47 @@ export function loadManagedApplication({ configFile }) {
           fail("RUNTIME_NOT_STARTED");
         },
       };
+    } else if (spec.runtime.kind === "native-stdio") {
+      runtime = inspectStdioRuntime({
+        spec: spec.runtime,
+        mode: config.mode,
+        providerId: p.providerId,
+        resolvePath: (path) => managedPath(root, path),
+      });
     } else fail("UNSUPPORTED_RUNTIME_PROTOCOL");
+    const assessor = inspectManagedAssessor({
+      root,
+      spec: spec.assessor,
+      providerId: p.providerId,
+      mode: config.mode,
+      profiles: runtime.profiles,
+    });
+    const payment = inspectManagedPayments({
+      spec: spec.payment ?? {
+        version: "1",
+        policy: "non-economic",
+        ...(config.core?.maxRecords === undefined
+          ? {}
+          : { maxRecords: config.core.maxRecords }),
+      },
+      mode: config.mode,
+      providerId: p.providerId,
+      profileIds: p.profileIds,
+    });
+    const paymentPolicy = spec.payment?.policy ?? "non-economic";
+    if (paymentPolicy !== config.accessPolicy) fail("PAYMENT_POLICY_MISMATCH");
+    if (
+      paymentPolicy === "ordinary-paid-x402" &&
+      ((!config.port && !config.publicOrigin) ||
+        spec.payment.config.resourceUrl !==
+          (config.publicOrigin ?? "http://127.0.0.1:" + config.port) +
+            "/v1/jobs")
+    )
+      fail("PAYMENT_RESOURCE_ORIGIN_MISMATCH");
     return {
+      payment,
+      paymentPolicy,
+      assessor,
       providerId: p.providerId,
       receiptSigner,
       runtime,
@@ -278,24 +326,10 @@ export function loadManagedApplication({ configFile }) {
       spec,
     };
   });
-  let history;
-  if (manifest.history !== undefined) {
-    exact(manifest.history, ["endpoint", "deployment", "deploymentId"]);
-    if (manifest.history.deployment.mode !== config.mode)
-      fail("HISTORY_MODE_MISMATCH");
-    history = createHistory({
-      config: {
-        mode: config.mode,
-        chainId: String(manifest.history.deployment.chainId),
-        deployment: manifest.history.deployment,
-        deploymentId: manifest.history.deploymentId,
-      },
-      client: createGraphClient({
-        endpoint: manifest.history.endpoint,
-        allowLocal: config.mode === "development",
-      }),
-    });
-  }
+  const history =
+    manifest.history === undefined
+      ? undefined
+      : createManagedHistory({ spec: manifest.history, mode: config.mode });
   const specs = manifest.historicalKeys ?? [];
   if (!Array.isArray(specs) || specs.length > 16)
     fail("INVALID_HISTORICAL_KEYS");
@@ -337,10 +371,36 @@ export function loadManagedApplication({ configFile }) {
       fail("INVALID_DISCOVERY_BINDING");
     discovery = createEnsV2Discovery({ inputs });
   }
-  return { root, config, entries, history, historicalKeys, discovery };
+  const publication =
+    manifest.publication === undefined
+      ? undefined
+      : inspectManagedPublication({
+          root,
+          spec: manifest.publication,
+          mode: config.mode,
+        });
+  return {
+    root,
+    config,
+    entries,
+    history,
+    historicalKeys,
+    discovery,
+    publication,
+  };
 }
 async function prepare(options, { start = false } = {}) {
   const x = loadManagedApplication(options);
+  if (
+    start &&
+    x.config.mode === "live" &&
+    x.config.accessPolicy === "ordinary-paid-x402" &&
+    !options.ordinaryPaidAuthority
+  )
+    fail("ORDINARY_PAID_AUTHORITY_REQUIRED");
+  if (start)
+    for (const e of x.entries)
+      if (e.runtime.kind === "native-stdio") e.runtime.authorize();
   for (const e of x.entries)
     if (e.input) {
       const { createMyceliumProfile } = await import("./mycelium-profile.mjs");
@@ -358,17 +418,53 @@ async function prepare(options, { start = false } = {}) {
         };
       }
     }
+  for (const e of x.entries)
+    if (start && e.assessor) {
+      const original = e.runtime;
+      e.runtime = {
+        ...original,
+        async create(context) {
+          const r = await original.create(context);
+          try {
+            if (r.assessor) fail("ASSESSOR_BINDING_CONFLICT");
+            const assessor = await e.assessor.create(context);
+            return {
+              ...r,
+              assessor,
+              async close() {
+                try {
+                  await assessor.close?.();
+                } finally {
+                  await r.close?.();
+                }
+              },
+            };
+          } catch (error) {
+            await r.close?.();
+            throw error;
+          }
+        },
+      };
+    }
+  if (x.publication && options.eventSink !== undefined)
+    fail("PUBLICATION_BINDING_CONFLICT");
   const bindings = {
+    ...(x.publication ? { createEventSink: x.publication.create } : {}),
     ...(x.history ? { history: x.history } : {}),
     ...(x.discovery ? { discovery: x.discovery } : {}),
     ...(options.eventSink !== undefined
       ? { eventSink: options.eventSink }
       : {}),
-    providers: x.entries.map(({ providerId, receiptSigner, runtime }) => ({
-      providerId,
-      receiptSigner,
-      runtime,
-    })),
+    providers: x.entries.map(
+      ({ providerId, receiptSigner, runtime, payment, paymentPolicy }) => ({
+        payment,
+        paymentPolicy,
+        ordinaryPaidAuthority: options.ordinaryPaidAuthority,
+        providerId,
+        receiptSigner,
+        runtime,
+      }),
+    ),
   };
   preflightApplication({ config: x.config, bindings });
   return { ...x, bindings };
@@ -396,10 +492,13 @@ export async function doctorApplication(options) {
     modelLoaded: false,
     grantVerified: false,
     portAvailability: "checked-at-start",
-    checking: x.entries.some((e) => e.input?.replayGateway)
+    checking: x.entries.some((e) => e.assessor || e.input?.replayGateway)
       ? "configured-not-qualified"
       : "unavailable",
-    payment: "non-monetary-no-settlement",
+    payment:
+      x.config.accessPolicy === "non-economic"
+        ? "non-monetary-no-settlement"
+        : "ordinary-x402-configured-not-protected",
   };
 }
 /**

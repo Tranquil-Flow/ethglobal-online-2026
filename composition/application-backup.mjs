@@ -1,4 +1,13 @@
 import { createRequire } from "node:module";
+import {
+  existsSync,
+  readdirSync,
+  openSync,
+  closeSync,
+  fstatSync,
+  constants,
+} from "node:fs";
+import { readPrivateFile } from "../operations/src/private-files.mjs";
 import { join, relative, resolve, dirname } from "node:path";
 import { digestOf } from "../packages/contracts/index.mjs";
 import {
@@ -25,6 +34,7 @@ export function managedInventory({ configFile }) {
     config,
     entries: bindings,
     historicalKeys,
+    publication,
   } = loadManagedApplication({ configFile });
   const db = new Database(join(root, "core.sqlite"), { fileMustExist: true });
   let records;
@@ -115,6 +125,10 @@ export function managedInventory({ configFile }) {
       historicalIdentityIds: historical.map((k) => k.identityId),
     });
     const spec = b.spec;
+    for (const file of b.assessor?.files ?? []) {
+      managedPath(root, file);
+      entries.push(entry(file, "opaque-private", ["application-config"]));
+    }
     entries.push(
       entry(
         spec.keyFile,
@@ -124,6 +138,18 @@ export function managedInventory({ configFile }) {
         identityId,
       ),
     );
+    if (b.paymentPolicy === "ordinary-paid-x402") {
+      const path =
+        "providers/" + digestOf(p.providerId).slice(7) + "/payments.sqlite";
+      entries.push(
+        entry(
+          path,
+          "sqlite",
+          ["budget-state", "idempotency-state"],
+          p.providerId,
+        ),
+      );
+    }
     const runtimePath =
       "providers/" + digestOf(p.providerId).slice(7) + "/runtime.sqlite";
     const runtimeDb = new Database(join(root, runtimePath), {
@@ -144,6 +170,16 @@ export function managedInventory({ configFile }) {
         p.providerId,
       ),
     );
+    if (spec.runtime.kind === "native-stdio") {
+      for (const file of [
+        spec.runtime.bindingFile,
+        spec.runtime.accessFile,
+        spec.runtime.credentialFile,
+      ]) {
+        managedPath(root, file);
+        entries.push(entry(file, "opaque-private", ["application-config"]));
+      }
+    }
     if (spec.runtime.kind === "mycelium") {
       for (const file of [
         spec.runtime.inputFile,
@@ -152,6 +188,25 @@ export function managedInventory({ configFile }) {
       ]) {
         managedPath(root, file);
         entries.push(entry(file, "opaque-private", ["application-config"]));
+      }
+    }
+  }
+  if (publication) {
+    for (const file of publication.files)
+      entries.push(entry(file, "json", ["application-config"]));
+    for (const dir of publication.directories) {
+      const absolute = managedPath(root, dir);
+      if (!existsSync(absolute)) continue;
+      for (const name of readdirSync(absolute)) {
+        if (!["journal.json", "journal.lock"].includes(name))
+          fail("UNEXPECTED_PUBLICATION_STATE");
+        const path = dir + "/" + name;
+        managedPath(root, path);
+        entries.push(
+          entry(path, name.endsWith(".json") ? "json" : "opaque-private", [
+            "publication-state",
+          ]),
+        );
       }
     }
   }
@@ -164,6 +219,35 @@ export function managedInventory({ configFile }) {
     entries: unique,
   });
 }
+function lockPublicationSnapshot(configFile) {
+  const { root, publication } = loadManagedApplication({ configFile });
+  const fds = [];
+  try {
+    for (const dir of publication?.directories ?? []) {
+      const path = managedPath(root, dir) + "/journal.lock";
+      if (!existsSync(path)) continue;
+      const { data, stat } = readPrivateFile(path, {
+        maxBytes: 128,
+        code: "UNSAFE_PUBLICATION_LOCK",
+      });
+      data.fill(0);
+      const fd = openSync(path, constants.O_RDWR | constants.O_NOFOLLOW);
+      fds.push(fd);
+      const actual = fstatSync(fd);
+      if (actual.ino !== stat.ino || actual.dev !== stat.dev)
+        fail("UNSAFE_PUBLICATION_LOCK");
+      createRequire(
+        new URL("../packages/indexing/package.json", import.meta.url),
+      )("fs-ext").flockSync(fd, "exnb");
+    }
+  } catch {
+    for (const fd of fds) closeSync(fd);
+    fail("PUBLICATION_STATE_BUSY");
+  }
+  return () => {
+    for (const fd of fds) closeSync(fd);
+  };
+}
 export async function backupManagedApplication({
   configFile,
   artifactPath,
@@ -171,7 +255,9 @@ export async function backupManagedApplication({
 }) {
   const root = dirname(resolve(configFile)),
     release = acquirePrivateStateLock(root);
+  let releasePublication;
   try {
+    releasePublication = lockPublicationSnapshot(configFile);
     await doctorApplication({ configFile });
     const inventory = managedInventory({ configFile });
     const result = await backupApplicationState({
@@ -183,6 +269,7 @@ export async function backupManagedApplication({
     });
     return { ...result, inventory };
   } finally {
+    releasePublication?.();
     release();
   }
 }

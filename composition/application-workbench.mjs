@@ -3,7 +3,10 @@ import { createServer as createPortProbe } from "node:net";
 import { assertPrivateDirectory } from "../operations/src/private-files.mjs";
 import { join, resolve } from "node:path";
 import { createApp, createStore } from "../packages/core/src/index.mjs";
+import { createHash } from "node:crypto";
+import { digest as nativeRecordDigest } from "./vendor/a-native-executor-v1.mjs";
 import { createReceiptVerifier } from "../packages/core/src/receipts.mjs";
+import { createSqliteStore as createPaymentStore } from "../packages/payments/src/index.mjs";
 import { createNonEconomicAccess } from "../packages/payments/src/non-economic.mjs";
 import { digestOf, validate } from "../packages/contracts/index.mjs";
 import { createProviderPayments } from "./provider-payments.mjs";
@@ -91,7 +94,7 @@ export function validateApplicationConfig(input) {
     )
       fail("INVALID_PUBLIC_ORIGIN");
   }
-  if (input.accessPolicy !== "non-economic")
+  if (!["non-economic", "ordinary-paid-x402"].includes(input.accessPolicy))
     fail("PROTECTED_PAYMENT_UNAVAILABLE");
   if (
     input.version !== "2" ||
@@ -223,7 +226,8 @@ export function preflightApplication({ config: input, bindings }) {
       runtime = b.runtime;
     if (
       runtime?.mode !== config.mode ||
-      (config.mode === "live" && runtime.kind !== "mycelium") ||
+      (config.mode === "live" &&
+        !["mycelium", "native-stdio"].includes(runtime.kind)) ||
       (config.mode === "development" &&
         !["synthetic", "mycelium-v3-conformance"].includes(runtime?.kind))
     )
@@ -257,6 +261,11 @@ export function preflightApplication({ config: input, bindings }) {
       Object.hasOwn(pins.publicKeyJwk, "d")
     )
       fail("RECEIPT_SIGNER_IDENTITY_MISMATCH");
+    if (
+      config.accessPolicy !== "non-economic" &&
+      (!b.payment || b.paymentPolicy !== config.accessPolicy)
+    )
+      fail("PAYMENT_POLICY_MISMATCH");
     const publicId = digestOf(pins.publicKeyJwk);
     if (keys.has(p.keyId) || publicKeys.has(publicId))
       fail("SEPARATE_PROVIDER_KEYS_REQUIRED");
@@ -284,6 +293,12 @@ export function preflightApplication({ config: input, bindings }) {
       typeof bindings.eventSink?.close !== "function")
   )
     fail("INVALID_EVENT_SINK_BINDING");
+  if (
+    bindings.createEventSink !== undefined &&
+    (typeof bindings.createEventSink !== "function" ||
+      bindings.eventSink !== undefined)
+  )
+    fail("INVALID_EVENT_SINK_BINDING");
   return { config, entries };
 }
 
@@ -300,8 +315,10 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
     app,
     viewer,
     payments,
+    eventSink = bindings.eventSink,
     closed = false;
   const stores = [],
+    ownedPaymentPorts = [],
     runtimes = [];
   const close = async () => {
     if (closed) return;
@@ -310,8 +327,10 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
     for (const fn of [
       () => viewer?.close(),
       () => app?.close(),
-      () => bindings.eventSink?.close(),
+      () => eventSink?.close(),
+      () => bindings.history?.close?.(),
       () => payments?.close(),
+      ...ownedPaymentPorts.map((p) => () => p.close()),
       ...runtimes.map((r) => () => r.close?.()),
       ...stores.map((s) => () => s.close()),
       () => store?.close(),
@@ -426,7 +445,16 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
     const providerPins = Object.fromEntries(
       entries.map((e) => [e.config.providerId, e.pins]),
     );
+    if (bindings.createEventSink) {
+      eventSink = await bindings.createEventSink();
+      if (
+        typeof eventSink?.publish !== "function" ||
+        typeof eventSink?.close !== "function"
+      )
+        fail("INVALID_EVENT_SINK_BINDING");
+    }
     const ports = new Map(),
+      runtimeStores = new Map(),
       paymentPorts = {};
     for (const e of entries) {
       const childDir = join(
@@ -437,8 +465,101 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       mkdirSync(childDir, { recursive: true, mode: 0o700 });
       const child = createStore({ path: join(childDir, "runtime.sqlite") });
       stores.push(child);
+      runtimeStores.set(e.config.providerId, child);
+    }
+    // All payment policies and factories are admitted before native readiness.
+    for (const e of entries) {
+      let port;
+      if (e.binding.payment) {
+        let db;
+        const file = join(
+          dir,
+          "providers",
+          digestOf(e.config.providerId).slice(7),
+          "payments.sqlite",
+        );
+        const lazy = new Proxy(
+          {},
+          {
+            get(_, key) {
+              if (key === "close") return () => db?.close();
+              db ??= createPaymentStore({ path: file });
+              const value = db[key];
+              return typeof value === "function" ? value.bind(db) : value;
+            },
+          },
+        );
+        const child = runtimeStores.get(e.config.providerId);
+        try {
+          port = e.binding.payment.create({
+            store: config.accessPolicy === "non-economic" ? child : lazy,
+            ordinaryPaidAuthority: e.binding.ordinaryPaidAuthority,
+          });
+        } catch (error) {
+          db?.close();
+          throw error;
+        }
+      } else
+        port = createNonEconomicAccess({
+          store: runtimeStores.get(e.config.providerId),
+          mode: config.mode,
+          providerId: e.config.providerId,
+          profileIds: e.config.profileIds,
+          maxRecords: config.core?.maxRecords,
+        });
+      paymentPorts[e.config.providerId] = port;
+      ownedPaymentPorts.push(port);
+    }
+    for (const e of entries) {
+      const child = runtimeStores.get(e.config.providerId);
       const r = await e.binding.runtime.create({
         store: child,
+        async loadExecutionArtifact({ jobId, kind }) {
+          if (
+            kind !== "native-terminal-record-v1" ||
+            !/^[-a-f0-9]{36}$/.test(jobId)
+          )
+            fail("EXECUTION_ARTIFACT_UNAVAILABLE");
+          const row = store.get("jobs", jobId),
+            bundle = store.get("private", jobId),
+            receipt = store.get("receipts", jobId)?.receipt;
+          if (
+            !row ||
+            row.providerId !== e.config.providerId ||
+            !Number.isSafeInteger(row.evidenceExpiresAt) ||
+            row.evidenceExpiresAt <= Date.now() ||
+            !bundle ||
+            !receipt
+          ) {
+            child.delete("native-evidence-v1", jobId);
+            fail("EVIDENCE_UNAVAILABLE");
+          }
+          const saved = child.get("native-evidence-v1", jobId);
+          if (
+            !saved ||
+            saved.providerId !== e.config.providerId ||
+            saved.profileId !== receipt.payload.profileId ||
+            saved.evidenceDigest !== receipt.payload.evidenceDigest
+          )
+            fail("EXECUTION_ARTIFACT_UNAVAILABLE");
+          const unsigned = { ...saved.record };
+          delete unsigned.record_digest;
+          if (
+            nativeRecordDigest(unsigned) !== saved.evidenceDigest ||
+            digestOf(saved.record.request.original_context) !==
+              digestOf(bundle.request)
+          )
+            fail("EXECUTION_ARTIFACT_INVALID");
+          const bytes = Buffer.from(JSON.stringify(saved.record));
+          if (bytes.length > 1048576) fail("EXECUTION_ARTIFACT_LIMIT");
+          return {
+            kind,
+            bytes,
+            digest:
+              "sha256:" + createHash("sha256").update(bytes).digest("hex"),
+            executionEvidenceDigest: saved.evidenceDigest,
+          };
+        },
         providerPins: { [e.config.providerId]: e.pins },
         async loadEvidence(ref) {
           if (!/^core-local:[a-f0-9-]{36}$/.test(ref || ""))
@@ -480,13 +601,6 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
         fail("INVALID_ASSESSOR_BINDING");
       ports.set(e.config.providerId, r);
       runtimes.push(r);
-      paymentPorts[e.config.providerId] = createNonEconomicAccess({
-        store: child,
-        mode: config.mode,
-        providerId: e.config.providerId,
-        profileIds: e.config.profileIds,
-        maxRecords: config.core?.maxRecords,
-      });
     }
     const check = (request) => {
       const e = byProvider.get(request.providerId);
@@ -504,6 +618,13 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
     };
     const executor = {
       mode: config.mode,
+      deleteEvidence({ jobId, providerId }) {
+        const child = runtimeStores.get(providerId);
+        if (!child) fail("EVIDENCE_PROVIDER_MISMATCH");
+        for (const name of ["assessor-artifacts-v1", "native-evidence-v1"])
+          for (const row of child.list(name))
+            if (row.jobId === jobId) child.delete(name, row.id);
+      },
       validateRequest(request) {
         check(request);
       },
@@ -527,9 +648,11 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
         name: entry.config.providerId,
         endpoint: config.publicOrigin ?? viewer.url,
         profileIds: entry.config.profileIds,
-        paymentNetwork: "non-economic",
-        paymentAsset: "none",
-        paymentReceiver: entry.config.providerId,
+        paymentNetwork:
+          entry.binding.payment?.offerTerms.network ?? "non-economic",
+        paymentAsset: entry.binding.payment?.offerTerms.asset ?? "none",
+        paymentReceiver:
+          entry.binding.payment?.offerTerms.receiver ?? entry.config.providerId,
         mode: config.mode,
         source: {
           chainId: "application-direct",
@@ -614,8 +737,8 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
               fail("PROVIDER_CHANGED");
             if (!entry.config.profileIds.includes(profileId))
               reject.push("PROFILE_UNSUPPORTED");
-            if (network !== "non-economic") reject.push("NETWORK_MISMATCH");
-            if (asset !== "none") reject.push("ASSET_MISMATCH");
+            if (network !== p.paymentNetwork) reject.push("NETWORK_MISMATCH");
+            if (asset !== p.paymentAsset) reject.push("ASSET_MISMATCH");
             const matching = quotes.filter(
                 (q) => q.providerId === p.providerId,
               ),
@@ -630,9 +753,9 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
               }
               if (
                 q.profileId !== profileId ||
-                q.network !== "non-economic" ||
-                q.asset !== "none" ||
-                q.receiver !== p.providerId ||
+                q.network !== p.paymentNetwork ||
+                q.asset !== p.paymentAsset ||
+                q.receiver !== p.paymentReceiver ||
                 q.mode !== config.mode
               ) {
                 codes.push("QUOTE_BINDING_MISMATCH");
@@ -754,7 +877,7 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       payments,
       discovery: directDiscovery,
       history: bindings.history,
-      eventSink: bindings.eventSink,
+      eventSink,
       assessor: {
         forProvider(id) {
           return ports.get(id)?.assessor;
@@ -768,7 +891,7 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
             version: "2",
             offers: entries.map((e) =>
               e.binding.receiptSigner.signOffer({
-                version: "2",
+                version: config.accessPolicy === "non-economic" ? "2" : "3",
                 providerId: e.config.providerId,
                 profileIds: e.config.profileIds,
                 runtimeDigest: e.config.runtimeDigest,
@@ -776,7 +899,7 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
                 aliases: e.config.aliases,
                 endpoint: config.publicOrigin ?? viewer.url,
                 mode: config.mode,
-                accessPolicy: "non-economic",
+                accessPolicy: config.accessPolicy,
                 issuedAt: new Date(now).toISOString(),
                 expiresAt: new Date(now + 60000).toISOString(),
               }),
@@ -791,8 +914,11 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       applicationVersion: "2",
       fixture: false,
       development: config.mode === "development",
-      accessPolicy: "non-economic",
-      payment: "non-monetary-no-settlement",
+      accessPolicy: config.accessPolicy,
+      payment:
+        config.accessPolicy === "non-economic"
+          ? "non-monetary-no-settlement"
+          : "ordinary-x402-not-financial-protection",
       assessment: [...ports.values()].some((r) => r.assessor)
         ? "configured-observations-not-proof"
         : "unavailable",
@@ -809,7 +935,7 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
             : null,
         ]),
       ),
-      publication: bindings.eventSink
+      publication: eventSink
         ? "configured-consent-and-outbox-driven"
         : "disabled",
       discovery: bindings.discovery
@@ -836,7 +962,7 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       mode: config.mode,
       providerIds: config.providers.map((p) => p.providerId),
       profileIds: profiles.map(digestOf),
-      accessPolicy: "non-economic",
+      accessPolicy: config.accessPolicy,
       pins: providerPins,
       close,
     };

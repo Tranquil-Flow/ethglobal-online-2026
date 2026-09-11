@@ -29,9 +29,11 @@ export function validateOfferPayload(p) {
     "expiresAt",
   ]);
   if (
-    p.version !== "2" ||
+    !["2", "3"].includes(p.version) ||
     !id(p.providerId) ||
-    p.accessPolicy !== "non-economic" ||
+    (p.version === "2"
+      ? p.accessPolicy !== "non-economic"
+      : p.accessPolicy !== "ordinary-paid-x402") ||
     !["live", "development"].includes(p.mode) ||
     !digest(p.runtimeDigest) ||
     !Array.isArray(p.profileIds) ||
@@ -98,7 +100,7 @@ export function validateOfferPayload(p) {
 }
 export function offerSigningText(p) {
   validateOfferPayload(p);
-  return "mycelium:direct-offer:v2\n" + canonicalize(p);
+  return "mycelium:direct-offer:v" + p.version + "\n" + canonicalize(p);
 }
 export function validateSignedOffer(o) {
   exact(o, ["payload", "keyId", "algorithm", "signature"]);

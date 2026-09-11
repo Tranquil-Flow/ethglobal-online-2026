@@ -1,5 +1,10 @@
 # Submission and demo draft — not submitted
 
+## Integration successor update (2026-09-11)
+
+See `MANAGED_INTEGRATIONS.md` for the implemented managed publisher/budget/journal closure, hosted History RPC, private CLI/MCP pins and non-economic submission policy, provider payment factory, and method-neutral assessor/artifact lifecycle. These are exercised local integration paths, not a selected verifier or protected-finance release. Historical statements below about wholly missing adapters or wholly absent public deployments must not override this later source and its final receipt. The earlier native success and public Registry/Graph assets remain real; a new managed native start failed because A's advertised socket/processes were absent. Current real native/public qualification remains blocked on A's maintained binding/topology and any exact remaining activation authority. Do not infer completion until the adjacent `NONVERIFICATION-INTEGRATION-HANDOFF.json` binds final source and observed gates.
+
+
 Successor 03 adds native admission/import/raw-selector metadata and deployment preparation. It remains end-to-end incomplete: no new real-model, independently controlled physical, actual-checker/financial or public qualification is claimed, and current full local combined acceptance awaits resource coordination. Do not submit this as a completed protected service.
 
 ## Proposed description
