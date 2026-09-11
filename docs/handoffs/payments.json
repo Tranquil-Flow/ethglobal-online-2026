@@ -1,7 +1,7 @@
 {
   "lane": "payments",
-  "status": "local_ready",
-  "codeRevision": "8a6fee1e86a283688029a7704000637eb4331134",
+  "status": "blocked",
+  "codeRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
   "runtime": {
     "node": "20.19.5",
     "npm": "10.8.2",
@@ -12,25 +12,18 @@
   "verifiedAt": "2026-09-07T15:56:23.674930+00:00",
   "commands": [
     {
-      "id": "closure02-payments-check",
+      "id": "source03-payments-check",
       "command": "npm --prefix packages/payments run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/application-verification.json",
-      "localLog": "../logs/closure02-payments-check.log"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "localLog": "../logs/source03-payments-check.log"
     },
     {
-      "id": "closure02-payments-smoke",
+      "id": "source03-payments-smoke",
       "command": "npm --prefix packages/payments run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/application-verification.json",
-      "localLog": "../logs/closure02-payments-smoke.log"
-    },
-    {
-      "id": "closure02-integration",
-      "command": "npm run smoke:integration",
-      "exitCode": 0,
-      "evidence": "docs/handoffs/application-verification.json",
-      "localLog": "../logs/closure02-integration.log"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "localLog": "../logs/source03-payments-smoke.log"
     }
   ],
   "acceptance": [
@@ -315,9 +308,9 @@
     },
     {
       "id": "combined-app",
-      "status": "qualified",
-      "reason": "Application-local only at 8a6fee1e86a283688029a7704000637eb4331134: actual canonical local composition/ingestion passed. Synthetic executor/checker; not inference, financial protection or public qualification.",
-      "evidence": "docs/handoffs/application-verification.json"
+      "status": "blocked",
+      "reason": "Current successor combined/public qualification is not complete. Historical qualified scope remains preserved in verificationHistory.",
+      "evidence": "docs/APPLICATION_COMPLETION.md"
     },
     {
       "id": "public-release",
@@ -718,63 +711,63 @@
   "acceptanceCases": [
     {
       "id": "real-sdk-protocol",
-      "status": "passed",
+      "status": "pending",
       "commandIds": [
-        "closure02-payments-check",
-        "closure02-payments-smoke",
-        "closure02-integration"
+        "source03-payments-check",
+        "source03-payments-smoke"
       ],
-      "evidence": "docs/handoffs/application-verification.json"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
     },
     {
       "id": "header-policy",
-      "status": "passed",
+      "status": "pending",
       "commandIds": [
-        "closure02-payments-check",
-        "closure02-payments-smoke",
-        "closure02-integration"
+        "source03-payments-check",
+        "source03-payments-smoke"
       ],
-      "evidence": "docs/handoffs/application-verification.json"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
     },
     {
       "id": "request-budget-binding",
-      "status": "passed",
+      "status": "pending",
       "commandIds": [
-        "closure02-payments-check",
-        "closure02-payments-smoke",
-        "closure02-integration"
+        "source03-payments-check",
+        "source03-payments-smoke"
       ],
-      "evidence": "docs/handoffs/application-verification.json"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
     },
     {
       "id": "concurrent-replay",
-      "status": "passed",
+      "status": "pending",
       "commandIds": [
-        "closure02-payments-check",
-        "closure02-payments-smoke",
-        "closure02-integration"
+        "source03-payments-check",
+        "source03-payments-smoke"
       ],
-      "evidence": "docs/handoffs/application-verification.json"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
     },
     {
       "id": "settlement-recovery",
-      "status": "passed",
+      "status": "pending",
       "commandIds": [
-        "closure02-payments-check",
-        "closure02-payments-smoke",
-        "closure02-integration"
+        "source03-payments-check",
+        "source03-payments-smoke"
       ],
-      "evidence": "docs/handoffs/application-verification.json"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
     },
     {
       "id": "paid-but-failed",
-      "status": "passed",
+      "status": "pending",
       "commandIds": [
-        "closure02-payments-check",
-        "closure02-payments-smoke",
-        "closure02-integration"
+        "source03-payments-check",
+        "source03-payments-smoke"
       ],
-      "evidence": "docs/handoffs/application-verification.json"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
     }
   ],
   "environment": {
@@ -783,7 +776,7 @@
     "platform": "darwin",
     "arch": "arm64"
   },
-  "documentationRevisionNote": "Application implementation tested at 8a6fee1e86a283688029a7704000637eb4331134. Later root README/docs/handoff-only commits do not change package/composition bytes. Final exact-candidate canonical receipt is in the adjacent APPLICATION-HANDOFF.json packet.",
+  "documentationRevisionNote": "Frozen implementation 0d0c7cd52b84f2b7516c29c3febc79ff3cc79063 has component checks/smokes. Status remains blocked until full combined acceptance and truthful handoff refresh; see the adjacent END-TO-END-HANDOFF.json and RESOURCE-COORDINATION.json. No new target/public qualification.",
   "verificationHistory": [
     {
       "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
@@ -949,6 +942,146 @@
         }
       ],
       "documentationRevisionNote": "Previous handoff preserved in archive/pre-closeout-payments.json. Current package check/smoke and combined integration executed in a fresh owned checkout of codeRevision."
+    },
+    {
+      "status": "local_ready",
+      "codeRevision": "8a6fee1e86a283688029a7704000637eb4331134",
+      "commands": [
+        {
+          "id": "closure02-payments-check",
+          "command": "npm --prefix packages/payments run check",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-payments-check.log"
+        },
+        {
+          "id": "closure02-payments-smoke",
+          "command": "npm --prefix packages/payments run smoke",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-payments-smoke.log"
+        },
+        {
+          "id": "closure02-integration",
+          "command": "npm run smoke:integration",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-integration.log"
+        }
+      ],
+      "acceptanceCases": [
+        {
+          "id": "real-sdk-protocol",
+          "status": "pending",
+          "commandIds": [
+            "source03-payments-check",
+            "source03-payments-smoke"
+          ],
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+        },
+        {
+          "id": "header-policy",
+          "status": "pending",
+          "commandIds": [
+            "source03-payments-check",
+            "source03-payments-smoke"
+          ],
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+        },
+        {
+          "id": "request-budget-binding",
+          "status": "pending",
+          "commandIds": [
+            "source03-payments-check",
+            "source03-payments-smoke"
+          ],
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+        },
+        {
+          "id": "concurrent-replay",
+          "status": "pending",
+          "commandIds": [
+            "source03-payments-check",
+            "source03-payments-smoke"
+          ],
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+        },
+        {
+          "id": "settlement-recovery",
+          "status": "pending",
+          "commandIds": [
+            "source03-payments-check",
+            "source03-payments-smoke"
+          ],
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+        },
+        {
+          "id": "paid-but-failed",
+          "status": "pending",
+          "commandIds": [
+            "source03-payments-check",
+            "source03-payments-smoke"
+          ],
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+        }
+      ],
+      "externalGates": [
+        {
+          "id": "hedera-blocky402-live-payment",
+          "status": "blocked",
+          "reason": "Historical external evidence/grants are preserved in verificationHistory but do not qualify or authorize this application candidate. Exact current targets, fresh scoped approval and external qualification remain required.",
+          "evidence": "docs/APPLICATION_COMPLETION.md"
+        },
+        {
+          "id": "funded-wallet-approval",
+          "status": "blocked",
+          "reason": "Historical external evidence/grants are preserved in verificationHistory but do not qualify or authorize this application candidate. Exact current targets, fresh scoped approval and external qualification remain required.",
+          "evidence": "docs/APPLICATION_COMPLETION.md"
+        },
+        {
+          "id": "combined-app",
+          "status": "blocked",
+          "reason": "Current successor combined/public qualification is not complete. Historical qualified scope remains preserved in verificationHistory.",
+          "evidence": "docs/APPLICATION_COMPLETION.md"
+        },
+        {
+          "id": "public-release",
+          "status": "blocked",
+          "reason": "Outside authorized technical qualification: no source push/public visibility, license change, mainnet/paid hosting, production inference, demo publication or hackathon submission. Testnet actions are separately authorized and documented."
+        },
+        {
+          "id": "live-refund",
+          "status": "inapplicable",
+          "reason": "Not part of this bounded receipt-payment/ENS/Graph qualification; no live refund or optional HCS publication is claimed."
+        },
+        {
+          "id": "optional-hcs",
+          "status": "inapplicable",
+          "reason": "Not part of this bounded receipt-payment/ENS/Graph qualification; no live refund or optional HCS publication is claimed."
+        },
+        {
+          "id": "mycelium-execution",
+          "status": "inapplicable",
+          "reason": "Explicitly excluded from this payments-local scope; no Mycelium changes, model runs or physical inference qualification."
+        },
+        {
+          "id": "gaskiller-integration",
+          "status": "inapplicable",
+          "reason": "Explicitly excluded from this scope; no Gas Killer integration, changes or settlement performed."
+        },
+        {
+          "id": "independent-replay",
+          "status": "inapplicable",
+          "reason": "Independent inference replay/assessment is a separately authorized future scope; payment idempotency/restart is not inference verification."
+        }
+      ],
+      "documentationRevisionNote": "Application implementation tested at 8a6fee1e86a283688029a7704000637eb4331134. Later root README/docs/handoff-only commits do not change package/composition bytes. Final exact-candidate canonical receipt is in the adjacent APPLICATION-HANDOFF.json packet."
     }
   ]
 }

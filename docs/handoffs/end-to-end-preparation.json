@@ -1,0 +1,378 @@
+{
+  "schema": "mycelium.application-successor-preparation.v1",
+  "sourceRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
+  "localRequiredPassed": false,
+  "externalRequiredPassed": false,
+  "endToEndReady": false,
+  "status": "MYCELIUM_END_TO_END_INCOMPLETE_BLOCKED",
+  "commands": [
+    {
+      "id": "source03-core-check",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/core",
+        "run",
+        "check"
+      ],
+      "exitCode": 0,
+      "sourceRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
+      "initialStatus": "",
+      "finalStatus": "",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "startedAt": "2026-09-11T08:23:30.041381+00:00",
+      "finishedAt": "2026-09-11T08:23:33.197694+00:00",
+      "log": "logs/source03-core-check.log",
+      "sha256": "5d4beaf28bdd89857a1b01de9b9c1031e646dcf046e58f78d4b8a80b77a03bba",
+      "tapSummaries": [
+        {
+          "tests": 44,
+          "pass": 44,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      ],
+      "disposition": "passed-component-source-gate",
+      "observedTopLevelPassLines": 44
+    },
+    {
+      "id": "source03-core-smoke",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/core",
+        "run",
+        "smoke"
+      ],
+      "exitCode": 0,
+      "sourceRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
+      "initialStatus": "",
+      "finalStatus": "",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "startedAt": "2026-09-11T08:23:33.254710+00:00",
+      "finishedAt": "2026-09-11T08:23:34.750713+00:00",
+      "log": "logs/source03-core-smoke.log",
+      "sha256": "92b245bd4632035651888aee52f7362e6f52873100907bfb34bf4601708aaa52",
+      "tapSummaries": [],
+      "disposition": "passed-component-source-gate",
+      "observedTopLevelPassLines": 0
+    },
+    {
+      "id": "source03-payments-check",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/payments",
+        "run",
+        "check"
+      ],
+      "exitCode": 0,
+      "sourceRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
+      "initialStatus": "",
+      "finalStatus": "",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "startedAt": "2026-09-11T08:23:34.808934+00:00",
+      "finishedAt": "2026-09-11T08:23:38.037267+00:00",
+      "log": "logs/source03-payments-check.log",
+      "sha256": "35ebc2d5d80822500f2d8c1591de5a02b8901803ef64655ad05c6e1f20f7ccc5",
+      "tapSummaries": [
+        {
+          "tests": 43,
+          "pass": 43,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      ],
+      "disposition": "passed-component-source-gate",
+      "observedTopLevelPassLines": 43
+    },
+    {
+      "id": "source03-payments-smoke",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/payments",
+        "run",
+        "smoke"
+      ],
+      "exitCode": 0,
+      "sourceRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
+      "initialStatus": "",
+      "finalStatus": "",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "startedAt": "2026-09-11T08:23:38.111171+00:00",
+      "finishedAt": "2026-09-11T08:23:40.124263+00:00",
+      "log": "logs/source03-payments-smoke.log",
+      "sha256": "3285ffd036b54e35587b03c3ca2f445b09f2f8b5913f5f7006f014985011f19e",
+      "tapSummaries": [],
+      "disposition": "passed-component-source-gate",
+      "observedTopLevelPassLines": 0
+    },
+    {
+      "id": "source03-discovery-check",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/discovery",
+        "run",
+        "check"
+      ],
+      "exitCode": 0,
+      "sourceRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
+      "initialStatus": "",
+      "finalStatus": "",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "startedAt": "2026-09-11T08:23:40.174321+00:00",
+      "finishedAt": "2026-09-11T08:23:45.605910+00:00",
+      "log": "logs/source03-discovery-check.log",
+      "sha256": "d0839adf9b3998495e3ab1b087a51c338c00c237015fbc97c809481c794d3012",
+      "tapSummaries": [
+        {
+          "tests": 17,
+          "pass": 17,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      ],
+      "disposition": "passed-component-source-gate",
+      "observedTopLevelPassLines": 17
+    },
+    {
+      "id": "source03-discovery-smoke",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/discovery",
+        "run",
+        "smoke"
+      ],
+      "exitCode": 0,
+      "sourceRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
+      "initialStatus": "",
+      "finalStatus": "",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "startedAt": "2026-09-11T08:23:45.657296+00:00",
+      "finishedAt": "2026-09-11T08:23:46.851603+00:00",
+      "log": "logs/source03-discovery-smoke.log",
+      "sha256": "cfc63b3a41d2c14e516674484e7565d534009010374fd04637c247a98fecca8a",
+      "tapSummaries": [],
+      "disposition": "passed-component-source-gate",
+      "observedTopLevelPassLines": 0
+    },
+    {
+      "id": "source03-indexing-check",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/indexing",
+        "run",
+        "check"
+      ],
+      "exitCode": 0,
+      "sourceRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
+      "initialStatus": "",
+      "finalStatus": "",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "startedAt": "2026-09-11T08:23:46.903376+00:00",
+      "finishedAt": "2026-09-11T08:24:30.377195+00:00",
+      "log": "logs/source03-indexing-check.log",
+      "sha256": "2b5d892600f76a5c5e169f8d01863b37185ba27861a4a6ab4a34d3a255818595",
+      "tapSummaries": [
+        {
+          "tests": 42,
+          "pass": 42,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      ],
+      "disposition": "passed-component-source-gate",
+      "observedTopLevelPassLines": 42
+    },
+    {
+      "id": "source03-indexing-smoke",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/indexing",
+        "run",
+        "smoke"
+      ],
+      "exitCode": 0,
+      "sourceRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
+      "initialStatus": "",
+      "finalStatus": "",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "startedAt": "2026-09-11T08:24:30.428531+00:00",
+      "finishedAt": "2026-09-11T08:24:32.820130+00:00",
+      "log": "logs/source03-indexing-smoke.log",
+      "sha256": "b0432afc33254f7b17addb6c2a979e966cd2b86d440e549a4cbce3868762b344",
+      "tapSummaries": [],
+      "disposition": "passed-component-source-gate",
+      "observedTopLevelPassLines": 0
+    },
+    {
+      "id": "source03-access-check",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/access",
+        "run",
+        "check"
+      ],
+      "exitCode": 0,
+      "sourceRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
+      "initialStatus": "",
+      "finalStatus": "",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "startedAt": "2026-09-11T08:24:32.869900+00:00",
+      "finishedAt": "2026-09-11T08:24:44.353507+00:00",
+      "log": "logs/source03-access-check.log",
+      "sha256": "8d5cd23d242b6948f871c6552dc9ca7055710d452f532ff722109ce3d2c44401",
+      "tapSummaries": [
+        {
+          "tests": 32,
+          "pass": 32,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      ],
+      "disposition": "passed-component-source-gate",
+      "observedTopLevelPassLines": 32
+    },
+    {
+      "id": "source03-access-smoke",
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/access",
+        "run",
+        "smoke"
+      ],
+      "exitCode": 0,
+      "sourceRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
+      "initialStatus": "",
+      "finalStatus": "",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "startedAt": "2026-09-11T08:24:44.407600+00:00",
+      "finishedAt": "2026-09-11T08:24:53.376445+00:00",
+      "log": "logs/source03-access-smoke.log",
+      "sha256": "f83fabfb1880856373b12b50c4936a00c10a324b7cd7f28563fea3845eb6319b",
+      "tapSummaries": [
+        {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      ],
+      "disposition": "passed-component-source-gate",
+      "observedTopLevelPassLines": 7
+    },
+    {
+      "id": "source03-operations-light",
+      "argv": [
+        "npm",
+        "run",
+        "check:operations"
+      ],
+      "exitCode": 0,
+      "sourceRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
+      "initialStatus": "",
+      "finalStatus": "",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "startedAt": "2026-09-11T08:46:21.890550+00:00",
+      "finishedAt": "2026-09-11T08:46:25.567752+00:00",
+      "log": "logs/source03-operations-light.log",
+      "sha256": "cc3784976e33848868df007dd001bc614f8a8c6fa55a146c29a7607ecf9a1498",
+      "tapSummaries": [
+        {
+          "tests": 24,
+          "pass": 24,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      ],
+      "disposition": "passed-component-source-gate",
+      "observedTopLevelPassLines": 19
+    },
+    {
+      "id": "source03-integration",
+      "argv": [
+        "npm",
+        "run",
+        "smoke:integration"
+      ],
+      "exitCode": 1,
+      "sourceRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
+      "initialStatus": "",
+      "finalStatus": "",
+      "node": "v22.22.2",
+      "npm": "10.9.7",
+      "startedAt": "2026-09-11T08:24:53.433272+00:00",
+      "finishedAt": "2026-09-11T08:28:37.151452+00:00",
+      "log": "logs/source03-integration.log",
+      "sha256": "b2391f7de65e3134c8cae23cdf1cc294766057d1c637f6297d180b003f2004dd",
+      "tapSummaries": [],
+      "disposition": "resource-coordination-interruption-not-a-pass",
+      "observedTopLevelPassLines": 161
+    }
+  ],
+  "pendingCanonical": [
+    "check:all",
+    "complete smoke:integration",
+    "smoke:ingestion",
+    "fresh final-source setup/demo"
+  ],
+  "authorityNote": "C-NATIVE-FEASIBILITY-1 is already approved to A; this is not application/N-serving/public/financial authority. Integration was interrupted to yield shared resources. Do not request C approval again.",
+  "sourceScope": "Native import/admission/raw metadata, TLS/public pins, RegistryV2 preparation/inspection; generated-identity and model-shaped local fixtures only",
+  "proofScope": "No target model, physical provider, actual checker/settlement or public deployment run by this continuation."
+}

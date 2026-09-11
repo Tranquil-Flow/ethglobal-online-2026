@@ -1,5 +1,7 @@
 # Submission and demo draft — not submitted
 
+Successor 03 adds native admission/import/raw-selector metadata and deployment preparation. It remains end-to-end incomplete: no new real-model, independently controlled physical, actual-checker/financial or public qualification is claimed, and current full local combined acceptance awaits resource coordination. Do not submit this as a completed protected service.
+
 ## Proposed description
 
 A request-bound non-economic application that keeps execution, payment capability, receipt

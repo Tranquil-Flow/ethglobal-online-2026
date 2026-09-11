@@ -1,99 +1,92 @@
 {
   "lane": "core",
-  "status": "local_ready",
-  "codeRevision": "8a6fee1e86a283688029a7704000637eb4331134",
+  "status": "blocked",
+  "codeRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
   "reviewContract": "handoff-review-v1",
   "commands": [
     {
-      "id": "closure02-core-check",
+      "id": "source03-core-check",
       "command": "npm --prefix packages/core run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/application-verification.json",
-      "localLog": "../logs/closure02-core-check.log"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "localLog": "../logs/source03-core-check.log"
     },
     {
-      "id": "closure02-core-smoke",
+      "id": "source03-core-smoke",
       "command": "npm --prefix packages/core run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/application-verification.json",
-      "localLog": "../logs/closure02-core-smoke.log"
-    },
-    {
-      "id": "closure02-integration",
-      "command": "npm run smoke:integration",
-      "exitCode": 0,
-      "evidence": "docs/handoffs/application-verification.json",
-      "localLog": "../logs/closure02-integration.log"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "localLog": "../logs/source03-core-smoke.log"
     }
   ],
   "acceptanceCases": [
     {
       "id": "http-lifecycle",
-      "status": "passed",
+      "status": "pending",
       "commandIds": [
-        "closure02-core-check",
-        "closure02-core-smoke",
-        "closure02-integration"
+        "source03-core-check",
+        "source03-core-smoke"
       ],
-      "evidence": "docs/handoffs/application-verification.json"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
     },
     {
       "id": "restart-idempotency",
-      "status": "passed",
+      "status": "pending",
       "commandIds": [
-        "closure02-core-check",
-        "closure02-core-smoke",
-        "closure02-integration"
+        "source03-core-check",
+        "source03-core-smoke"
       ],
-      "evidence": "docs/handoffs/application-verification.json"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
     },
     {
       "id": "private-capabilities",
-      "status": "passed",
+      "status": "pending",
       "commandIds": [
-        "closure02-core-check",
-        "closure02-core-smoke",
-        "closure02-integration"
+        "source03-core-check",
+        "source03-core-smoke"
       ],
-      "evidence": "docs/handoffs/application-verification.json"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
     },
     {
       "id": "receipt-integrity-export",
-      "status": "passed",
+      "status": "pending",
       "commandIds": [
-        "closure02-core-check",
-        "closure02-core-smoke",
-        "closure02-integration"
+        "source03-core-check",
+        "source03-core-smoke"
       ],
-      "evidence": "docs/handoffs/application-verification.json"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
     },
     {
       "id": "payment-outbox-failures",
-      "status": "passed",
+      "status": "pending",
       "commandIds": [
-        "closure02-core-check",
-        "closure02-core-smoke",
-        "closure02-integration"
+        "source03-core-check",
+        "source03-core-smoke"
       ],
-      "evidence": "docs/handoffs/application-verification.json"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
     },
     {
       "id": "assessment-unavailable",
-      "status": "passed",
+      "status": "pending",
       "commandIds": [
-        "closure02-core-check",
-        "closure02-core-smoke",
-        "closure02-integration"
+        "source03-core-check",
+        "source03-core-smoke"
       ],
-      "evidence": "docs/handoffs/application-verification.json"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
     }
   ],
   "externalGates": [
     {
       "id": "combined-app",
-      "status": "qualified",
-      "reason": "Application-local only at 8a6fee1e86a283688029a7704000637eb4331134: actual canonical local composition/ingestion passed. Synthetic executor/checker; not inference, financial protection or public qualification.",
-      "evidence": "docs/handoffs/application-verification.json"
+      "status": "blocked",
+      "reason": "Current successor combined/public qualification is not complete. Historical qualified scope remains preserved in verificationHistory.",
+      "evidence": "docs/APPLICATION_COMPLETION.md"
     },
     {
       "id": "mycelium-execution",
@@ -127,7 +120,7 @@
     "platform": "darwin",
     "arch": "arm64"
   },
-  "documentationRevisionNote": "Application implementation tested at 8a6fee1e86a283688029a7704000637eb4331134. Later root README/docs/handoff-only commits do not change package/composition bytes. Final exact-candidate canonical receipt is in the adjacent APPLICATION-HANDOFF.json packet.",
+  "documentationRevisionNote": "Frozen implementation 0d0c7cd52b84f2b7516c29c3febc79ff3cc79063 has component checks/smokes. Status remains blocked until full combined acceptance and truthful handoff refresh; see the adjacent END-TO-END-HANDOFF.json and RESOURCE-COORDINATION.json. No new target/public qualification.",
   "verificationHistory": [
     {
       "codeRevision": "a4b48df9af9bb291d23a877661499132570293ef",
@@ -275,6 +268,128 @@
         }
       ],
       "documentationRevisionNote": "Foundation closure: implementation source tested at 7cde8c1ec03391cc80d0d3d1160cc77c6b6638ae; this handoff metadata may be committed later without changing package/composition bytes. See docs/handoffs/foundation-verification.json and foundation evidence root."
+    },
+    {
+      "status": "local_ready",
+      "codeRevision": "8a6fee1e86a283688029a7704000637eb4331134",
+      "commands": [
+        {
+          "id": "closure02-core-check",
+          "command": "npm --prefix packages/core run check",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-core-check.log"
+        },
+        {
+          "id": "closure02-core-smoke",
+          "command": "npm --prefix packages/core run smoke",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-core-smoke.log"
+        },
+        {
+          "id": "closure02-integration",
+          "command": "npm run smoke:integration",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-integration.log"
+        }
+      ],
+      "acceptanceCases": [
+        {
+          "id": "http-lifecycle",
+          "status": "pending",
+          "commandIds": [
+            "source03-core-check",
+            "source03-core-smoke"
+          ],
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+        },
+        {
+          "id": "restart-idempotency",
+          "status": "pending",
+          "commandIds": [
+            "source03-core-check",
+            "source03-core-smoke"
+          ],
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+        },
+        {
+          "id": "private-capabilities",
+          "status": "pending",
+          "commandIds": [
+            "source03-core-check",
+            "source03-core-smoke"
+          ],
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+        },
+        {
+          "id": "receipt-integrity-export",
+          "status": "pending",
+          "commandIds": [
+            "source03-core-check",
+            "source03-core-smoke"
+          ],
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+        },
+        {
+          "id": "payment-outbox-failures",
+          "status": "pending",
+          "commandIds": [
+            "source03-core-check",
+            "source03-core-smoke"
+          ],
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+        },
+        {
+          "id": "assessment-unavailable",
+          "status": "pending",
+          "commandIds": [
+            "source03-core-check",
+            "source03-core-smoke"
+          ],
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+        }
+      ],
+      "externalGates": [
+        {
+          "id": "combined-app",
+          "status": "blocked",
+          "reason": "Current successor combined/public qualification is not complete. Historical qualified scope remains preserved in verificationHistory.",
+          "evidence": "docs/APPLICATION_COMPLETION.md"
+        },
+        {
+          "id": "mycelium-execution",
+          "status": "blocked",
+          "reason": "Goal C implements local clean-room adapter/profile/replay machinery. Current upstream native token/config/completion contract and real metadata/route authority remain required; no physical model execution.",
+          "evidence": "docs/MYCELIUM-GOAL-C-HANDOFF.md"
+        },
+        {
+          "id": "gaskiller-integration",
+          "status": "inapplicable",
+          "reason": "Explicitly excluded future scope. No Gas Killer runtime/check/settlement was accessed or modified.",
+          "evidence": "docs/handoffs/core.md"
+        },
+        {
+          "id": "independent-replay",
+          "status": "inapplicable",
+          "reason": "Not a retained current claim: integrity/export and unavailable assessments are not independent replay or physical inference proof.",
+          "evidence": "docs/handoffs/core.md"
+        },
+        {
+          "id": "public-release",
+          "status": "blocked",
+          "reason": "Outside authorized technical qualification: no source push/public visibility, license change, mainnet/paid hosting, production inference, demo publication or hackathon submission. Testnet actions are separately authorized and documented.",
+          "evidence": "docs/handoffs/core.md"
+        }
+      ],
+      "documentationRevisionNote": "Application implementation tested at 8a6fee1e86a283688029a7704000637eb4331134. Later root README/docs/handoff-only commits do not change package/composition bytes. Final exact-candidate canonical receipt is in the adjacent APPLICATION-HANDOFF.json packet."
     }
   ],
   "foundationPriorCodeRevision": "5697576298491efbd1a2285def50d49baad27ebd"

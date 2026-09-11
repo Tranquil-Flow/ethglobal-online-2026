@@ -1,32 +1,25 @@
 {
   "lane": "discovery",
-  "status": "local_ready",
-  "codeRevision": "8a6fee1e86a283688029a7704000637eb4331134",
+  "status": "blocked",
+  "codeRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
   "historicalLaneCodeRevision": "4842acb92b278ca8228946d086b544f22652eab9",
   "integrationEvidence": "docs/handoffs/integration.md",
   "branch": "lane/discovery",
   "bootstrapRevision": "13f5e295bdeb833b9977a84edc97b2ee64147579",
   "commands": [
     {
-      "id": "closure02-discovery-check",
+      "id": "source03-discovery-check",
       "command": "npm --prefix packages/discovery run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/application-verification.json",
-      "localLog": "../logs/closure02-discovery-check.log"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "localLog": "../logs/source03-discovery-check.log"
     },
     {
-      "id": "closure02-discovery-smoke",
+      "id": "source03-discovery-smoke",
       "command": "npm --prefix packages/discovery run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/application-verification.json",
-      "localLog": "../logs/closure02-discovery-smoke.log"
-    },
-    {
-      "id": "closure02-integration",
-      "command": "npm run smoke:integration",
-      "exitCode": 0,
-      "evidence": "docs/handoffs/application-verification.json",
-      "localLog": "../logs/closure02-integration.log"
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "localLog": "../logs/source03-discovery-smoke.log"
     }
   ],
   "externalGates": [
@@ -44,9 +37,9 @@
     },
     {
       "id": "combined-app",
-      "status": "qualified",
-      "reason": "Application-local only at 8a6fee1e86a283688029a7704000637eb4331134: actual canonical local composition/ingestion passed. Synthetic executor/checker; not inference, financial protection or public qualification.",
-      "evidence": "docs/handoffs/application-verification.json"
+      "status": "blocked",
+      "reason": "Current successor combined/public qualification is not complete. Historical qualified scope remains preserved in verificationHistory.",
+      "evidence": "docs/APPLICATION_COMPLETION.md"
     },
     {
       "id": "public-release",
@@ -265,71 +258,71 @@
   "acceptanceCases": [
     {
       "id": "ensv2-contract-resolution",
-      "status": "passed",
+      "status": "pending",
       "commandIds": [
-        "closure02-discovery-check",
-        "closure02-discovery-smoke",
-        "closure02-integration"
+        "source03-discovery-check",
+        "source03-discovery-smoke"
       ],
-      "evidence": "docs/handoffs/application-verification.json",
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
       "detailedCases": [
         "Official ENSv2 deployment, resolver APIs and provenance",
         "Actual ENSv2 resolver SDK/RPC through canonical hierarchy",
         "Standalone CLI, operator provisioning/update/revocation dry-run and bounded smoke"
-      ]
+      ],
+      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
     },
     {
       "id": "delegation-revocation",
-      "status": "passed",
+      "status": "pending",
       "commandIds": [
-        "closure02-discovery-check",
-        "closure02-discovery-smoke",
-        "closure02-integration"
+        "source03-discovery-check",
+        "source03-discovery-smoke"
       ],
-      "evidence": "docs/handoffs/application-verification.json",
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
       "detailedCases": [
         "Record-scoped delegated service edits, payment isolation and revocation",
         "Standalone CLI, operator provisioning/update/revocation dry-run and bounded smoke"
-      ]
+      ],
+      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
     },
     {
       "id": "freshness-provenance",
-      "status": "passed",
+      "status": "pending",
       "commandIds": [
-        "closure02-discovery-check",
-        "closure02-discovery-smoke",
-        "closure02-integration"
+        "source03-discovery-check",
+        "source03-discovery-smoke"
       ],
-      "evidence": "docs/handoffs/application-verification.json",
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
       "detailedCases": [
         "Normalization, malformed/stale/unknown records, TTL, block provenance, expiry and reorg invalidation"
-      ]
+      ],
+      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
     },
     {
       "id": "ssrf-boundary",
-      "status": "passed",
+      "status": "pending",
       "commandIds": [
-        "closure02-discovery-check",
-        "closure02-discovery-smoke",
-        "closure02-integration"
+        "source03-discovery-check",
+        "source03-discovery-smoke"
       ],
-      "evidence": "docs/handoffs/application-verification.json",
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
       "detailedCases": [
         "SSRF at resolver and consuming boundaries, redirect/DNS/body/abort/deadline controls"
-      ]
+      ],
+      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
     },
     {
       "id": "quote-history-selection",
-      "status": "passed",
+      "status": "pending",
       "commandIds": [
-        "closure02-discovery-check",
-        "closure02-discovery-smoke",
-        "closure02-integration"
+        "source03-discovery-check",
+        "source03-discovery-smoke"
       ],
-      "evidence": "docs/handoffs/application-verification.json",
+      "evidence": "docs/handoffs/end-to-end-preparation.json",
       "detailedCases": [
         "Compatible provider selection changes after real record mutation and observed History changes"
-      ]
+      ],
+      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
     }
   ],
   "externalGateDetails": [
@@ -372,7 +365,7 @@
     "validationBefore": "Tagged validator rejected old handoff: Invalid command ID.",
     "validationAfter": "passed: exact tagged validator executed in memory, all 5 acceptance IDs and 4 required external gates covered; command evidence paths tracked; lane gate passed again with 14 discovery tests and actual smoke."
   },
-  "documentationRevisionNote": "Application implementation tested at 8a6fee1e86a283688029a7704000637eb4331134. Later root README/docs/handoff-only commits do not change package/composition bytes. Final exact-candidate canonical receipt is in the adjacent APPLICATION-HANDOFF.json packet.",
+  "documentationRevisionNote": "Frozen implementation 0d0c7cd52b84f2b7516c29c3febc79ff3cc79063 has component checks/smokes. Status remains blocked until full combined acceptance and truthful handoff refresh; see the adjacent END-TO-END-HANDOFF.json and RESOURCE-COORDINATION.json. No new target/public qualification.",
   "verificationHistory": [
     {
       "codeRevision": "04391f596e9a3cdeae48fc0f2f70edd65f7a6a77",
@@ -542,6 +535,150 @@
         }
       ],
       "documentationRevisionNote": "Discovery response-clock regression reproduced deterministically; package check/smoke and actual local-services gate passed on the committed code bytes. See closeout-current.md for adjudicated prior failure."
+    },
+    {
+      "status": "local_ready",
+      "codeRevision": "8a6fee1e86a283688029a7704000637eb4331134",
+      "commands": [
+        {
+          "id": "closure02-discovery-check",
+          "command": "npm --prefix packages/discovery run check",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-discovery-check.log"
+        },
+        {
+          "id": "closure02-discovery-smoke",
+          "command": "npm --prefix packages/discovery run smoke",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-discovery-smoke.log"
+        },
+        {
+          "id": "closure02-integration",
+          "command": "npm run smoke:integration",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/application-verification.json",
+          "localLog": "../logs/closure02-integration.log"
+        }
+      ],
+      "acceptanceCases": [
+        {
+          "id": "ensv2-contract-resolution",
+          "status": "pending",
+          "commandIds": [
+            "source03-discovery-check",
+            "source03-discovery-smoke"
+          ],
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "detailedCases": [
+            "Official ENSv2 deployment, resolver APIs and provenance",
+            "Actual ENSv2 resolver SDK/RPC through canonical hierarchy",
+            "Standalone CLI, operator provisioning/update/revocation dry-run and bounded smoke"
+          ],
+          "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+        },
+        {
+          "id": "delegation-revocation",
+          "status": "pending",
+          "commandIds": [
+            "source03-discovery-check",
+            "source03-discovery-smoke"
+          ],
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "detailedCases": [
+            "Record-scoped delegated service edits, payment isolation and revocation",
+            "Standalone CLI, operator provisioning/update/revocation dry-run and bounded smoke"
+          ],
+          "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+        },
+        {
+          "id": "freshness-provenance",
+          "status": "pending",
+          "commandIds": [
+            "source03-discovery-check",
+            "source03-discovery-smoke"
+          ],
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "detailedCases": [
+            "Normalization, malformed/stale/unknown records, TTL, block provenance, expiry and reorg invalidation"
+          ],
+          "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+        },
+        {
+          "id": "ssrf-boundary",
+          "status": "pending",
+          "commandIds": [
+            "source03-discovery-check",
+            "source03-discovery-smoke"
+          ],
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "detailedCases": [
+            "SSRF at resolver and consuming boundaries, redirect/DNS/body/abort/deadline controls"
+          ],
+          "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+        },
+        {
+          "id": "quote-history-selection",
+          "status": "pending",
+          "commandIds": [
+            "source03-discovery-check",
+            "source03-discovery-smoke"
+          ],
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "detailedCases": [
+            "Compatible provider selection changes after real record mutation and observed History changes"
+          ],
+          "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+        }
+      ],
+      "externalGates": [
+        {
+          "id": "ensv2-sepolia-write",
+          "status": "blocked",
+          "reason": "Historical external evidence/grants are preserved in verificationHistory but do not qualify or authorize this application candidate. Exact current targets, fresh scoped approval and external qualification remain required.",
+          "evidence": "docs/APPLICATION_COMPLETION.md"
+        },
+        {
+          "id": "ens-name-wallet-approval",
+          "status": "blocked",
+          "reason": "Historical external evidence/grants are preserved in verificationHistory but do not qualify or authorize this application candidate. Exact current targets, fresh scoped approval and external qualification remain required.",
+          "evidence": "docs/APPLICATION_COMPLETION.md"
+        },
+        {
+          "id": "combined-app",
+          "status": "blocked",
+          "reason": "Current successor combined/public qualification is not complete. Historical qualified scope remains preserved in verificationHistory.",
+          "evidence": "docs/APPLICATION_COMPLETION.md"
+        },
+        {
+          "id": "public-release",
+          "status": "blocked",
+          "reason": "Outside authorized technical qualification: no source push/public visibility, license change, mainnet/paid hosting, production inference, demo publication or hackathon submission. Testnet actions are separately authorized and documented."
+        },
+        {
+          "id": "live-history-decision",
+          "status": "blocked",
+          "reason": "Historical external evidence/grants are preserved in verificationHistory but do not qualify or authorize this application candidate. Exact current targets, fresh scoped approval and external qualification remain required.",
+          "evidence": "docs/APPLICATION_COMPLETION.md"
+        },
+        {
+          "id": "mycelium-execution",
+          "status": "inapplicable",
+          "reason": "Explicitly excluded from current independent discovery lane; no Mycelium adapter, model or physical execution qualification claim."
+        },
+        {
+          "id": "gaskiller-integration",
+          "status": "inapplicable",
+          "reason": "Explicitly excluded from current discovery lane; no Gas Killer runtime, settlement or integration changes."
+        },
+        {
+          "id": "independent-replay",
+          "status": "inapplicable",
+          "reason": "Execution replay and physical inference proof are future separate scope. ENS record integrity and observed assessment history do not establish execution correctness."
+        }
+      ],
+      "documentationRevisionNote": "Application implementation tested at 8a6fee1e86a283688029a7704000637eb4331134. Later root README/docs/handoff-only commits do not change package/composition bytes. Final exact-candidate canonical receipt is in the adjacent APPLICATION-HANDOFF.json packet."
     }
   ]
 }

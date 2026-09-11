@@ -2,6 +2,8 @@
 
 ## Current managed application (v2)
 
+**Successor 03 is an unqualified source-preparation candidate.** Component checks pass; full combined acceptance was interrupted to yield shared resources to the separately approved A-owned feasibility tranche. See the current application ledger and adjacent `END-TO-END-HANDOFF.json`. The preserved predecessor’s local completion is not fresh qualification of this successor.
+
 The checker-independent application supports independently configured provider identities, signed offers, optional ENSv2 discovery, scoped non-economic access, encrypted same-attempt recovery, open attributed history and private operator backup/restore. Native execution needs explicit accepted pins and a fresh owner grant; absent checking does not block ordinary serving. Protected paid mode remains refused.
 
 ```sh
