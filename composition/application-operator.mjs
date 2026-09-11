@@ -172,16 +172,31 @@ export async function initializeApplication({
 }
 import { inspectStdioRuntime } from "./application-stdio.mjs";
 import { inspectManagedPublication } from "./application-publication-config.mjs";
+import { inspectOwnedNativeRuntime } from "./application-owned-native.mjs";
 import { inspectManagedAssessor } from "./application-assessor.mjs";
 import { inspectManagedPayments } from "./application-payments.mjs";
 
-export function loadManagedApplication({ configFile }) {
+export function loadManagedApplication({ configFile, nativeHostBindings }) {
   const root = dirname(resolve(configFile));
   assertPrivateDirectory(root);
   const raw = json(configFile);
   if (raw.dataDir !== ".") fail("MANAGED_DATA_DIR_REQUIRED");
   const config = validateApplicationConfig({ ...raw, dataDir: root });
   const manifest = json(join(root, "operator.json"));
+  if (
+    nativeHostBindings !== undefined &&
+    (!nativeHostBindings ||
+      typeof nativeHostBindings !== "object" ||
+      Array.isArray(nativeHostBindings) ||
+      Object.keys(nativeHostBindings).some(
+        (id) =>
+          !manifest.providers?.some(
+            (p) =>
+              p.providerId === id && p.runtime?.kind === "application-native",
+          ),
+      ))
+  )
+    fail("INVALID_NATIVE_HOST_BINDINGS");
   exact(manifest, [
     "version",
     "providers",
@@ -283,6 +298,14 @@ export function loadManagedApplication({ configFile }) {
         mode: config.mode,
         providerId: p.providerId,
         resolvePath: (path) => managedPath(root, path),
+      });
+    } else if (spec.runtime.kind === "application-native") {
+      runtime = inspectOwnedNativeRuntime({
+        root,
+        spec: spec.runtime,
+        mode: config.mode,
+        providerId: p.providerId,
+        hostBindings: nativeHostBindings?.[p.providerId],
       });
     } else fail("UNSUPPORTED_RUNTIME_PROTOCOL");
     const assessor = inspectManagedAssessor({
@@ -400,7 +423,8 @@ async function prepare(options, { start = false } = {}) {
     fail("ORDINARY_PAID_AUTHORITY_REQUIRED");
   if (start)
     for (const e of x.entries)
-      if (e.runtime.kind === "native-stdio") e.runtime.authorize();
+      if (["native-stdio", "application-native"].includes(e.runtime.kind))
+        e.runtime.authorize();
   for (const e of x.entries)
     if (e.input) {
       const { createMyceliumProfile } = await import("./mycelium-profile.mjs");
@@ -469,8 +493,12 @@ async function prepare(options, { start = false } = {}) {
   preflightApplication({ config: x.config, bindings });
   return { ...x, bindings };
 }
-export async function getApplicationPublicPins({ configFile, providerId }) {
-  const x = await prepare({ configFile });
+export async function getApplicationPublicPins({
+  configFile,
+  providerId,
+  nativeHostBindings,
+}) {
+  const x = await prepare({ configFile, nativeHostBindings });
   const validated = preflightApplication({
     config: x.config,
     bindings: x.bindings,

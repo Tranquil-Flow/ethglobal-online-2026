@@ -1,5 +1,10 @@
 # Application v2 operator and developer quickstart
 
+## Application-owned runtime amendment
+
+The owner replaced the Session-A serving dependency with an application-owned lifecycle. See `APP_OWNED_NATIVE.md` for setup, plan/init/start/status, finite permits, checked replay/cancellation, private artifacts and host-aware restore. A/B/C research is left untouched. This source addition is model-free qualified until its separately approved real-model run; old A readiness/lease files are not an activation dependency or reusable authority. Historical evidence below remains historical.
+
+
 ## Integration successor update (2026-09-11)
 
 See `MANAGED_INTEGRATIONS.md` for the implemented managed publisher/budget/journal closure, hosted History RPC, private CLI/MCP pins and non-economic submission policy, provider payment factory, and method-neutral assessor/artifact lifecycle. These are exercised local integration paths, not a selected verifier or protected-finance release. Historical statements below about wholly missing adapters or wholly absent public deployments must not override this later source and its final receipt. The earlier native success and public Registry/Graph assets remain real; a new managed native start failed because A's advertised socket/processes were absent. Current real native/public qualification remains blocked on A's maintained binding/topology and any exact remaining activation authority. Do not infer completion until the adjacent `NONVERIFICATION-INTEGRATION-HANDOFF.json` binds final source and observed gates.

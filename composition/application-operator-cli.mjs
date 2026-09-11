@@ -13,10 +13,12 @@ import {
   writePrivateExclusive,
 } from "../operations/src/private-files.mjs";
 import { initializeNativeApplication } from "./application-native-import.mjs";
+import { initializeOwnedNativeApplication } from "./application-owned-import.mjs";
 import { initializeStdioApplication } from "./application-stdio-import.mjs";
 import { planApplicationDeployment } from "./application-deployment.mjs";
 const fields = {
   "--tls-config": "tlsConfigFile",
+  "--native-hosts-file": "nativeHostsFile",
   "--data-dir": "dataDir",
   "--config": "configFile",
   "--artifact": "artifactPath",
@@ -57,6 +59,15 @@ try {
       options[f] = v;
     }
   }
+  let nativeHostBindings;
+  if (options.nativeHostsFile) {
+    if (
+      !["doctor", "start", "backup", "restore", "public-pins"].includes(action)
+    )
+      fail();
+    nativeHostBindings = privateJson(options.nativeHostsFile);
+    delete options.nativeHostsFile;
+  }
   if (action === "init") {
     requireOptions(options, ["dataDir"]);
     console.log(
@@ -74,13 +85,24 @@ try {
       JSON.stringify(
         await getApplicationPublicPins({
           ...options,
+          nativeHostBindings,
           providerId: providerIds[0],
         }),
       ),
     );
   } else {
     if (providerIds.length) fail();
-    if (action === "plan-native" || action === "init-native") {
+    if (action === "plan-owned-native" || action === "init-owned-native") {
+      requireOptions(options, ["configFile", "dataDir"]);
+      console.log(
+        JSON.stringify(
+          await initializeOwnedNativeApplication({
+            ...options,
+            dryRun: action === "plan-owned-native",
+          }),
+        ),
+      );
+    } else if (action === "plan-native" || action === "init-native") {
       requireOptions(options, ["configFile", "dataDir"]);
       console.log(
         JSON.stringify(
@@ -96,12 +118,65 @@ try {
     } else if (action === "plan-deployment") {
       requireOptions(options, ["configFile", "tlsConfigFile"]);
       console.log(JSON.stringify(await planApplicationDeployment(options)));
+    } else if (action === "runtime-status") {
+      requireOptions(options, ["configFile"]);
+      const config = privateJson(options.configFile);
+      if (
+        !Number.isInteger(config.port) ||
+        config.port < 1 ||
+        config.port > 65535
+      )
+        throw Error("FIXED_PORT_REQUIRED_FOR_STATUS");
+      const response = await fetch(
+        "http://127.0.0.1:" + config.port + "/v2/runtime-status",
+        { signal: AbortSignal.timeout(5000) },
+      );
+      if (!response.ok) throw Error("APPLICATION_STATUS_UNAVAILABLE");
+      const report = await response.json();
+      if (
+        report.version !== "1" ||
+        !Array.isArray(report.providers) ||
+        report.providers.length !== config.providers.length ||
+        report.providers.some(
+          (p) =>
+            !config.providers.some((c) => c.providerId === p.providerId) ||
+            p.mode !== config.mode ||
+            ![
+              "not_started",
+              "loading",
+              "ready",
+              "stopping",
+              "stopped",
+              "expired",
+              "failed",
+              "unknown",
+            ].includes(p.state),
+        )
+      )
+        throw Error("APPLICATION_STATUS_UNAVAILABLE");
+      console.log(
+        JSON.stringify({
+          version: "1",
+          providers: report.providers.map((p) => ({
+            providerId: p.providerId,
+            mode: p.mode,
+            state: p.state,
+            modelLoaded: p.modelLoaded === true,
+            inferenceVerified: false,
+            financialProtection: false,
+          })),
+        }),
+      );
     } else if (action === "doctor" || action === "start") {
       requireOptions(options, ["configFile"]);
       if (action === "doctor")
-        console.log(JSON.stringify(await doctorApplication(options)));
+        console.log(
+          JSON.stringify(
+            await doctorApplication({ ...options, nativeHostBindings }),
+          ),
+        );
       else {
-        app = await startManagedApplication(options);
+        app = await startManagedApplication({ ...options, nativeHostBindings });
         console.log(
           JSON.stringify({
             status: "listening",
@@ -140,6 +215,7 @@ try {
       if (action === "backup") {
         const { inventory, ...report } = await backupManagedApplication({
           ...options,
+          nativeHostBindings,
           passphrase: secret.passphrase,
         });
         writePrivateExclusive(
@@ -150,6 +226,7 @@ try {
       } else {
         const report = await restoreManagedApplication({
           ...options,
+          nativeHostBindings,
           targetDataDir: options.dataDir,
           passphrase: secret.passphrase,
           expectedInventory: privateJson(options.inventoryFile),

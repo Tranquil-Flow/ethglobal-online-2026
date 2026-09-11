@@ -1,5 +1,10 @@
 # Managed integrations and current activation boundary
 
+## Application-owned runtime amendment
+
+The owner replaced the Session-A serving dependency with an application-owned lifecycle. See `APP_OWNED_NATIVE.md` for setup, plan/init/start/status, finite permits, checked replay/cancellation, private artifacts and host-aware restore. A/B/C research is left untouched. This source addition is model-free qualified until its separately approved real-model run; old A readiness/lease files are not an activation dependency or reusable authority. Historical evidence below remains historical.
+
+
 This is the runnable integration extension to `APPLICATION_QUICKSTART.md`. It does not select an inference-verification method or authorize verification-contingent settlement. Read `NONVERIFICATION-INTEGRATION-HANDOFF.json` beside the checkout for final-candidate results when present; an absent or unsuccessful packet is not completion.
 
 ## Operator entrypoints

@@ -10,6 +10,7 @@
   "packageManager": "npm@10.9.7",
   "scripts": {
     "setup": "node scripts/setup.mjs",
+    "setup:native": "node scripts/setup-native.mjs",
     "start": "node composition/serve.mjs",
     "mcp": "node composition/mcp.mjs",
     "operator": "node composition/application-operator-cli.mjs",

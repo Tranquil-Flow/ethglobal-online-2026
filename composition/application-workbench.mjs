@@ -227,9 +227,15 @@ export function preflightApplication({ config: input, bindings }) {
     if (
       runtime?.mode !== config.mode ||
       (config.mode === "live" &&
-        !["mycelium", "native-stdio"].includes(runtime.kind)) ||
+        !["mycelium", "native-stdio", "application-native"].includes(
+          runtime.kind,
+        )) ||
       (config.mode === "development" &&
-        !["synthetic", "mycelium-v3-conformance"].includes(runtime?.kind))
+        ![
+          "synthetic",
+          "mycelium-v3-conformance",
+          "application-native",
+        ].includes(runtime?.kind))
     )
       fail("RUNTIME_MODE_MISMATCH");
     if (runtime.bindingDigest !== p.runtimeDigest)
@@ -516,7 +522,10 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
         store: child,
         async loadExecutionArtifact({ jobId, kind }) {
           if (
-            kind !== "native-terminal-record-v1" ||
+            ![
+              "native-terminal-record-v1",
+              "application-native-record-v1",
+            ].includes(kind) ||
             !/^[-a-f0-9]{36}$/.test(jobId)
           )
             fail("EXECUTION_ARTIFACT_UNAVAILABLE");
@@ -533,6 +542,31 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
           ) {
             child.delete("native-evidence-v1", jobId);
             fail("EVIDENCE_UNAVAILABLE");
+          }
+          if (kind === "application-native-record-v1") {
+            const saved = child.get("app-native-jobs-v1", jobId),
+              record = saved?.record;
+            if (
+              saved?.phase !== "completed" ||
+              !record ||
+              record.jobId !== jobId ||
+              record.profileId !== receipt.payload.profileId ||
+              record.runtimeDigest !== e.config.runtimeDigest ||
+              record.request?.providerId !== e.config.providerId ||
+              saved.evidenceDigest !== receipt.payload.evidenceDigest ||
+              digestOf(record) !== saved.evidenceDigest ||
+              digestOf(record.request) !== digestOf(bundle.request)
+            )
+              fail("EXECUTION_ARTIFACT_UNAVAILABLE");
+            const bytes = Buffer.from(JSON.stringify(record));
+            if (bytes.length > 1048576) fail("EXECUTION_ARTIFACT_LIMIT");
+            return {
+              kind,
+              bytes,
+              digest:
+                "sha256:" + createHash("sha256").update(bytes).digest("hex"),
+              executionEvidenceDigest: saved.evidenceDigest,
+            };
           }
           const saved = child.get("native-evidence-v1", jobId);
           if (
@@ -619,6 +653,7 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
     const executor = {
       mode: config.mode,
       deleteEvidence({ jobId, providerId }) {
+        ports.get(providerId)?.deleteEvidence?.({ jobId, providerId });
         const child = runtimeStores.get(providerId);
         if (!child) fail("EVIDENCE_PROVIDER_MISMATCH");
         for (const name of ["assessor-artifacts-v1", "native-evidence-v1"])
@@ -627,6 +662,9 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       },
       validateRequest(request) {
         check(request);
+      },
+      async preflightRequest(request, options) {
+        return check(request).executor.preflightRequest?.(request, options);
       },
       execute(args) {
         return check(args.request).executor.execute(args);
@@ -882,6 +920,23 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
         forProvider(id) {
           return ports.get(id)?.assessor;
         },
+      },
+      runtimeStatus() {
+        return {
+          version: "1",
+          providers: entries.map((e) => {
+            const s = ports.get(e.config.providerId)?.status?.();
+            return {
+              providerId: e.config.providerId,
+              mode: config.mode,
+              state: s?.status ?? "unknown",
+              modelLoaded:
+                typeof s?.modelLoaded === "boolean" ? s.modelLoaded : null,
+              inferenceVerified: false,
+              financialProtection: false,
+            };
+          }),
+        };
       },
       offers: {
         async list() {

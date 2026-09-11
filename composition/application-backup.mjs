@@ -28,14 +28,14 @@ const Database = require("better-sqlite3");
 const fail = (code) => {
   throw Error(code);
 };
-export function managedInventory({ configFile }) {
+export function managedInventory({ configFile, nativeHostBindings }) {
   const {
     root,
     config,
     entries: bindings,
     historicalKeys,
     publication,
-  } = loadManagedApplication({ configFile });
+  } = loadManagedApplication({ configFile, nativeHostBindings });
   const db = new Database(join(root, "core.sqlite"), { fileMustExist: true });
   let records;
   try {
@@ -170,6 +170,15 @@ export function managedInventory({ configFile }) {
         p.providerId,
       ),
     );
+    if (spec.runtime.kind === "application-native") {
+      for (const file of [
+        spec.runtime.configurationFile,
+        spec.runtime.permitFile,
+      ]) {
+        managedPath(root, file);
+        entries.push(entry(file, "opaque-private", ["application-config"]));
+      }
+    }
     if (spec.runtime.kind === "native-stdio") {
       for (const file of [
         spec.runtime.bindingFile,
@@ -219,8 +228,11 @@ export function managedInventory({ configFile }) {
     entries: unique,
   });
 }
-function lockPublicationSnapshot(configFile) {
-  const { root, publication } = loadManagedApplication({ configFile });
+function lockPublicationSnapshot(configFile, nativeHostBindings) {
+  const { root, publication } = loadManagedApplication({
+    configFile,
+    nativeHostBindings,
+  });
   const fds = [];
   try {
     for (const dir of publication?.directories ?? []) {
@@ -252,14 +264,18 @@ export async function backupManagedApplication({
   configFile,
   artifactPath,
   passphrase,
+  nativeHostBindings,
 }) {
   const root = dirname(resolve(configFile)),
     release = acquirePrivateStateLock(root);
   let releasePublication;
   try {
-    releasePublication = lockPublicationSnapshot(configFile);
-    await doctorApplication({ configFile });
-    const inventory = managedInventory({ configFile });
+    releasePublication = lockPublicationSnapshot(
+      configFile,
+      nativeHostBindings,
+    );
+    await doctorApplication({ configFile, nativeHostBindings });
+    const inventory = managedInventory({ configFile, nativeHostBindings });
     const result = await backupApplicationState({
       privateStateDir: root,
       artifactPath,
@@ -278,6 +294,7 @@ export async function restoreManagedApplication({
   targetDataDir,
   passphrase,
   expectedInventory,
+  nativeHostBindings,
 }) {
   return restoreApplicationState({
     artifactPath,
@@ -286,9 +303,9 @@ export async function restoreManagedApplication({
     expectedInventory,
     async validateStagedState(root) {
       const configFile = join(root, "application.json");
-      await doctorApplication({ configFile });
+      await doctorApplication({ configFile, nativeHostBindings });
       if (
-        digestOf(managedInventory({ configFile })) !==
+        digestOf(managedInventory({ configFile, nativeHostBindings })) !==
         digestOf(expectedInventory)
       )
         fail("SNAPSHOT_IDENTITY_MISMATCH");

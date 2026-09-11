@@ -81,6 +81,7 @@ export function createApp({
   eventSink,
   assessor,
   offers,
+  runtimeStatus,
 } = {}) {
   if (!store) throw new Error("Explicit durable store required");
   if (!["development", "live"].includes(config.mode))
@@ -804,6 +805,10 @@ export function createApp({
           c.maxQueue
       )
         fail(429, "QUEUE_LIMIT");
+      if (!recovering) {
+        await executionPreflight(r);
+        quoteFor(b.quoteId, s, r);
+      }
       const quoteRecord = store.get("quotes", q.quoteId) || {
         quote: q,
         principalId: s.principalId,
@@ -1054,9 +1059,22 @@ export function createApp({
     });
     return a;
   }
+  async function executionPreflight(r) {
+    if (typeof executor?.preflightRequest !== "function") return;
+    try {
+      await bounded((signal) =>
+        executor.preflightRequest(structuredClone(r), { signal }),
+      );
+    } catch (error) {
+      if (error?.message === "INPUT_TOKEN_LIMIT")
+        fail(400, "UNSUPPORTED_EXECUTION_REQUEST");
+      fail(503, "EXECUTION_PREFLIGHT_UNAVAILABLE");
+    }
+  }
   async function createQuote(s, r) {
     if (!payments) fail(503, "PAYMENTS_UNAVAILABLE");
     if (store.list("quotes").length >= c.maxRecords) fail(429, "QUOTE_LIMIT");
+    await executionPreflight(r);
     const q = adapterChecked(
       "Quote",
       await bounded((signal) =>
@@ -1168,6 +1186,42 @@ export function createApp({
     if ([...url.searchParams.keys()].some((k) => k !== "name"))
       fail(400, "INVALID_QUERY");
     if (await recoveryRoutes.handle(req, res, url.pathname)) return;
+    if (
+      method === "GET" &&
+      url.pathname === "/v2/runtime-status" &&
+      typeof runtimeStatus === "function"
+    ) {
+      if (url.search) fail(400, "INVALID_QUERY");
+      const report = runtimeStatus();
+      if (
+        report?.version !== "1" ||
+        !Array.isArray(report.providers) ||
+        report.providers.length > 8
+      )
+        fail(503, "RUNTIME_STATUS_UNAVAILABLE");
+      const states = new Set([
+        "not_started",
+        "loading",
+        "ready",
+        "stopping",
+        "stopped",
+        "expired",
+        "failed",
+        "unknown",
+      ]);
+      return send(res, 200, {
+        version: "1",
+        providers: report.providers.map((r) => ({
+          providerId: r.providerId,
+          mode: c.mode,
+          state: states.has(r.state) ? r.state : "unknown",
+          modelLoaded:
+            typeof r.modelLoaded === "boolean" ? r.modelLoaded : null,
+          inferenceVerified: false,
+          financialProtection: false,
+        })),
+      });
+    }
     if (method === "GET" && url.pathname === "/healthz")
       return send(res, 200, { status: "ok", mode: c.mode });
     if (method === "POST" && url.pathname === "/v1/sessions") {
