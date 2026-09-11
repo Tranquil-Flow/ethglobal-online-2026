@@ -1,0 +1,122 @@
+{
+  "step": 2,
+  "status": "PASSED",
+  "codeRevision": "3e591c80bc1c41ad026b168ef4da6195d57a3b7f",
+  "acceptance": {
+    "allThreeNewFiles": "18/18 passed, no skips",
+    "checkAll": "exit 0; 222/222 composition tests; all five lane gates passed",
+    "realOllama": "real local complete and 200ms abort artifacts independently read; unload observed"
+  },
+  "commands": [
+    {
+      "id": "step2-adapter-red",
+      "command": "node --test composition/test/ollama-adapter.test.mjs composition/test/ollama-adapter-privacy.test.mjs",
+      "exitCode": 1,
+      "logSha256": "93b5bcf9eecc40be7d44bfe84e13bafb7f99410cdf242c99389fde40e4d5a7c0",
+      "finalSummary": [
+        "# tests 15",
+        "# suites 0",
+        "# pass 0",
+        "# fail 15",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 252.457542"
+      ]
+    },
+    {
+      "id": "step2-preflight-interface-red",
+      "command": "node --test --test-name-pattern=Ollama adapter is lazy composition/test/ollama-adapter.test.mjs",
+      "exitCode": 1,
+      "logSha256": "dac2352dc44e3b5b887dda59335fa2ab3df2be52c65666bd05c41d47ecd57499",
+      "finalSummary": [
+        "# tests 1",
+        "# suites 0",
+        "# pass 0",
+        "# fail 1",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 370.43825"
+      ]
+    },
+    {
+      "id": "step2-request-snapshot-red",
+      "command": "node --test --test-name-pattern=caller mutation composition/test/ollama-adapter.test.mjs",
+      "exitCode": 1,
+      "logSha256": "f65193e998288a706026ce6269d7366cd22461a4f9afbcd543acbeba06eeb809",
+      "finalSummary": [
+        "# tests 1",
+        "# suites 0",
+        "# pass 0",
+        "# fail 1",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 265.624709"
+      ]
+    },
+    {
+      "id": "step2-final-three-file-gate",
+      "command": "node --test composition/test/ollama-adapter.test.mjs composition/test/ollama-adapter-privacy.test.mjs composition/test/application-ollama-adapter.test.mjs",
+      "exitCode": 0,
+      "logSha256": "03aa98204e86bc91cec60f7bd65c50ac690fe4dffdc7f629dea380ceda511b44",
+      "finalSummary": [
+        "# tests 18",
+        "# suites 0",
+        "# pass 18",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 5003.912167"
+      ]
+    },
+    {
+      "id": "step2-check-all-explicit-approval",
+      "command": "npm run check:all",
+      "exitCode": 0,
+      "logSha256": "992032a8a645f4ce612f56267536960c97f4d471162ed6ee4b6086dc4e1f21e8",
+      "finalSummary": [
+        "# tests 222",
+        "# suites 0",
+        "# pass 222",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 307776.7595"
+      ]
+    }
+  ],
+  "livePortEvidence": [
+    {
+      "kind": "complete",
+      "status": "passed",
+      "artifactBasename": "step2-live-ollama-e1bef930-e623-4ef3-ba76-ac0bb784a73f.json",
+      "model": "qwen2.5:7b",
+      "profileId": "sha256:0542943d1358a7b3c2762e7b9ae9a8ab38c2d2a735d7e5e913e9c00c8568a079",
+      "adapterSha256": "589f578a80626d0d521b976c5c169c857d5cb1841cdf6d6e9f4c00aee5a05567",
+      "deltaCount": 32,
+      "completedCount": 1,
+      "outputBytes": 150,
+      "finishReason": "length",
+      "modelUnloaded": true,
+      "generationRequestsCreated": 1,
+      "inferenceVerified": false
+    },
+    {
+      "kind": "cancel",
+      "status": "passed",
+      "artifactBasename": "step2-live-ollama-e1a07b0f-be5b-4d35-b97f-b30e944d2eab.json",
+      "model": "qwen2.5:7b",
+      "profileId": "sha256:0542943d1358a7b3c2762e7b9ae9a8ab38c2d2a735d7e5e913e9c00c8568a079",
+      "adapterSha256": "589f578a80626d0d521b976c5c169c857d5cb1841cdf6d6e9f4c00aee5a05567",
+      "deltaCount": 0,
+      "completedCount": 0,
+      "outputBytes": null,
+      "finishReason": null,
+      "modelUnloaded": true,
+      "generationRequestsCreated": 1,
+      "inferenceVerified": false
+    }
+  ],
+  "claimBoundary": "Real local raw-prompt qwen2.5:7b ExecutionPort behavior, not a paid application receipt, split inference, physical distributed execution, public serving, inference verification or selected assessor. Identity/counts are operator/Ollama-reported. Token IDs remain [].",
+  "retainedFailedAttempts": "Private step2-interrupted-attempts.json retains foreground timeout and background missing-approval environment failure; neither is relabeled green.",
+  "testSetup": "Node22.22.2/npm10.9.7, existing isolated non-model conformance checkout and pinned OpenAI SDK; explicit WAVE5_OLLAMA_LIVE_APPROVED=1 on background invocation."
+}
