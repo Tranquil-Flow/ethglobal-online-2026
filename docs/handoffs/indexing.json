@@ -1,20 +1,20 @@
 {
   "lane": "indexing",
   "status": "local_ready",
-  "codeRevision": "b53126d57b6dc7e32cc78af1b05887d38ab21711",
+  "codeRevision": "80b98ce6094c5128112cc5ad46dc5e38f324491b",
   "reviewContract": "handoff-review-v1",
   "commands": [
     {
-      "id": "step5-indexing-check",
+      "id": "step5-repaired-index-check",
       "command": "npm --prefix packages/indexing run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/wave5-step5-components.json"
+      "evidence": "docs/handoffs/wave5-step5-local-repair.json"
     },
     {
-      "id": "step5-indexing-smoke",
+      "id": "step5-repaired-index-smoke",
       "command": "npm --prefix packages/indexing run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/wave5-step5-components.json"
+      "evidence": "docs/handoffs/wave5-step5-local-repair.json"
     }
   ],
   "acceptanceCases": [
@@ -22,60 +22,60 @@
       "id": "local-evm-events",
       "status": "passed",
       "commandIds": [
-        "step5-indexing-check",
-        "step5-indexing-smoke"
+        "step5-repaired-index-check",
+        "step5-repaired-index-smoke"
       ],
-      "evidence": "docs/handoffs/wave5-step5-components.json",
+      "evidence": "docs/handoffs/wave5-step5-local-repair.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "publisher-auth-replay",
       "status": "passed",
       "commandIds": [
-        "step5-indexing-check",
-        "step5-indexing-smoke"
+        "step5-repaired-index-check",
+        "step5-repaired-index-smoke"
       ],
-      "evidence": "docs/handoffs/wave5-step5-components.json",
+      "evidence": "docs/handoffs/wave5-step5-local-repair.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "mapping-build-tests",
       "status": "passed",
       "commandIds": [
-        "step5-indexing-check",
-        "step5-indexing-smoke"
+        "step5-repaired-index-check",
+        "step5-repaired-index-smoke"
       ],
-      "evidence": "docs/handoffs/wave5-step5-components.json",
+      "evidence": "docs/handoffs/wave5-step5-local-repair.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "metadata-provenance",
       "status": "passed",
       "commandIds": [
-        "step5-indexing-check",
-        "step5-indexing-smoke"
+        "step5-repaired-index-check",
+        "step5-repaired-index-smoke"
       ],
-      "evidence": "docs/handoffs/wave5-step5-components.json",
+      "evidence": "docs/handoffs/wave5-step5-local-repair.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "query-freshness",
       "status": "passed",
       "commandIds": [
-        "step5-indexing-check",
-        "step5-indexing-smoke"
+        "step5-repaired-index-check",
+        "step5-repaired-index-smoke"
       ],
-      "evidence": "docs/handoffs/wave5-step5-components.json",
+      "evidence": "docs/handoffs/wave5-step5-local-repair.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "privacy-mode",
       "status": "passed",
       "commandIds": [
-        "step5-indexing-check",
-        "step5-indexing-smoke"
+        "step5-repaired-index-check",
+        "step5-repaired-index-smoke"
       ],
-      "evidence": "docs/handoffs/wave5-step5-components.json",
+      "evidence": "docs/handoffs/wave5-step5-local-repair.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     }
   ],
@@ -129,7 +129,7 @@
     "platform": "darwin",
     "arch": "arm64"
   },
-  "documentationRevisionNote": "Wave 5 Step 5 component gates passed on code bytes independently matched to b53126d57b6dc7e32cc78af1b05887d38ab21711. Public qualification remains separate.",
+  "documentationRevisionNote": "46 indexing tests, package check/build and smoke passed for the local startup repair; production indexing/Graph receipt validation unchanged from the public candidate.",
   "verificationHistory": [
     {
       "codeRevision": "c59a71579aaa7d8cd131dfe4ae265aeaba4c8293",
@@ -652,6 +652,86 @@
         }
       ],
       "documentationRevisionNote": "Wave 5 prerequisite repair: 42 indexing tests plus package build/check/smoke passed on bytes equal to 231deba03180bb167e26062cf34a37d2d82444ee. Only one test fixture changed; production guard/source and historical receipts remain unchanged."
+    },
+    {
+      "codeRevision": "b53126d57b6dc7e32cc78af1b05887d38ab21711",
+      "commands": [
+        {
+          "id": "step5-indexing-check",
+          "command": "npm --prefix packages/indexing run check",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/wave5-step5-components.json"
+        },
+        {
+          "id": "step5-indexing-smoke",
+          "command": "npm --prefix packages/indexing run smoke",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/wave5-step5-components.json"
+        }
+      ],
+      "acceptanceCases": [
+        {
+          "id": "local-evm-events",
+          "status": "passed",
+          "commandIds": [
+            "step5-indexing-check",
+            "step5-indexing-smoke"
+          ],
+          "evidence": "docs/handoffs/wave5-step5-components.json",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        },
+        {
+          "id": "publisher-auth-replay",
+          "status": "passed",
+          "commandIds": [
+            "step5-indexing-check",
+            "step5-indexing-smoke"
+          ],
+          "evidence": "docs/handoffs/wave5-step5-components.json",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        },
+        {
+          "id": "mapping-build-tests",
+          "status": "passed",
+          "commandIds": [
+            "step5-indexing-check",
+            "step5-indexing-smoke"
+          ],
+          "evidence": "docs/handoffs/wave5-step5-components.json",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        },
+        {
+          "id": "metadata-provenance",
+          "status": "passed",
+          "commandIds": [
+            "step5-indexing-check",
+            "step5-indexing-smoke"
+          ],
+          "evidence": "docs/handoffs/wave5-step5-components.json",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        },
+        {
+          "id": "query-freshness",
+          "status": "passed",
+          "commandIds": [
+            "step5-indexing-check",
+            "step5-indexing-smoke"
+          ],
+          "evidence": "docs/handoffs/wave5-step5-components.json",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        },
+        {
+          "id": "privacy-mode",
+          "status": "passed",
+          "commandIds": [
+            "step5-indexing-check",
+            "step5-indexing-smoke"
+          ],
+          "evidence": "docs/handoffs/wave5-step5-components.json",
+          "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
+        }
+      ],
+      "documentationRevisionNote": "Wave 5 Step 5 component gates passed on code bytes independently matched to b53126d57b6dc7e32cc78af1b05887d38ab21711. Public qualification remains separate."
     }
   ],
   "integrationPriorHandoffCommit": "59c5cb141f951d402e047e818920ef5eb24a6a3a",

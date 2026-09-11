@@ -1,0 +1,59 @@
+{
+  "status": "focused-gates-passed-aggregate-pending",
+  "codeRevision": "80b98ce6094c5128112cc5ad46dc5e38f324491b",
+  "commands": [
+    {
+      "id": "step5-local-recovery-green",
+      "command": "node --test packages/indexing/test/local-startup.test.mjs composition/test/mycelium-cleanup.test.mjs",
+      "exitCode": 0,
+      "logSha256": "c819178409783b16dd575e1338a212cdbf1363f1bbfd643cbf367c5e4022f37e",
+      "summaryLines": [
+        "# tests 3",
+        "# suites 0",
+        "# pass 3",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 715.834125"
+      ]
+    },
+    {
+      "id": "step5-workbench-capture-green",
+      "command": "node --test --test-concurrency=1 composition/test/workbench.test.mjs",
+      "exitCode": 0,
+      "logSha256": "c28dd2082f25e8672d2127b99e7d0f6bdddb9e04bb13e708164f3857cf4de832",
+      "summaryLines": [
+        "# tests 3",
+        "# suites 0",
+        "# pass 3",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 106678.037292"
+      ]
+    },
+    {
+      "id": "step5-repaired-index-check",
+      "command": "npm --prefix packages/indexing run check",
+      "exitCode": 0,
+      "logSha256": "73a11e830d321c1972a06e65432d0ddddbf01b61837b4245bee6b1b7623992ee",
+      "summaryLines": [
+        "# tests 46",
+        "# suites 0",
+        "# pass 46",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 52585.656334"
+      ]
+    },
+    {
+      "id": "step5-repaired-index-smoke",
+      "command": "npm --prefix packages/indexing run smoke",
+      "exitCode": 0,
+      "logSha256": "29bdf17431b22ee939a844c682ddcd77c12c7c5545538a38f67527d529c3215d",
+      "summaryLines": []
+    }
+  ],
+  "scope": "Test/session setup and local test Graph orchestration only; no Mycelium gateway or live publication logic changed. Original 100ms cleanup bound and authenticated DELETE assertions retained. Real Graph readiness remains mandatory after at most one diagnosed database-pool restart."
+}
