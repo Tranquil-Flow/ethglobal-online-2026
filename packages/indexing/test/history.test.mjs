@@ -12,8 +12,10 @@ export async function graphServer(handler){
  return {endpoint:`http://127.0.0.1:${server.address().port}`,async close(){server.closeAllConnections();await new Promise(r=>server.close(r));}};
 }
 test('real Graph HTTP transport yields History DTO, bounded variables and retained provenance',async()=>{
+ // One block hash has one timestamp, even when replies cross a wall-clock second.
+ const snapshot=graphData();
  let requests=0;
- const s=await graphServer((req,res,body)=>{requests++;assert.equal(req.headers.authorization,'Bearer synthetic-token');if(body.variables.provider){assert.equal(body.variables.provider,hex(event.providerKey));assert.equal(body.variables.block,hash);assert.equal(body.variables.limit,100);}res.setHeader('content-type','application/json');res.end(JSON.stringify({data:graphData()}));});
+ const s=await graphServer(async(req,res,body)=>{requests++;if(requests===2)await new Promise(r=>setTimeout(r,1100));assert.equal(req.headers.authorization,'Bearer synthetic-token');if(body.variables.provider){assert.equal(body.variables.provider,hex(event.providerKey));assert.equal(body.variables.block,hash);assert.equal(body.variables.limit,100);}res.setHeader('content-type','application/json');res.end(JSON.stringify({data:snapshot}));});
  try{
   const client=createGraphClient({endpoint:s.endpoint,allowLocal:true,token:'synthetic-token'});
   const report=await queryProviderHistory({config,client,providerId});assert.equal(requests,2);assert.equal(report.history.freshness,'fresh');assert.deepEqual(report.history.observations,[assessment]);assert.deepEqual(report.reasons,['UNKNOWN_VERIFIER']);assert.equal(report.provenance[0].transactionHash,hash);assert.equal(report.counts['["unknown-verifier","passed"]'],1);
