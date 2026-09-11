@@ -1,0 +1,55 @@
+{
+  "schema": "mycelium.public-open-registry-evidence/v1",
+  "authority": {
+    "sessionId": "20260910_124347_7069ff",
+    "messageId": 627815,
+    "record": "NONVERIFICATION-OWNER-AUTHORITY.md",
+    "scope": "Sepolia RegistryV2 only; no mainnet, value transfer, verification or financial-protection claim",
+    "maxTotalFeeWei": "10000000000000000"
+  },
+  "inspection": {
+    "schema": "mycelium.open-registry-deployment-inspection/v1",
+    "verified": true,
+    "transactionHash": "0xba3753e8b8844b7c1088a0c754eabdb5677d94d281085124852fa285e89d2b64",
+    "sender": "0xb4f0b42fbB0fCAf62703475039A7E26EF6dD5EaE",
+    "nonce": 10,
+    "value": "0",
+    "contractAddress": "0xCf14c9bf5657487F1dBF03C9eF0DE0FfdA959e34",
+    "chainId": 11155111,
+    "blockNumber": 11681335,
+    "blockHash": "0xcafa18cbd132a903410346eba760c0bbcdc0eb959ef59718ed39c7fced4a0810",
+    "confirmations": 12,
+    "creationDataHash": "0x7d3eaff47d034d77b0b4f27ff6460fd430da89da87b6e3da8dff130e1a682c8c",
+    "runtimeHash": "0x67a0d639c50c5e70fa8fc41d11269a5bdb1b0dfa50c21418941b529123a18a49",
+    "compilerMetadataHash": "0x207a6f9e50bf0f5f242662681c858960dc56b8332ed38c9e18f2e33703cb7f35",
+    "sourceHashes": {
+      "RegistryV2.sol": "0x8bf65989acb1ffd9db952c7a86c3c4b62ee4059f079b820f03e66666b8140d57"
+    }
+  },
+  "actualFeeWei": "1912964195166750",
+  "recordPath": "../OPEN-REGISTRY-DEPLOYMENT.json",
+  "command": {
+    "id": "nonverify03-registry-v2-confirm",
+    "argv": [
+      "node",
+      "../deploy_open_registry_approved.mjs",
+      "inspect"
+    ],
+    "cwd": "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/continuations/hackathon-app-03/workbench",
+    "startedAt": "2026-09-11T10:29:09.323151+00:00",
+    "head": "e1960b77b448bb050b2eb431255e9343975bfe8b",
+    "initialStatus": "M composition/application-deployment.mjs\n M composition/application-https.mjs\n M docs/APPLICATION_COMPLETION.md\n M docs/APPLICATION_QUICKSTART.md\n M docs/handoffs/access.json\n M docs/handoffs/core.json\n M docs/handoffs/discovery.json\n M docs/handoffs/indexing.json\n M docs/handoffs/payments.json\n?? composition/test/application-https-idle.test.mjs\n?? docs/handoffs/nonverification-component-evidence.json",
+    "node": "v22.22.2",
+    "npm": "10.9.7",
+    "log": "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/continuations/hackathon-app-03/logs/nonverify03-registry-v2-confirm.log",
+    "exitCode": 0,
+    "finishedAt": "2026-09-11T10:31:14.364909+00:00",
+    "finalHead": "e1960b77b448bb050b2eb431255e9343975bfe8b",
+    "finalStatus": "M composition/application-deployment.mjs\n M composition/application-https.mjs\n M docs/APPLICATION_COMPLETION.md\n M docs/APPLICATION_QUICKSTART.md\n M docs/handoffs/access.json\n M docs/handoffs/core.json\n M docs/handoffs/discovery.json\n M docs/handoffs/indexing.json\n M docs/handoffs/payments.json\n?? composition/test/application-https-idle.test.mjs\n?? composition/test/application-publication.test.mjs\n?? docs/handoffs/nonverification-component-evidence.json",
+    "sha256": "9074b0e30da79bbbd5cd8d26b8775e66064d1493848f237a96a9f5df6d1fe964"
+  },
+  "applicationServingQualified": false,
+  "hostedGraphV2Qualified": false,
+  "inferenceVerified": false,
+  "financialProtection": false
+}

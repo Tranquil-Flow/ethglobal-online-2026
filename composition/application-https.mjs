@@ -18,14 +18,25 @@ function loadTlsMaterial({ configFile, now = Date.now() }) {
   } finally {
     bytes.fill(0);
   }
+  const required = ["upstream", "publicOrigin", "certFile", "keyFile", "port"];
   if (
     !config ||
-    Object.keys(config).sort().join(",") !==
-      ["upstream", "publicOrigin", "certFile", "keyFile", "port"]
-        .sort()
-        .join(",")
+    typeof config !== "object" ||
+    Array.isArray(config) ||
+    required.some((key) => !Object.hasOwn(config, key)) ||
+    Object.keys(config).some(
+      (key) => ![...required, "upstreamTimeoutMs"].includes(key),
+    )
   )
     throw Error("INVALID_TLS_CONFIG");
+  if (!Object.hasOwn(config, "upstreamTimeoutMs"))
+    config.upstreamTimeoutMs = 30000;
+  if (
+    !Number.isSafeInteger(config.upstreamTimeoutMs) ||
+    config.upstreamTimeoutMs < 1 ||
+    config.upstreamTimeoutMs > 300000
+  )
+    throw Error("INVALID_TLS_TIMEOUT");
   let origin;
   try {
     origin = new URL(config.publicOrigin);
@@ -105,6 +116,7 @@ export function inspectApplicationHttps(options) {
       upstream: config.upstream,
       publicOrigin: config.publicOrigin,
       port: config.port,
+      upstreamTimeoutMs: config.upstreamTimeoutMs,
       certificateFingerprint: certificate.fingerprint256,
       validFrom: certificate.validFrom,
       validTo: certificate.validTo,
@@ -127,7 +139,7 @@ export async function startApplicationHttps({ configFile }) {
       allowedHosts: [origin.hostname],
       allowedOrigins: [config.publicOrigin],
       allowedPaths: ["/"],
-      upstreamTimeoutMs: 30000,
+      upstreamTimeoutMs: config.upstreamTimeoutMs,
     });
     await proxy.listen({ host: "127.0.0.1", port: config.port });
     return { publicOrigin: config.publicOrigin, close: () => proxy.close() };

@@ -361,6 +361,9 @@ async function prepare(options, { start = false } = {}) {
   const bindings = {
     ...(x.history ? { history: x.history } : {}),
     ...(x.discovery ? { discovery: x.discovery } : {}),
+    ...(options.eventSink !== undefined
+      ? { eventSink: options.eventSink }
+      : {}),
     providers: x.entries.map(({ providerId, receiptSigner, runtime }) => ({
       providerId,
       receiptSigner,
@@ -399,6 +402,11 @@ export async function doctorApplication(options) {
     payment: "non-monetary-no-settlement",
   };
 }
+/**
+ * Start from private managed files with an optional preconstructed EventSink.
+ * This layer never loads publication keys or creates a transport. After
+ * preflight accepts the binding, the workbench owns and closes it.
+ */
 export async function startManagedApplication(options) {
   // Complete offline catalog checks before any native readiness I/O.
   await doctorApplication(options);

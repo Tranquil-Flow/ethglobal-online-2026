@@ -1,23 +1,25 @@
 {
   "lane": "access",
-  "status": "blocked",
-  "codeRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
+  "status": "local_ready",
+  "codeRevision": "e1960b77b448bb050b2eb431255e9343975bfe8b",
   "historicalLaneCodeRevision": "4e15d0c4abc501a3cdb235c787352bba7023ba01",
   "integrationEvidence": "docs/handoffs/foundation-verification.json",
   "commands": [
     {
-      "id": "source03-access-check",
+      "id": "nonverify01-access-check",
       "command": "npm --prefix packages/access run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/end-to-end-preparation.json",
-      "localLog": "../logs/source03-access-check.log"
+      "observedViaParent": "nonverify01-all",
+      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt.",
+      "evidence": "docs/handoffs/nonverification-component-evidence.json"
     },
     {
-      "id": "source03-access-smoke",
+      "id": "nonverify01-access-smoke",
       "command": "npm --prefix packages/access run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/end-to-end-preparation.json",
-      "localLog": "../logs/source03-access-smoke.log"
+      "observedViaParent": "nonverify01-all",
+      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt.",
+      "evidence": "docs/handoffs/nonverification-component-evidence.json"
     }
   ],
   "acceptance": [
@@ -125,7 +127,7 @@
     {
       "id": "public-release",
       "status": "blocked",
-      "reason": "Outside authorized technical qualification: no source push/public visibility, license change, mainnet/paid hosting, production inference, demo publication or hackathon submission. Testnet actions are separately authorized and documented."
+      "reason": "Direct owner approval now authorizes necessary non-verification completion work; actual release, licensing/eligibility reconciliation, deployed consumption and final candidate qualification remain unfinished. Verification-dependent guarantees remain disabled."
     },
     {
       "id": "mycelium-execution",
@@ -145,7 +147,7 @@
   ],
   "contractRequests": [],
   "evidencePrivacy": "Foundation handoff uses synthetic/local conformance evidence only; no bearer, wallet secret, Graph credential, private live prompt, or payment proof is included in tracked metadata.",
-  "documentationRevisionNote": "Frozen implementation 0d0c7cd52b84f2b7516c29c3febc79ff3cc79063 has component checks/smokes. Status remains blocked until full combined acceptance and truthful handoff refresh; see the adjacent END-TO-END-HANDOFF.json and RESOURCE-COORDINATION.json. No new target/public qualification.",
+  "documentationRevisionNote": "Non-verification local component handoff refreshed from observed e1960b7 results. Parent aggregate exit 1 is retained and not relabeled; root gate must be rerun. Package bytes pinned by codeRevision; this update changes docs only.",
   "reviewTag": {
     "name": "handoff-review-v1",
     "revision": "74ae66f6bd895b13a9ce9de083357c0fcb88e564",
@@ -154,69 +156,69 @@
   "acceptanceCases": [
     {
       "id": "sdk-http-errors",
-      "status": "pending",
+      "status": "passed",
       "commandIds": [
-        "source03-access-check",
-        "source03-access-smoke"
+        "nonverify01-access-check",
+        "nonverify01-access-smoke"
       ],
-      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "evidence": "docs/handoffs/nonverification-component-evidence.json",
       "details": "All HTTP methods; exact shared DTOs and envelopes; malformed JSON/DTOs; safe errors; bounded 429/network retries; AbortSignal/deadline;409 conflict; unsupported/expired quote; request/profile/budget binding.",
-      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
     },
     {
       "id": "session-payment-consent",
-      "status": "pending",
+      "status": "passed",
       "commandIds": [
-        "source03-access-check",
-        "source03-access-smoke"
+        "nonverify01-access-check",
+        "nonverify01-access-smoke"
       ],
-      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "evidence": "docs/handoffs/nonverification-component-evidence.json",
       "details": "Explicit sessions; expiry/revocation no auto-renew or repay; default no spending; bounded consent; native x402 402 bytes; callback bearer/cookie/header isolation; rejected authorizer header injection; concurrency/replay/ambiguous-paid-outcome controls.",
-      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
     },
     {
       "id": "sse-reconnect-cancel",
-      "status": "pending",
+      "status": "passed",
       "commandIds": [
-        "source03-access-check",
-        "source03-access-smoke"
+        "nonverify01-access-check",
+        "nonverify01-access-smoke"
       ],
-      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "evidence": "docs/handoffs/nonverification-component-evidence.json",
       "details": "Actual fetch SSE resume with Last-Event-ID; no duplicate deltas/paid resubmission; expired cursor409; stream disconnection not cancel; SDK/real-browser explicit cancellation; paid_but_failed remains separate; bounded output.",
-      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
     },
     {
       "id": "cli-mcp",
-      "status": "pending",
+      "status": "passed",
       "commandIds": [
-        "source03-access-check",
-        "source03-access-smoke"
+        "nonverify01-access-check",
+        "nonverify01-access-smoke"
       ],
-      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "evidence": "docs/handoffs/nonverification-component-evidence.json",
       "details": "CLI providers/select/profile/quote/submit/stream/inspect/cancel/receipt-integrity/assess/export/history/revoke; official MCP stdio connect/history/quote/select/submit/watch; host and caller authorization; no-quote refusal and stale Graph-derived history veto.",
-      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
     },
     {
       "id": "browser-accessibility-xss",
-      "status": "pending",
+      "status": "passed",
       "commandIds": [
-        "source03-access-check",
-        "source03-access-smoke"
+        "nonverify01-access-check",
+        "nonverify01-access-smoke"
       ],
-      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "evidence": "docs/handoffs/nonverification-component-evidence.json",
       "details": "Actual Chromium desktop/mobile; Tab/Enter; loading/empty/error/unavailable/development/cancelled paths; accessible alerts/status; CSP/text-only XSS; no page errors/dialogs/horizontal overflow; separate states; consent invalidation; evidence download.",
-      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
     },
     {
       "id": "privacy-export",
-      "status": "pending",
+      "status": "passed",
       "commandIds": [
-        "source03-access-check",
-        "source03-access-smoke"
+        "nonverify01-access-check",
+        "nonverify01-access-smoke"
       ],
-      "evidence": "docs/handoffs/end-to-end-preparation.json",
+      "evidence": "docs/handoffs/nonverification-component-evidence.json",
       "details": "Permission-restricted CLI files; memory-only browser capability; no bearer in URL/authorizer; no private normal SDK logs; no wallet/Graph secrets; hash/association/signature-validated private export/import; corruption/pin mismatch rejection; evidence deletion yields unavailable assessment; integrity is not execution verification.",
-      "note": "Component check/smoke passed; successor combined acceptance interrupted for A resource coordination. No inherited composition pass is relabeled."
+      "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
     }
   ],
   "lateReview": {
@@ -528,6 +530,95 @@
         }
       ],
       "documentationRevisionNote": "Application implementation tested at 8a6fee1e86a283688029a7704000637eb4331134. Later root README/docs/handoff-only commits do not change package/composition bytes. Final exact-candidate canonical receipt is in the adjacent APPLICATION-HANDOFF.json packet."
+    },
+    {
+      "kind": "superseded-preparation-handoff",
+      "status": "blocked",
+      "codeRevision": "0d0c7cd52b84f2b7516c29c3febc79ff3cc79063",
+      "commands": [
+        {
+          "id": "source03-access-check",
+          "command": "npm --prefix packages/access run check",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "localLog": "../logs/source03-access-check.log"
+        },
+        {
+          "id": "source03-access-smoke",
+          "command": "npm --prefix packages/access run smoke",
+          "exitCode": 0,
+          "evidence": "docs/handoffs/end-to-end-preparation.json",
+          "localLog": "../logs/source03-access-smoke.log"
+        }
+      ],
+      "acceptanceCases": [
+        {
+          "id": "sdk-http-errors",
+          "status": "passed",
+          "commandIds": [
+            "nonverify01-access-check",
+            "nonverify01-access-smoke"
+          ],
+          "evidence": "docs/handoffs/nonverification-component-evidence.json",
+          "details": "All HTTP methods; exact shared DTOs and envelopes; malformed JSON/DTOs; safe errors; bounded 429/network retries; AbortSignal/deadline;409 conflict; unsupported/expired quote; request/profile/budget binding.",
+          "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+        },
+        {
+          "id": "session-payment-consent",
+          "status": "passed",
+          "commandIds": [
+            "nonverify01-access-check",
+            "nonverify01-access-smoke"
+          ],
+          "evidence": "docs/handoffs/nonverification-component-evidence.json",
+          "details": "Explicit sessions; expiry/revocation no auto-renew or repay; default no spending; bounded consent; native x402 402 bytes; callback bearer/cookie/header isolation; rejected authorizer header injection; concurrency/replay/ambiguous-paid-outcome controls.",
+          "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+        },
+        {
+          "id": "sse-reconnect-cancel",
+          "status": "passed",
+          "commandIds": [
+            "nonverify01-access-check",
+            "nonverify01-access-smoke"
+          ],
+          "evidence": "docs/handoffs/nonverification-component-evidence.json",
+          "details": "Actual fetch SSE resume with Last-Event-ID; no duplicate deltas/paid resubmission; expired cursor409; stream disconnection not cancel; SDK/real-browser explicit cancellation; paid_but_failed remains separate; bounded output.",
+          "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+        },
+        {
+          "id": "cli-mcp",
+          "status": "passed",
+          "commandIds": [
+            "nonverify01-access-check",
+            "nonverify01-access-smoke"
+          ],
+          "evidence": "docs/handoffs/nonverification-component-evidence.json",
+          "details": "CLI providers/select/profile/quote/submit/stream/inspect/cancel/receipt-integrity/assess/export/history/revoke; official MCP stdio connect/history/quote/select/submit/watch; host and caller authorization; no-quote refusal and stale Graph-derived history veto.",
+          "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+        },
+        {
+          "id": "browser-accessibility-xss",
+          "status": "passed",
+          "commandIds": [
+            "nonverify01-access-check",
+            "nonverify01-access-smoke"
+          ],
+          "evidence": "docs/handoffs/nonverification-component-evidence.json",
+          "details": "Actual Chromium desktop/mobile; Tab/Enter; loading/empty/error/unavailable/development/cancelled paths; accessible alerts/status; CSP/text-only XSS; no page errors/dialogs/horizontal overflow; separate states; consent invalidation; evidence download.",
+          "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+        },
+        {
+          "id": "privacy-export",
+          "status": "passed",
+          "commandIds": [
+            "nonverify01-access-check",
+            "nonverify01-access-smoke"
+          ],
+          "evidence": "docs/handoffs/nonverification-component-evidence.json",
+          "details": "Permission-restricted CLI files; memory-only browser capability; no bearer in URL/authorizer; no private normal SDK logs; no wallet/Graph secrets; hash/association/signature-validated private export/import; corruption/pin mismatch rejection; evidence deletion yields unavailable assessment; integrity is not execution verification.",
+          "note": "Local component check/smoke completed on exact clean candidate; separate current integration was 163/163. Native serving, independent operation, public deployment and financial qualification are not inferred."
+        }
+      ]
     }
   ],
   "foundationPriorCodeRevision": "5c76af329661fab1a2e237c2b9b328db49c4b131"

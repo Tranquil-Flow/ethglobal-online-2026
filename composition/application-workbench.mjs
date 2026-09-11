@@ -278,6 +278,12 @@ export function preflightApplication({ config: input, bindings }) {
     typeof bindings.discovery?.list !== "function"
   )
     fail("INVALID_DISCOVERY_BINDING");
+  if (
+    bindings.eventSink !== undefined &&
+    (typeof bindings.eventSink?.publish !== "function" ||
+      typeof bindings.eventSink?.close !== "function")
+  )
+    fail("INVALID_EVENT_SINK_BINDING");
   return { config, entries };
 }
 
@@ -289,41 +295,8 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
     return digestOf({ ...p, source });
   };
   const dir = resolve(config.dataDir);
-  if (existsSync(dir)) {
-    assertPrivateDirectory(dir);
-    const directories = [
-      join(dir, "providers"),
-      ...entries.map((e) =>
-        join(dir, "providers", digestOf(e.config.providerId).slice(7)),
-      ),
-    ];
-    for (const path of directories)
-      if (existsSync(path)) assertPrivateDirectory(path);
-    const files = [
-      join(dir, "core.sqlite"),
-      ...directories.slice(1).map((p) => join(p, "runtime.sqlite")),
-    ];
-    for (const path of files)
-      if (existsSync(path)) {
-        const st = lstatSync(path);
-        if (
-          !st.isFile() ||
-          st.isSymbolicLink() ||
-          st.nlink !== 1 ||
-          (st.mode & 0o777) !== 0o600
-        )
-          fail("PRIVATE_STATE_REQUIRED");
-      }
-  }
-  if (config.port)
-    await new Promise((resolve, reject) => {
-      const probe = createPortProbe();
-      probe.once("error", () => reject(Error("PORT_UNAVAILABLE")));
-      probe.listen(config.port, "127.0.0.1", () => probe.close(resolve));
-    });
-  mkdirSync(dir, { recursive: true, mode: 0o700 });
-  const release = acquirePrivateStateLock(dir);
-  let store,
+  let release,
+    store,
     app,
     viewer,
     payments,
@@ -337,11 +310,12 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
     for (const fn of [
       () => viewer?.close(),
       () => app?.close(),
+      () => bindings.eventSink?.close(),
       () => payments?.close(),
       ...runtimes.map((r) => () => r.close?.()),
       ...stores.map((s) => () => s.close()),
       () => store?.close(),
-      release,
+      () => release?.(),
     ])
       try {
         await fn();
@@ -352,6 +326,42 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       throw new AggregateError(errors, "APPLICATION_CLEANUP_FAILED");
   };
   try {
+    // A valid injected port becomes composition-owned after preflight. Keep all
+    // subsequent startup work inside this cleanup boundary.
+    if (existsSync(dir)) {
+      assertPrivateDirectory(dir);
+      const directories = [
+        join(dir, "providers"),
+        ...entries.map((e) =>
+          join(dir, "providers", digestOf(e.config.providerId).slice(7)),
+        ),
+      ];
+      for (const path of directories)
+        if (existsSync(path)) assertPrivateDirectory(path);
+      const files = [
+        join(dir, "core.sqlite"),
+        ...directories.slice(1).map((p) => join(p, "runtime.sqlite")),
+      ];
+      for (const path of files)
+        if (existsSync(path)) {
+          const st = lstatSync(path);
+          if (
+            !st.isFile() ||
+            st.isSymbolicLink() ||
+            st.nlink !== 1 ||
+            (st.mode & 0o777) !== 0o600
+          )
+            fail("PRIVATE_STATE_REQUIRED");
+        }
+    }
+    if (config.port)
+      await new Promise((resolve, reject) => {
+        const probe = createPortProbe();
+        probe.once("error", () => reject(Error("PORT_UNAVAILABLE")));
+        probe.listen(config.port, "127.0.0.1", () => probe.close(resolve));
+      });
+    mkdirSync(dir, { recursive: true, mode: 0o700 });
+    release = acquirePrivateStateLock(dir);
     store = createStore({ path: join(dir, "core.sqlite") });
     const identity = {
       version: "2",
@@ -744,6 +754,7 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       payments,
       discovery: directDiscovery,
       history: bindings.history,
+      eventSink: bindings.eventSink,
       assessor: {
         forProvider(id) {
           return ports.get(id)?.assessor;
@@ -798,7 +809,9 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
             : null,
         ]),
       ),
-      publication: "disabled",
+      publication: bindings.eventSink
+        ? "configured-consent-and-outbox-driven"
+        : "disabled",
       discovery: bindings.discovery
         ? "configured-ensv2-bound-to-offers"
         : "direct-stable-offers-not-ENS",

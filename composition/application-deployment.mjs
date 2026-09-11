@@ -25,6 +25,7 @@ export async function planApplicationDeployment({ configFile, tlsConfigFile }) {
     publicOrigin: tls.publicOrigin,
     applicationPort: x.config.port,
     tlsPort: tls.port,
+    upstreamTimeoutMs: tls.upstreamTimeoutMs,
     certificateFingerprint: tls.certificateFingerprint,
     certificateValidTo: tls.validTo,
     networkContacted: false,

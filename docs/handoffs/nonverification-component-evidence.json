@@ -1,0 +1,167 @@
+{
+  "scope": "local component closure; no native/public/financial qualification",
+  "candidateCommit": "e1960b77b448bb050b2eb431255e9343975bfe8b",
+  "candidateTree": "d52eab02257285ea72e0de9e4f6c8bb1896ca618",
+  "aggregateAttempt": {
+    "id": "nonverify01-all",
+    "argv": [
+      "npm",
+      "run",
+      "check:all"
+    ],
+    "cwd": "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/continuations/hackathon-app-03/workbench",
+    "startedAt": "2026-09-11T09:57:27.513440+00:00",
+    "head": "e1960b77b448bb050b2eb431255e9343975bfe8b",
+    "initialStatus": "",
+    "node": "v22.22.2",
+    "npm": "10.9.7",
+    "log": "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/continuations/hackathon-app-03/logs/nonverify01-all.log",
+    "exitCode": 1,
+    "finishedAt": "2026-09-11T10:03:47.772176+00:00",
+    "finalHead": "e1960b77b448bb050b2eb431255e9343975bfe8b",
+    "finalStatus": "",
+    "sha256": "149573583a8b7cdd1f60d819589d8d85613325f940fe6f10f75dea85d676660a"
+  },
+  "integrationAttempt": {
+    "id": "nonverify01-integration",
+    "argv": [
+      "npm",
+      "run",
+      "smoke:integration"
+    ],
+    "cwd": "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/continuations/hackathon-app-03/workbench",
+    "startedAt": "2026-09-11T09:50:27.535070+00:00",
+    "head": "e1960b77b448bb050b2eb431255e9343975bfe8b",
+    "initialStatus": "",
+    "node": "v22.22.2",
+    "npm": "10.9.7",
+    "log": "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/continuations/hackathon-app-03/logs/nonverify01-integration.log",
+    "exitCode": 0,
+    "finishedAt": "2026-09-11T09:55:30.226744+00:00",
+    "finalHead": "e1960b77b448bb050b2eb431255e9343975bfe8b",
+    "finalStatus": "",
+    "sha256": "b1019caef1f79033ecd2e0d6313d682d4d65b511150cef4877d0801d94115ee8"
+  },
+  "integrationResult": {
+    "tests": 163,
+    "passed": 163,
+    "failed": 0,
+    "skipped": 0
+  },
+  "aggregateDisposition": "FAILED, metadata-only: each lane reached the post-command blocked-handoff guard; all per-lane check/smoke subprocesses had therefore returned zero. Aggregate pass is not claimed.",
+  "derivationSource": "scripts/check-lane.mjs:13-17, scripts/check-all.mjs:7-12",
+  "successfulComponentCommands": [
+    {
+      "id": "nonverify01-core-check",
+      "command": "npm --prefix packages/core run check",
+      "exitCode": 0,
+      "observedViaParent": "nonverify01-all",
+      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt."
+    },
+    {
+      "id": "nonverify01-core-smoke",
+      "command": "npm --prefix packages/core run smoke",
+      "exitCode": 0,
+      "observedViaParent": "nonverify01-all",
+      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt."
+    },
+    {
+      "id": "nonverify01-payments-check",
+      "command": "npm --prefix packages/payments run check",
+      "exitCode": 0,
+      "observedViaParent": "nonverify01-all",
+      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt."
+    },
+    {
+      "id": "nonverify01-payments-smoke",
+      "command": "npm --prefix packages/payments run smoke",
+      "exitCode": 0,
+      "observedViaParent": "nonverify01-all",
+      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt."
+    },
+    {
+      "id": "nonverify01-discovery-check",
+      "command": "npm --prefix packages/discovery run check",
+      "exitCode": 0,
+      "observedViaParent": "nonverify01-all",
+      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt."
+    },
+    {
+      "id": "nonverify01-discovery-smoke",
+      "command": "npm --prefix packages/discovery run smoke",
+      "exitCode": 0,
+      "observedViaParent": "nonverify01-all",
+      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt."
+    },
+    {
+      "id": "nonverify01-indexing-check",
+      "command": "npm --prefix packages/indexing run check",
+      "exitCode": 0,
+      "observedViaParent": "nonverify01-all",
+      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt."
+    },
+    {
+      "id": "nonverify01-indexing-smoke",
+      "command": "npm --prefix packages/indexing run smoke",
+      "exitCode": 0,
+      "observedViaParent": "nonverify01-all",
+      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt."
+    },
+    {
+      "id": "nonverify01-access-check",
+      "command": "npm --prefix packages/access run check",
+      "exitCode": 0,
+      "observedViaParent": "nonverify01-all",
+      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt."
+    },
+    {
+      "id": "nonverify01-access-smoke",
+      "command": "npm --prefix packages/access run smoke",
+      "exitCode": 0,
+      "observedViaParent": "nonverify01-all",
+      "evidenceDerivation": "Each is before the reached handoff guard; check-lane exits immediately if a subprocess fails. Not a separately invoked top-level attempt."
+    }
+  ],
+  "retainedGuardDiagnostics": [
+    "core: handoff is blocked, not local_ready",
+    "payments: handoff is blocked, not local_ready",
+    "discovery: handoff is blocked, not local_ready",
+    "indexing: handoff is blocked, not local_ready",
+    "access: handoff is blocked, not local_ready"
+  ],
+  "nativeModelExecution": false,
+  "publicDeploymentQualified": false,
+  "financialProtection": false,
+  "ingestionAttempt": {
+    "id": "nonverify01-ingestion-corrected",
+    "argv": [
+      "npm",
+      "--prefix",
+      "packages/indexing",
+      "run",
+      "smoke:ingestion"
+    ],
+    "cwd": "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/continuations/hackathon-app-03/workbench",
+    "startedAt": "2026-09-11T10:06:33.524849+00:00",
+    "head": "e1960b77b448bb050b2eb431255e9343975bfe8b",
+    "initialStatus": "",
+    "node": "v22.22.2",
+    "npm": "10.9.7",
+    "log": "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/continuations/hackathon-app-03/logs/nonverify01-ingestion-corrected.log",
+    "exitCode": 0,
+    "finishedAt": "2026-09-11T10:06:55.873286+00:00",
+    "finalHead": "e1960b77b448bb050b2eb431255e9343975bfe8b",
+    "finalStatus": "M docs/handoffs/access.json\n M docs/handoffs/core.json\n M docs/handoffs/discovery.json\n M docs/handoffs/indexing.json\n M docs/handoffs/payments.json\n?? docs/handoffs/nonverification-component-evidence.json",
+    "sha256": "936dd4e552bd1606a514f6ed41971e6d5a8b817c319fa4bf4eadf7bf9bf1c599"
+  },
+  "ingestionScope": "Real local EVM + Graph Node + history; source packages unchanged while companion handoff docs were edited. Public hosting and native inference not qualified.",
+  "ingestionCleanup": {
+    "containersAbsent": [
+      "indexing-8eb8d18d-pg",
+      "indexing-8eb8d18d-ipfs",
+      "indexing-8eb8d18d-graph"
+    ],
+    "networkAbsent": "indexing-8eb8d18d-net",
+    "observation": "docker ps -a and docker network ls returned no matching resources after completion"
+  }
+}

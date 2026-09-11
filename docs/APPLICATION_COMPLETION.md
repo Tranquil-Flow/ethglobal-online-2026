@@ -4,7 +4,7 @@ Authority: continuation `hackathon-app-02/GOAL.md`, from preserved buyer anchor 
 
 ## Current disposition
 
-**Successor 03: end-to-end work remains incomplete.** Native configuration/admission and public deployment preparation are being exercised locally; no new model/physical/checking/financial/public qualification is authorized or claimed. The preserved application-only milestone below is historical. Current successor results belong in the adjacent `END-TO-END-HANDOFF.json`, not the predecessor packet.
+**Successor 03: non-verification completion is now owner-authorized and in progress.** The direct instruction in session `20260910_124347_7069ff`, message `627815`, supersedes preparation-only authority for this application scope. Native/heavy execution remains coordinated through existing A; inference verification and dependent financial guarantees remain separate and disabled. No unchecked real-model, independent-provider or public-service completion is claimed until exercised. Historical milestones below remain historical.
 
 
 **Application-only implementation verified at `8a6fee1`; final qualification is resolved by the exact-candidate `../APPLICATION-HANDOFF.json` packet. An absent or unsuccessful final packet is not local completion.** Do not infer release, selected-model execution or financial protection from these results.
