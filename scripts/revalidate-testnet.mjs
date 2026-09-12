@@ -8,6 +8,17 @@ import { createGraphClient, createHistory, queryProviderHistory } from '../packa
 const require = createRequire(new URL('../packages/indexing/package.json', import.meta.url));
 const { JsonRpcProvider, Contract, keccak256 } = require('ethers');
 const load = name => JSON.parse(fs.readFileSync(new URL('../docs/handoffs/' + name, import.meta.url)));
+if (process.argv.length > 2) {
+  // A Step 6 successor readback never overwrites the retained Step 5 receipt.
+  const { parseArgs } = await import('node:util');
+  const { values } = parseArgs({options:{'hedera-evidence':{type:'string'},output:{type:'string'}}});
+  if(!values['hedera-evidence'] || !values.output) throw Error('HEDERA_EVIDENCE_AND_OUTPUT_REQUIRED');
+  const { revalidateHederaEvidence } = await import('../composition/hedera-revalidation.mjs');
+  const evidence=JSON.parse(fs.readFileSync(values['hedera-evidence'],'utf8'));
+  const observed=await revalidateHederaEvidence(evidence);
+  fs.writeFileSync(values.output,JSON.stringify(observed,null,2)+'\n',{flag:'wx',mode:0o600});
+  console.log(JSON.stringify({status:observed.status,transactionId:observed.transactionId,amountTinybars:observed.amountTinybars,broadcast:false,inferenceVerified:false}));
+} else {
 const hedera = load('hedera-qualification.json'), graph = load('graph-studio-deployment.json'), ens = load('ens-qualification.json');
 const provider = new JsonRpcProvider('https://ethereum-sepolia-rpc.publicnode.com');
 const result = { revision: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: new URL('..', import.meta.url), encoding: 'utf8' }).trim(), scope: 'read-only-testnet-qualification', inferenceVerified: false, transactions: [], hedera: [] };
@@ -83,3 +94,4 @@ try {
   fs.writeFileSync(new URL('../artifacts/closeout/external-revalidation.json', import.meta.url), JSON.stringify(result, null, 2) + '\n');
   console.log(JSON.stringify(result, null, 2));
 } finally { provider.destroy(); }
+}

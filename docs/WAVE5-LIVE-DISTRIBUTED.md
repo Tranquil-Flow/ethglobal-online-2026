@@ -168,7 +168,9 @@ This is the actual sponsor qualification for the Hedera track. Use `packages/pay
 
 **Pre-flight:**
 - Verify wallet still funded: `https://testnet.mirrornode.hedera.com/api/v1/accounts/0.0.10419268` → balance > 1 tinybar.
-- Verify facilitator reachable: `GET https://api.testnet.blocky402.com/` → 200.
+- Verify facilitator health and pinned protocol: `GET https://api.testnet.blocky402.com/health` → 200 with `status:"ok"`; `/supported` → 200 with v2 exact `hedera:testnet`, fee payer and sole Hedera signer `0.0.7162784`.
+
+**Owner correction (2026-09-12, takeover):** The root `/` returns 404 while `/health` and `/supported` are healthy. The owner explicitly approved the protocol-based preflight above; the original failed root check is retained. The owner also approved one additional public HTTPS window at `https://m4pro.tail53d0d3.ts.net:8443`, at most ten minutes, restoring prior serving afterward. The one-tinybar cap is unchanged. No public source push, cloud deployment or submission is authorized.
 
 **Acceptance:**
 - One real `0.0.10419268 → 0.0.10419316` transfer of exactly 1 tinybar, confirmed by mirror node.

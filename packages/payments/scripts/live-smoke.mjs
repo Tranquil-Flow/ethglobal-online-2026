@@ -35,13 +35,22 @@ try {
     if (v.approved !== true || !v.adapter || !isAbsolute(v.adapter))
       fail("EXTERNAL_APPROVAL_AND_ADAPTER_REQUIRED");
     const { connect } = await import(pathToFileURL(v.adapter));
-    const signal = AbortSignal.timeout(30000);
-    const connection = await connect({
-      network: v.network,
-      maxAmountBaseUnits: v.budget,
-      signal,
-    });
+    const stopping = new AbortController();
+    const abort = () => stopping.abort();
+    process.on("SIGINT", abort);
+    process.on("SIGTERM", abort);
+    // Setup has its own finite ceiling; payment consumption remains <=30s.
+    const signal = AbortSignal.any([
+      stopping.signal,
+      AbortSignal.timeout(180000),
+    ]);
+    let connection;
     try {
+      connection = await connect({
+        network: v.network,
+        maxAmountBaseUnits: v.budget,
+        signal,
+      });
       const { url, expected, request, capability, walletAuthorize } =
         connection;
       if (
@@ -60,7 +69,9 @@ try {
         base.hash
       )
         fail("HTTPS_SERVICE_REQUIRED");
-      const response = await fetch(url + "/quote", {
+      const fetchImpl = connection.fetch ?? fetch;
+      if (typeof fetchImpl !== "function") fail("INVALID_OPERATOR_TRANSPORT");
+      const response = await fetchImpl(url + "/quote", {
         method: "POST",
         redirect: "error",
         signal,
@@ -76,9 +87,10 @@ try {
         url: url + "/operation",
         expected,
         walletAuthorize,
+        fetch: fetchImpl,
         maxAmountBaseUnits: v.budget,
         maxTotalAmountBaseUnits: v.budget,
-        timeoutMs: 20000,
+        timeoutMs: 30000,
       });
       const result = await consumer.consume({
         request,
@@ -94,6 +106,7 @@ try {
         result.body?.execution !== "succeeded"
       )
         fail("LIVE_SMOKE_NOT_CONFIRMED");
+      await connection.recordResult?.(result);
       console.log(
         JSON.stringify({
           mode: "live",
@@ -101,11 +114,17 @@ try {
           payment: result.body.payment.status,
           transactionRef: result.body.payment.transactionRef,
           operation: result.body.operation,
-          inference: false,
+          inference: result.body.inference === true,
+          inferenceVerified: false,
         }),
       );
     } finally {
-      await connection.close?.();
+      try {
+        await connection?.close?.();
+      } finally {
+        process.off("SIGINT", abort);
+        process.off("SIGTERM", abort);
+      }
     }
   }
 } catch (e) {
