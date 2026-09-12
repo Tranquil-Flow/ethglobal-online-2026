@@ -1,72 +1,70 @@
 # Submission and demo draft — not submitted
 
-## Integration successor update (2026-09-11)
+## Current qualification (Wave 5, 2026-09-12)
 
-See `MANAGED_INTEGRATIONS.md` for the implemented managed publisher/budget/journal closure, hosted History RPC, private CLI/MCP pins and non-economic submission policy, provider payment factory, and method-neutral assessor/artifact lifecycle. These are exercised local integration paths, not a selected verifier or protected-finance release. Historical statements below about wholly missing adapters or wholly absent public deployments must not override this later source and its final receipt. The earlier native success and public Registry/Graph assets remain real; a new managed native start failed because A's advertised socket/processes were absent. Current real native/public qualification remains blocked on A's maintained binding/topology and any exact remaining activation authority. Do not infer completion until the adjacent `NONVERIFICATION-INTEGRATION-HANDOFF.json` binds final source and observed gates.
+This is an application-owned, multi-provider inference workbench. It keeps execution, payment, receipt integrity, assessment and publication as separate states. **No inference-verification method is selected. Output is provisional; ordinary paid service is not verification-contingent financial protection.**
 
+The earlier synthetic-only and Session-A-blocked descriptions are superseded for this Wave 5 route. The application uses its own Ollama `qwen2.5:7b` adapter and operator configuration. It does not modify or run the Mycelium v3 gateway, select an A/B/C research method, or claim layer-split inference or independent hardware attestation.
 
-Successor 03 adds native admission/import/raw-selector metadata and deployment preparation. It remains end-to-end incomplete: no new real-model, independently controlled physical, actual-checker/financial or public qualification is claimed, and current full local combined acceptance awaits resource coordination. Do not submit this as a completed protected service.
+### What actually ran
+
+- Two physical hosts served bounded Qwen requests through the browser, with distinct signed application receipts and profile-bound node identifiers. See `handoffs/wave5-step4.json`.
+- Live ENSv2 Sepolia discovery, public HTTPS with trusted TLS, a real model request, consented Sepolia receipt publication, hosted Graph indexing, and a subsequent provider-selection decision were exercised. See `handoffs/wave5-step5.json` and `handoffs/wave5-public-qualification.json`.
+- A native x402 Hedera testnet payment was initiated through the public HTTPS service and settled through Blocky402. Independent mirror readback confirms exactly **one tinybar** from `0.0.10419268` to `0.0.10419316`. Blocky402's fee payer, not the customer, paid the network fee.
+- The first paid response preceded mirror confirmation. The retained attempt was subsequently reconciled through the local authenticated application without a new quote, wallet-key loading, signature or payment. It produced real Qwen output and a signed receipt. **A successful paid completion response over public HTTPS was not exercised.** Do not edit that distinction out of the demo narrative.
+
+Payment transaction: `0.0.7162784@1789193044.396402824`.
+
+Paid job: `0d5edd41-f770-473e-a0b5-5ea9a96b7fb8`.
+
+Receipt digest: `sha256:201d4e4b181d615c2d4921fa9f0f36e9e34bd3e9d2f553c7cc0fa7d848dcd9f6`.
+
+Portable payment evidence: `handoffs/hedera-live-2026-09-12.json`. Component gates: `handoffs/wave5-step6-components.json`. Final Wave 5 disposition: `handoffs/wave5-step6.json`.
+
+Public windows are closed. A historical successful public journey does not promise that its URL is currently serving. No new public exposure is authorized by this document.
 
 ## Proposed description
 
-A request-bound non-economic application that keeps execution, payment capability, receipt
-integrity and assessment outcomes separate. Providers can be discovered through
-ENSv2; consented registry events can be indexed by The Graph and influence client
-selection. A shared HTTP application supports SDK, CLI, MCP and browser clients.
-Private evidence can be exported or deleted without pretending published claims
-have disappeared.
+Discover named model providers through ENSv2, inspect a request-bound quote, explicitly authorize a budget, and retain the output with a signed private receipt. The same HTTP application supports browser, SDK, CLI and MCP access. Consented receipt publication can be observed through The Graph and influence later provider selection without pretending that an indexed claim proves computation.
 
-The current application uses explicitly synthetic non-inference execution and zero-value bounded admission, with optional separately tested native/payment adapters. Actual local ENSv2 contracts, EVM registry publication and
-Graph Node ingestion/reorg recovery have been exercised. It does not claim real
-inference verification, live Hedera settlement or public sponsor deployment.
+The qualified model route is application-owned Ollama on two Macs. Hedera/Blocky402 supplies ordinary x402 payment; the method-neutral assessor remains empty. Private evidence can be exported or deleted without claiming that public records disappear. Token IDs are unavailable from this Ollama adapter and are not fabricated.
 
-## Existing versus new work
+## Sponsor evidence and boundaries
 
-The preserved predecessor application anchor is `2d5402e3963e43d62adb3e4248f9ded5e1a90c9b`. It already contained the shared v1 contracts, SDK/CLI/MCP/browser, native gateway adapter, payment safety boundaries, ENS/local Graph infrastructure and retained-job refresh. This continuation adds isolated non-economic multi-provider serving and signed offers, authenticated encrypted same-attempt recovery, versioned permissionless checker statements, unlinked-claim handling, managed operator setup and encrypted full-state portability. See `APPLICATION_COMPLETION.md` for the exact source/test/evidence ledger. These are extensions of existing work, not a claim of a wholly new project.
+These rows map to the requirements recorded in `SPONSORS.md`; they are not an eligibility award or a substitute for checking the current official rules before submission.
 
-The owner supplied the completion requirements and architecture/authority constraints. AI-assisted implementation, test construction, review and documentation produced this continuation. The sole-human Git author convention does not change that provenance. Dependency licenses and upstream public artifact origins remain in `docs/handoffs/*-provenance.md`; no native source, model weights or private research corpus is bundled. Final application/model licensing and event eligibility require owner review before publication; no license/eligibility approval is implied by a passing local test.
-
-## Sponsor evidence matrix
-
-| Integration | Local evidence | Live qualification still required |
+| Integration | Observed evidence | Remaining boundary |
 |---|---|---|
-| Hedera / Blocky402 | Native transaction/codec handling, bounded wallet callback, quote binding, denial/replay/uncertainty/restart tests | Approved funded testnet action; transaction and consumed-service evidence |
-| ENSv2 | Official pinned contracts on local EVM; permissions/revocation/resolution; composed provider discovery | Functional Sepolia deployment/records and externally verifiable behavior |
-| The Graph | Registry → actual Graph Node → History → selection; consent, rollback and republication | Approved deployed index/provider and public query driving a decision |
+| Hedera / Blocky402 | Native x402 partial signature; exact one-tinybar confirmed transfer; the same paid request consumed by real inference with a signed receipt | Completion recovered locally after public initiation. Public source/setup publication and final sponsor acceptance remain owner gates |
+| ENSv2 | Live Sepolia records for both named providers; resolution used by the public application journey | Public demo availability must be deliberately reactivated; no hardcoded lookup is claimed as live discovery |
+| The Graph | Hosted index ingested the exact consented Sepolia receipt; later selection reported `INDEXED_RECEIPT_OBSERVED_NOT_PROOF` with honest `HISTORY_UNKNOWN` | Indexing is not assessment or inference verification; final track/pool eligibility remains owner-reviewed |
 
-See `docs/EXTERNAL-GATES.md`, lane handoffs and `docs/handoffs/closeout-current.md`.
-Local mocks do not qualify live sponsor prizes. Final track rules and eligibility
-must be rechecked against the event's current official requirements before submission.
+The Hedera phrases in `SPONSORS.md` are addressed separately: "live x402-gated service" by the temporary public payment initiation; "settled through Blocky402" by native settlement and mirror evidence; "actual consuming paid request" by the original attempt's recovered real model result; "public source/setup/payment-flow docs" by prepared local documentation, **not yet publicly published source**.
+
+## Setup and payment-flow documentation
+
+Use `APPLICATION_QUICKSTART.md` for ordinary local setup and `MANAGED_INTEGRATIONS.md` for managed integration configuration. `WAVE5-LIVE-DISTRIBUTED.md` defines this qualification scope. `HEDERA-PAID-CALL.md` documents the guarded first payment and unsigned same-attempt recovery. Do not rerun a live smoke to inspect existing evidence: use the read-only command in that guide.
 
 ## Human-narrated demo script (target: three minutes)
 
-- **0:00–0:30:** Explain the problem and show the development banner. Say explicitly
-  that the executor is synthetic and this application mode has no monetary settlement; there are no
-  real funds or inference-verification claims.
-- **0:30–1:15:** Discover a provider/profile, inspect a request-bound quote, explicitly
-  authorize its budget, submit and stream. Show the same retained job through a
-  second client rather than a separate staged job.
-- **1:15–2:00:** Show separate execution/payment/assessment states, receipt integrity
-  and private evidence. Demonstrate deletion and explain what it cannot erase.
-- **2:00–2:40:** Show the local ENS/Graph rehearsal: an explicitly labelled test
-  independently signed but unlinked claim is explained without a false provider rejection; then show rollback and recovered indexed History.
-- **2:40–3:00:** Show the executor-port conformance command and explain precisely what
-  remains for Mycelium and live sponsor qualification.
+- **0:00–0:30:** Explain named-provider access and separate execution/payment/receipt/assessment states. State that the model output is not computation-verified.
+- **0:30–1:15:** Show the retained real two-host/browser journey and the resolved ENS names. Explain that this is provider routing across two hosts, not layer-split execution.
+- **1:15–2:00:** Show the exact Hedera transaction and receipt. Explain the delayed mirror confirmation and same-attempt recovery; do not stage a fresh payment without approval.
+- **2:00–2:40:** Show the consented Sepolia receipt transaction and hosted Graph observation influencing selection. An indexed receipt is not a passing assessment.
+- **2:40–3:00:** Show reproducible setup/check commands and the explicit empty assessor slot. Name the remaining public-source, licensing, video and submission gates.
 
-Record at least 720p, keep the final video within the event's required 2–4 minute
-window, and use human narration—not AI voiceover. The script is prepared; no video
-recording, upload or submission has been performed.
+Record at least 720p and check the event's current video constraints. The recorded bootstrap rules specify a 2–4 minute demo with human narration. No finished video, upload or submission is supplied by this code/documentation continuation.
 
-## Provenance and approval text
+## Existing work, provenance and approvals
 
-This project was developed with AI-agent assistance, including implementation,
-regression tests, documentation and integration debugging. Repository history and
-pinned dependencies document reused work; a new repository does not establish that
-all work is new. Do not attribute agent-written work to a human author in the
-submission narrative. Human Git authorship is retained per owner convention and is
-not a denial of AI assistance.
+The preserved predecessor anchor is `2d5402e3963e43d62adb3e4248f9ded5e1a90c9b`. It already contained shared contracts, SDK/CLI/MCP/browser access, native gateway adapters, payment safety boundaries and local ENS/Graph infrastructure. Subsequent continuations added managed multi-provider serving, recovery, private state portability and method-neutral assessment interfaces. Wave 5 adds frontend sponsor identifiers, the application-owned Ollama route, two-host qualification, public HTTPS qualification, and the bounded real paid-call/recovery flow. This is not a claim that all project-specific work started during the event.
 
-Before publishing, review the existing reuse/license/provenance records and confirm
-eligibility and the exact pre-existing/new-work boundary with the owner, select the
-license, and obtain scoped approval for public source, testnet actions, deployment
-and submission. Mycelium/Gas Killer compatibility must not be implied by this draft.
+The owner supplied goals, design and authority constraints. AI-agent assistance contributed implementation, tests, debugging and documentation. Sole-human Git authorship does not deny AI assistance. Existing dependency licenses and public SDK/artifact provenance remain in `handoffs/*-provenance.md`; no private research corpus, model weights or wallet secrets are bundled.
+
+Before publication/submission, the owner must confirm track/pool eligibility and the existing/new-work boundary, select the application license, approve public source and any new serving window, prepare the final narrated demo and approve submission. No push, PR, cloud deployment, mainnet transaction, verification-method selection or hackathon submission was performed here.
+
+## References
+
+- Hedera transaction: <https://hashscan.org/testnet/transaction/0.0.7162784-1789193044-396402824>
+- Independent mirror: <https://testnet.mirrornode.hedera.com/api/v1/transactions/0.0.7162784-1789193044-396402824>
+- Public-journey Sepolia publication: <https://sepolia.etherscan.io/tx/0x1cfc5c76992e4034ddc6130e9282d43137362c5cb51a84e21eb377241773f482>

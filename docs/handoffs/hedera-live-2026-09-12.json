@@ -1,0 +1,107 @@
+{
+  "network": "hedera:testnet",
+  "payer": "0.0.10419268",
+  "receiver": "0.0.10419316",
+  "feePayer": "0.0.7162784",
+  "transactionId": "0.0.7162784@1789193044.396402824",
+  "amountTinybars": "1",
+  "memo": "ethonline:15912039c2d7fad07c30ab5837d8fcf3ef194d87d39b7c2ce62b89aac8d50ece",
+  "readback": {
+    "status": "passed",
+    "network": "hedera:testnet",
+    "transactionId": "0.0.7162784@1789193044.396402824",
+    "payer": "0.0.10419268",
+    "receiver": "0.0.10419316",
+    "feePayer": "0.0.7162784",
+    "amountTinybars": "1",
+    "consensusTimestamp": "1789193049.219144459",
+    "mirrorResponseSha256": "90f2076be24a28555c4a1a048a8e667aeebba664e374e8bbc3753c61373edda2",
+    "mirror": {
+      "batch_key": null,
+      "bytes": null,
+      "charged_tx_fee": 268971,
+      "consensus_timestamp": "1789193049.219144459",
+      "entity_id": null,
+      "high_volume": false,
+      "high_volume_pricing_multiplier": 0,
+      "max_fee": "100000000",
+      "max_custom_fees": [],
+      "memo_base64": "ZXRob25saW5lOjE1OTEyMDM5YzJkN2ZhZDA3YzMwYWI1ODM3ZDhmY2YzZWYxOTRkODdkMzliN2MyY2U2MmI4OWFhYzhkNTBlY2U=",
+      "name": "CRYPTOTRANSFER",
+      "nft_transfers": [],
+      "node": "0.0.3",
+      "nonce": 0,
+      "parent_consensus_timestamp": null,
+      "result": "SUCCESS",
+      "scheduled": false,
+      "staking_reward_transfers": [],
+      "token_transfers": [],
+      "transaction_hash": "3iPFrj9+ZIUllSzWBvK/WjOvk1qXMsUN8TsJIBdoAHSXrF9oRj6G8pRKt+QCXhWC",
+      "transaction_id": "0.0.7162784-1789193044-396402824",
+      "transfers": [
+        {
+          "account": "0.0.802",
+          "amount": 268971,
+          "is_approval": false
+        },
+        {
+          "account": "0.0.7162784",
+          "amount": -268971,
+          "is_approval": false
+        },
+        {
+          "account": "0.0.10419268",
+          "amount": -1,
+          "is_approval": false
+        },
+        {
+          "account": "0.0.10419316",
+          "amount": 1,
+          "is_approval": false
+        }
+      ],
+      "valid_duration_seconds": "120",
+      "valid_start_timestamp": "1789193044.396402824"
+    },
+    "broadcast": false,
+    "privateKeysLoaded": false,
+    "inferenceVerified": false,
+    "scope": "Exact payment/memo readback only; inference verification is not performed"
+  },
+  "mode": "live",
+  "paymentStatus": "settled",
+  "executionStatus": "succeeded",
+  "jobId": "0d5edd41-f770-473e-a0b5-5ea9a96b7fb8",
+  "receiptDigest": "sha256:201d4e4b181d615c2d4921fa9f0f36e9e34bd3e9d2f553c7cc0fa7d848dcd9f6",
+  "profileId": "sha256:7b75d6bced105f508c91d760429d054fd2faaea6b07e97b2003c75db904ec330",
+  "providerId": "service.ethonline-node-a.eth",
+  "outputBytes": 46,
+  "receiptIntegrity": true,
+  "originalRequestBound": true,
+  "inference": true,
+  "inferenceVerified": false,
+  "verificationMethodSelected": false,
+  "publishConsent": false,
+  "consumptionTransport": "loopback-same-attempt-reconciliation",
+  "publicPaidCompletionQualified": false,
+  "initialPublicTls": {
+    "authorized": true,
+    "publicAddress": "176.58.90.63",
+    "hostname": "m4pro.tail53d0d3.ts.net",
+    "fingerprint256": "24:85:D9:4E:E1:49:41:05:8A:B2:B2:79:F8:79:BE:EA:3A:80:A6:46:E6:8A:A1:79:9D:C7:CC:21:9C:C1:13:68",
+    "issuer": {
+      "C": "US",
+      "O": "Let's Encrypt",
+      "CN": "YE2"
+    },
+    "protocol": "TLSv1.3"
+  },
+  "publicListenerOpened": false,
+  "payerKeyLoaded": false,
+  "newSignatures": 0,
+  "observedAt": "2026-09-12T06:21:27.702Z",
+  "codeRevision": "11b3907fa8ef80ed821dbcbd0d2638d64ec73e92",
+  "initialPaidAttemptCodeRevision": "0e0ab26db9c1219ba4092b143661b18a26acb438",
+  "componentEvidence": "docs/handoffs/wave5-step6-components.json",
+  "claimBoundary": "One native Blocky402 payment initiated over public HTTPS; same paid request completed through local authenticated recovery after mirror delay. No successful paid completion response over public HTTPS is claimed. No verifier, protected settlement, new recovery payment, source publication or hackathon submission."
+}

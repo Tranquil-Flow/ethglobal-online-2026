@@ -1,0 +1,200 @@
+{
+  "codeRevision": "11b3907fa8ef80ed821dbcbd0d2638d64ec73e92",
+  "scope": "Wave 5 Step 6 payments and composed runtime; no inference verification",
+  "commands": [
+    {
+      "id": "step6-final-payments-check",
+      "command": [
+        "npm",
+        "--prefix",
+        "packages/payments",
+        "run",
+        "check"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-09-12T06:22:11.525180+00:00",
+      "finishedAt": "2026-09-12T06:22:14.963814+00:00",
+      "sourceBefore": {
+        "head": "11b3907fa8ef80ed821dbcbd0d2638d64ec73e92",
+        "status": "",
+        "diffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "untrackedSha256": {},
+        "runnerSha256": "b76080888a5e1b3c33ce3bdd7390a01780c4e37b18000ba92b628bc2654fb5cd"
+      },
+      "headAfter": "11b3907fa8ef80ed821dbcbd0d2638d64ec73e92",
+      "logSha256": "66f77cbdd3049afcfd7f27c07dda33b0670f67a7b754f36b5c63f04f9c552012",
+      "summaryLines": [
+        "# tests 46",
+        "# suites 0",
+        "# pass 46",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 2038.072417"
+      ]
+    },
+    {
+      "id": "step6-final-payments-smoke",
+      "command": [
+        "npm",
+        "--prefix",
+        "packages/payments",
+        "run",
+        "smoke"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-09-12T06:22:15.053796+00:00",
+      "finishedAt": "2026-09-12T06:22:16.998490+00:00",
+      "sourceBefore": {
+        "head": "11b3907fa8ef80ed821dbcbd0d2638d64ec73e92",
+        "status": "",
+        "diffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "untrackedSha256": {},
+        "runnerSha256": "b76080888a5e1b3c33ce3bdd7390a01780c4e37b18000ba92b628bc2654fb5cd"
+      },
+      "headAfter": "11b3907fa8ef80ed821dbcbd0d2638d64ec73e92",
+      "logSha256": "84fc04895e42bb8cc6c5b0fafa2049076fe7a5f7892aa08d1099e727ce160039",
+      "summaryLines": []
+    },
+    {
+      "id": "step6-final-focused",
+      "command": [
+        "node",
+        "--test",
+        "composition/test/hedera-wallet-adapter.test.mjs",
+        "composition/test/hedera-connection.test.mjs",
+        "composition/test/hedera-revalidation.test.mjs",
+        "composition/test/hedera-live-smoke.test.mjs",
+        "packages/payments/test/live-smoke-transport.test.mjs"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-09-12T06:22:17.085727+00:00",
+      "finishedAt": "2026-09-12T06:22:18.407115+00:00",
+      "sourceBefore": {
+        "head": "11b3907fa8ef80ed821dbcbd0d2638d64ec73e92",
+        "status": "",
+        "diffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "untrackedSha256": {},
+        "runnerSha256": "b76080888a5e1b3c33ce3bdd7390a01780c4e37b18000ba92b628bc2654fb5cd"
+      },
+      "headAfter": "11b3907fa8ef80ed821dbcbd0d2638d64ec73e92",
+      "logSha256": "cb19d094cb889c8092eb8c3c791eba17eb503b700f1475be195749ac37fe7729",
+      "summaryLines": [
+        "# tests 16",
+        "# suites 0",
+        "# pass 16",
+        "# fail 0",
+        "# cancelled 0",
+        "# skipped 0",
+        "# duration_ms 1289.787"
+      ]
+    },
+    {
+      "id": "step6-existing-payment-reconciliation",
+      "command": [
+        "node",
+        "packages/payments/scripts/live-smoke.mjs",
+        "--network",
+        "hedera:testnet",
+        "--budget",
+        "1",
+        "--execute",
+        "--approved",
+        "--reconcile-only",
+        "--adapter",
+        "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/continuations/hackathon-app-03/workbench/composition/hedera-wallet-adapter.mjs"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-09-12T06:21:22.720428+00:00",
+      "finishedAt": "2026-09-12T06:21:27.713900+00:00",
+      "sourceBefore": {
+        "head": "11b3907fa8ef80ed821dbcbd0d2638d64ec73e92",
+        "status": "",
+        "diffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "untrackedSha256": {},
+        "runnerSha256": "b76080888a5e1b3c33ce3bdd7390a01780c4e37b18000ba92b628bc2654fb5cd"
+      },
+      "headAfter": "11b3907fa8ef80ed821dbcbd0d2638d64ec73e92",
+      "logSha256": "ea104326f6e7e13316fadf4f27684545ee30c48ba796eea5d34f1c48a8c96d99",
+      "summaryLines": []
+    },
+    {
+      "id": "step6-original-payment-readback",
+      "command": [
+        "node",
+        "--input-type=module",
+        "-e",
+        "import fs from \"node:fs\";import {revalidateHederaEvidence} from \"./composition/hedera-revalidation.mjs\";const root=\"../.private/wave5/paid-window-01/\";const j=JSON.parse(fs.readFileSync(root+\"wallet-journal.json\"));const p=JSON.parse(Buffer.from(j.headers[\"payment-signature\"],\"base64\").toString());const e={network:\"hedera:testnet\",payer:\"0.0.10419268\",receiver:\"0.0.10419316\",feePayer:\"0.0.7162784\",transactionId:j.transactionId,amountTinybars:\"1\",memo:p.accepted.extra.memo};const r=await revalidateHederaEvidence(e);fs.writeFileSync(root+\"confirmed-payment.json\",JSON.stringify({...e,readback:r},null,2)+\"\\n\",{flag:\"wx\",mode:0o600});console.log(JSON.stringify({status:r.status,transactionId:r.transactionId,amountTinybars:r.amountTinybars,consensusTimestamp:r.consensusTimestamp,broadcast:r.broadcast}));"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-09-12T06:05:30.996367+00:00",
+      "finishedAt": "2026-09-12T06:05:31.481542+00:00",
+      "sourceBefore": {
+        "head": "0e0ab26db9c1219ba4092b143661b18a26acb438",
+        "status": "",
+        "diffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "untrackedSha256": {},
+        "runnerSha256": "b76080888a5e1b3c33ce3bdd7390a01780c4e37b18000ba92b628bc2654fb5cd"
+      },
+      "headAfter": "0e0ab26db9c1219ba4092b143661b18a26acb438",
+      "logSha256": "77f4ef596094dce0f3bc8aa7b4a1dc558dcb37fa044d411adaa9307a3f169f24",
+      "summaryLines": []
+    },
+    {
+      "id": "step6-canonical-readback",
+      "command": [
+        "node",
+        "scripts/revalidate-testnet.mjs",
+        "--hedera-evidence",
+        "docs/handoffs/hedera-live-2026-09-12.json",
+        "--output",
+        "artifacts/closeout/hedera-step6-readback.json"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-09-12T06:27:27.496033+00:00",
+      "finishedAt": "2026-09-12T06:27:28.343287+00:00",
+      "sourceBefore": {
+        "head": "11b3907fa8ef80ed821dbcbd0d2638d64ec73e92",
+        "status": "M docs/SUBMISSION-DRAFT.md\n M docs/handoffs/payments.json\n?? docs/HEDERA-PAID-CALL.md\n?? docs/handoffs/hedera-live-2026-09-12.json\n?? docs/handoffs/wave5-step6-components.json\n?? docs/handoffs/wave5-step6.json",
+        "diffSha256": "4f0d44f433277c724fdbcf96db749bb3583aae8907aae1d29149f82caa222f9a",
+        "untrackedSha256": {
+          "docs/HEDERA-PAID-CALL.md": "d7c4ed1d67b847dcc2bdefb0d4256ce056c5aed7c3c4367e7b2adaea49350715",
+          "docs/handoffs/hedera-live-2026-09-12.json": "f31d9466490c069f082eafda589abcaac395c4db6cde9fc404f691e01a3335e9",
+          "docs/handoffs/wave5-step6-components.json": "99e26ffd8c6df2bed8e4f16cfeb6bfd910c81075bdc319b6ca9a40d8a82738d2",
+          "docs/handoffs/wave5-step6.json": "3b0dc2438096f6d8bfc44ac76568f2c5a8d177f584eca92de2e7ca5056bf7aca"
+        },
+        "runnerSha256": "b76080888a5e1b3c33ce3bdd7390a01780c4e37b18000ba92b628bc2654fb5cd"
+      },
+      "headAfter": "11b3907fa8ef80ed821dbcbd0d2638d64ec73e92",
+      "logSha256": "a4ee0015b8eae35c5595242820afe1c2fd7d21eb9c489c03dc24d283457a1c47",
+      "summaryLines": []
+    },
+    {
+      "id": "step6-live-cleanup-inspection",
+      "command": [
+        "node",
+        "--input-type=module",
+        "-e",
+        "import {execFileSync} from \"node:child_process\";const serve=JSON.parse(execFileSync(\"tailscale\",[\"serve\",\"status\",\"--json\"],{encoding:\"utf8\"}));const funnel=JSON.parse(execFileSync(\"tailscale\",[\"funnel\",\"status\",\"--json\"],{encoding:\"utf8\"}));const models=await(await fetch(\"http://127.0.0.1:11434/api/ps\")).json();if(Object.keys(serve).length||Object.keys(funnel).length||models.models.length)throw Error(\"CLEANUP_NOT_CONFIRMED\");console.log(JSON.stringify({serve,funnel,models:models.models,inferenceVerified:false}));"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-09-12T06:27:28.431025+00:00",
+      "finishedAt": "2026-09-12T06:27:28.564590+00:00",
+      "sourceBefore": {
+        "head": "11b3907fa8ef80ed821dbcbd0d2638d64ec73e92",
+        "status": "M docs/SUBMISSION-DRAFT.md\n M docs/handoffs/payments.json\n?? docs/HEDERA-PAID-CALL.md\n?? docs/handoffs/hedera-live-2026-09-12.json\n?? docs/handoffs/wave5-step6-components.json\n?? docs/handoffs/wave5-step6.json",
+        "diffSha256": "4f0d44f433277c724fdbcf96db749bb3583aae8907aae1d29149f82caa222f9a",
+        "untrackedSha256": {
+          "docs/HEDERA-PAID-CALL.md": "d7c4ed1d67b847dcc2bdefb0d4256ce056c5aed7c3c4367e7b2adaea49350715",
+          "docs/handoffs/hedera-live-2026-09-12.json": "f31d9466490c069f082eafda589abcaac395c4db6cde9fc404f691e01a3335e9",
+          "docs/handoffs/wave5-step6-components.json": "99e26ffd8c6df2bed8e4f16cfeb6bfd910c81075bdc319b6ca9a40d8a82738d2",
+          "docs/handoffs/wave5-step6.json": "3b0dc2438096f6d8bfc44ac76568f2c5a8d177f584eca92de2e7ca5056bf7aca"
+        },
+        "runnerSha256": "b76080888a5e1b3c33ce3bdd7390a01780c4e37b18000ba92b628bc2654fb5cd"
+      },
+      "headAfter": "11b3907fa8ef80ed821dbcbd0d2638d64ec73e92",
+      "logSha256": "b4d785be4a54cbead6075f0915cb7ef3571016a694274537304ddb7f7908a1bc",
+      "summaryLines": []
+    }
+  ]
+}

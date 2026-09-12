@@ -1,5 +1,9 @@
 # Managed integrations and current activation boundary
 
+## Wave 5 qualification update (2026-09-12)
+
+The application-owned Ollama route now has real two-host and public HTTPS/ENS/Graph qualification. A one-tinybar Blocky402 payment initiated over public HTTPS was consumed by real Qwen inference after local same-attempt recovery, without new signing. See `HEDERA-PAID-CALL.md`, `handoffs/wave5-step6.json` and `SUBMISSION-DRAFT.md`. The assessor stays empty; no protected-finance or 27B/MLX qualification is inherited. Public windows are closed, and public delivery of the recovered paid result remains unqualified. The older Session-A/socket and synthetic-only limitations below describe earlier compositions, not this qualified Ollama route.
+
 ## Application-owned runtime amendment
 
 The owner replaced the Session-A serving dependency with an application-owned lifecycle. See `APP_OWNED_NATIVE.md` for setup, plan/init/start/status, finite permits, checked replay/cancellation, private artifacts and host-aware restore. A/B/C research is left untouched. This source addition is model-free qualified until its separately approved real-model run; old A readiness/lease files are not an activation dependency or reusable authority. Historical evidence below remains historical.
@@ -113,6 +117,6 @@ Private derived artifact bytes are exact-digest checked, bounded and expiry-cont
 
 Plugins are **trusted operator code, not a sandbox**. The wrapper bounds its API/call/artifact lifecycle, not arbitrary filesystem/network/CPU effects of malicious imported code. Bundle/review and pin transitive implementation inputs, and authorize any external operator contact/private-input sharing separately. Do not load provider-supplied modules or infer financial authority from their outputs.
 
-## Current external boundary
+## Historical pre-Wave-5 external boundary
 
 The full public native journey remains unqualified. The previous A `READY` record outlived its socket/processes, and real managed startup failed. A current maintained serving/topology handoff is needed. Public ENS records still describe the older `.invalid` qualification resource until a real matching service can be safely activated. Existing RegistryV2 and hosted Graph deployments are real and must be reused rather than gratuitously redeployed. Licensing/public-source/submission approval remains separate; no final hackathon submission is claimed.

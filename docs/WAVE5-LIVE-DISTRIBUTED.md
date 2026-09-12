@@ -1,6 +1,6 @@
 # WAVE 5 — Live demo qualification, distributed Mycelium, public HTTPS, live Hedera paid call
 
-**Status:** Steps 1–5 passed. Step 5’s public window is closed and prior serving configuration restored. Step 6 remains. See `docs/handoffs/wave5-step5.json` and prior step evidence.
+**Status:** Steps 1–5 passed. Step 6 has a confirmed one-tinybar transfer and real paid Qwen receipt, recovered locally against the original public-initiated attempt; final root gate is pending. Public windows are closed. Public delivery of the recovered paid result is not claimed. See `docs/handoffs/wave5-step6.json`.
 **Branch baseline:** `b08b27a42bb37795056ccc61a911873211eeb7f3`
 **Workbench:** `workbench/` in this directory
 **Inheritance:** continues the application-owned runtime (OWNED10) and managed integration (INTEGRATION09) work. Leaves A/B/C research untouched.

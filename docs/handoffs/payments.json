@@ -1,27 +1,26 @@
 {
   "lane": "payments",
   "status": "local_ready",
-  "codeRevision": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+  "codeRevision": "11b3907fa8ef80ed821dbcbd0d2638d64ec73e92",
   "runtime": {
-    "node": "20.19.5",
-    "npm": "10.8.2",
+    "node": "22.22.2",
+    "npm": "10.9.7",
     "platform": "darwin-arm64",
-    "selectedNodeBin": "/Users/evinova-self/Projects/cheapDisperse-evidence-20260907/node-v20.19.5-darwin-arm64/bin",
-    "note": "PATH selected per command; same Node ABI for npm ci and verification. No other checkout modified."
+    "note": "All current commands use the preserved wave5 run-gate.py pinned Node PATH."
   },
-  "verifiedAt": "2026-09-07T15:56:23.674930+00:00",
+  "verifiedAt": "2026-09-12T06:22:14.963814+00:00",
   "commands": [
     {
-      "id": "integration09-frozen-payments-check",
+      "id": "step6-final-payments-check",
       "command": "npm --prefix packages/payments run check",
       "exitCode": 0,
-      "evidence": "docs/handoffs/integration09-component-evidence.json"
+      "evidence": "docs/handoffs/wave5-step6-components.json"
     },
     {
-      "id": "integration09-frozen-payments-smoke",
+      "id": "step6-final-payments-smoke",
       "command": "npm --prefix packages/payments run smoke",
       "exitCode": 0,
-      "evidence": "docs/handoffs/integration09-component-evidence.json"
+      "evidence": "docs/handoffs/wave5-step6-components.json"
     }
   ],
   "acceptance": [
@@ -711,60 +710,60 @@
       "id": "real-sdk-protocol",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-payments-check",
-        "integration09-frozen-payments-smoke"
+        "step6-final-payments-check",
+        "step6-final-payments-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step6-components.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "header-policy",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-payments-check",
-        "integration09-frozen-payments-smoke"
+        "step6-final-payments-check",
+        "step6-final-payments-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step6-components.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "request-budget-binding",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-payments-check",
-        "integration09-frozen-payments-smoke"
+        "step6-final-payments-check",
+        "step6-final-payments-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step6-components.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "concurrent-replay",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-payments-check",
-        "integration09-frozen-payments-smoke"
+        "step6-final-payments-check",
+        "step6-final-payments-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step6-components.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "settlement-recovery",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-payments-check",
-        "integration09-frozen-payments-smoke"
+        "step6-final-payments-check",
+        "step6-final-payments-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step6-components.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     },
     {
       "id": "paid-but-failed",
       "status": "passed",
       "commandIds": [
-        "integration09-frozen-payments-check",
-        "integration09-frozen-payments-smoke"
+        "step6-final-payments-check",
+        "step6-final-payments-smoke"
       ],
-      "evidence": "docs/handoffs/integration09-component-evidence.json",
+      "evidence": "docs/handoffs/wave5-step6-components.json",
       "note": "Current full lane check/smoke passed on committed source; native/public and financial qualification remain separate."
     }
   ],
@@ -1166,5 +1165,13 @@
     }
   ],
   "integrationPriorHandoffCommit": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
-  "integrationPriorCodeRevision": "e1960b77b448bb050b2eb431255e9343975bfe8b"
+  "integrationPriorCodeRevision": "e1960b77b448bb050b2eb431255e9343975bfe8b",
+  "previousCodeRevision": "59c5cb141f951d402e047e818920ef5eb24a6a3a",
+  "wave5Qualification": {
+    "liveEvidence": "docs/handoffs/hedera-live-2026-09-12.json",
+    "paymentTinybars": "1",
+    "inferenceVerified": false,
+    "completionTransport": "loopback same-attempt reconciliation after public initiation",
+    "newSigningOnRecovery": false
+  }
 }

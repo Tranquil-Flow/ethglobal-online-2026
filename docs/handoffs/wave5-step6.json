@@ -1,0 +1,36 @@
+{
+  "step": 6,
+  "status": "IMPLEMENTED_AND_LIVE_PAYMENT_CONSUMED_ROOT_GATE_PENDING",
+  "codeRevision": "11b3907fa8ef80ed821dbcbd0d2638d64ec73e92",
+  "paymentEvidence": "docs/handoffs/hedera-live-2026-09-12.json",
+  "componentEvidence": "docs/handoffs/wave5-step6-components.json",
+  "acceptance": {
+    "exactTransfer": "passed: exact one-tinybar payer debit/receiver credit; memo and fee-payer checked on real mirror",
+    "paidApplicationRequest": "passed: same original paid attempt produced real Qwen output and signed receipt, recovered locally without new signing",
+    "readOnlyRevalidation": "passed: scripts/revalidate-testnet.mjs --hedera-evidence docs/handoffs/hedera-live-2026-09-12.json --output artifacts/closeout/hedera-step6-readback.json",
+    "submissionDraft": "updated in this closure",
+    "rootGate": "pending"
+  },
+  "inferenceVerified": false,
+  "verificationMethodSelected": false,
+  "publicPaidCompletionQualified": false,
+  "retainedFailures": [
+    "Original root health check returned 404; owner approved /health + exact /supported preflight.",
+    "First startup omitted already-approved model environment flag; no window or wallet signing.",
+    "Immediate public TLS ECONNRESET; transient-only bounded wait later obtained trusted TLS.",
+    "First cleanup observation raced daemon restoration; later live state and corrected collector confirm closure.",
+    "Original public payment response preceded mirror consensus: pending/settling, zero jobs. Independent mirror confirmed exact payment; local same-attempt reconciliation completed without new signing.",
+    "Initial local test import and patch-format errors, unused inherited import, and shutdown fixture without a live handle were setup/oracle failures, not behavioral RED."
+  ],
+  "cleanup": {
+    "publicServingRestored": true,
+    "modelUnloadedAfterPaidCall": true,
+    "publicRecoveryWindow": "Requested without response; not authorized or opened"
+  },
+  "remaining": [
+    "Final root gate",
+    "Owner-only licensing/public source/demo video/submission decisions",
+    "A public HTTPS response delivering the recovered paid result remains unqualified; no further public window is authorized."
+  ],
+  "provenance": "AI-assisted continuation of inherited unfinished code. Existing pinned @x402/hedera/core and Hiero SDK are reused without copied upstream implementation. No shared DTO or verification algorithm changed."
+}
