@@ -161,6 +161,12 @@ export async function connect(options) {
     options.maxAmountBaseUnits !== "1"
   )
     fail("APPROVED_LIVE_SMOKE_FLOW_REQUIRED");
+  if (options.reconcileOnly === true) {
+    const { connectReconciliation } = await import(
+      "./hedera-reconciliation-connection.mjs"
+    );
+    return connectReconciliation(options);
+  }
   const { createLivePaidConnection } = await import(
     "./hedera-live-connection.mjs"
   );

@@ -44,6 +44,43 @@ test("approved smoke uses an explicit adapter transport but cannot promote its f
     rmSync(dir, { recursive: true, force: true });
   }
 });
+test("explicit recovery invokes only the original operation, never a quote or wallet callback", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "reconcile-only-")),
+    adapter = join(dir, "adapter.mjs"),
+    observed = join(dir, "observed.json");
+  const contracts = new URL("../../contracts/index.mjs", import.meta.url).href;
+  writeFileSync(
+    adapter,
+    `import {writeFileSync} from 'node:fs';import {digestOf} from ${JSON.stringify(contracts)};const calls=[];export async function connect(options){const request={prompt:'SYNTHETIC_LIVE_SMOKE: recovery negative fixture',publishConsent:false};if(!options.reconcileOnly)throw Error('RECOVERY_REQUIRED');return {url:'http://127.0.0.1:43210',expected:{mode:'live',network:'hedera:testnet'},request,capability:'fixture',reconciliation:{quoteId:'original',requestHash:digestOf(request),amountTinybars:'1',transactionId:'original-tx',payerKeyLoaded:false},walletAuthorize:()=>{throw Error('MUST_NOT_SIGN');},fetch:async(url,init)=>{calls.push({path:new URL(url).pathname,body:JSON.parse(init.body),proof:!!new Headers(init.headers).get('payment-signature')});return new Response('{}',{status:503});},close:()=>writeFileSync(${JSON.stringify(observed)},JSON.stringify(calls))};}`,
+  );
+  try {
+    const r = spawnSync(
+      process.execPath,
+      [
+        fileURLToPath(new URL("../scripts/live-smoke.mjs", import.meta.url)),
+        "--network",
+        "hedera:testnet",
+        "--budget",
+        "1",
+        "--execute",
+        "--approved",
+        "--reconcile-only",
+        "--adapter",
+        adapter,
+      ],
+      { encoding: "utf8", timeout: 10000 },
+    );
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /LIVE_SMOKE_NOT_CONFIRMED/);
+    const calls = JSON.parse(readFileSync(observed));
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].path, "/operation");
+    assert.equal(calls[0].body.quoteId, "original");
+    assert.equal(calls[0].proof, false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 test(
   "termination aborts an in-flight request and closes the operator connection",
   { timeout: 10000 },

@@ -128,12 +128,30 @@ test(
         walletAuthorize,
         timeoutMs: 10000,
       });
-      const result = await consumer.consume({
+      fixture.state.fault = "mirror-outage";
+      let result = await consumer.consume({
         request,
         quote,
         capability: session.capability,
         idempotencyKey: "one-attempt",
       });
+      assert.equal(result.status, 503);
+      assert.equal(signs, 1);
+      assert.equal(fixture.state.settle, 1);
+      fixture.state.fault = null;
+      const recoveredResponse = await fetch(bridge.url + "/operation", {
+        method: "POST",
+        headers: {
+          authorization: "Bearer " + session.capability,
+          "content-type": "application/json",
+          "idempotency-key": "one-attempt",
+        },
+        body: JSON.stringify({ request, quoteId: quote.quoteId }),
+      });
+      result = {
+        status: recoveredResponse.status,
+        body: await recoveredResponse.json(),
+      };
       assert.equal(result.status, 200);
       assert.equal(result.body.execution, "succeeded");
       assert.equal(result.body.payment.status, "settled");

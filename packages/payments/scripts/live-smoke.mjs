@@ -1,4 +1,6 @@
 import { parseArgs } from "node:util";
+import { digestOf } from "../../contracts/index.mjs";
+import { decodePaymentResponseHeader } from "@x402/core/http";
 import { pathToFileURL } from "node:url";
 import { isAbsolute } from "node:path";
 import { createBoundedConsumer } from "../src/client.mjs";
@@ -11,6 +13,7 @@ try {
       network: { type: "string" },
       budget: { type: "string" },
       execute: { type: "boolean" },
+      "reconcile-only": { type: "boolean" },
       approved: { type: "boolean" },
       adapter: { type: "string" },
     },
@@ -49,6 +52,7 @@ try {
       connection = await connect({
         network: v.network,
         maxAmountBaseUnits: v.budget,
+        reconcileOnly: v["reconcile-only"] === true,
         signal,
       });
       const { url, expected, request, capability, walletAuthorize } =
@@ -62,7 +66,13 @@ try {
         fail("SYNTHETIC_LIVE_REQUEST_REQUIRED");
       const base = new URL(url);
       if (
-        base.protocol !== "https:" ||
+        (v["reconcile-only"]
+          ? !(
+              base.protocol === "http:" &&
+              base.hostname === "127.0.0.1" &&
+              base.origin === url
+            )
+          : base.protocol !== "https:") ||
         base.username ||
         base.password ||
         base.search ||
@@ -71,34 +81,73 @@ try {
         fail("HTTPS_SERVICE_REQUIRED");
       const fetchImpl = connection.fetch ?? fetch;
       if (typeof fetchImpl !== "function") fail("INVALID_OPERATOR_TRANSPORT");
-      const response = await fetchImpl(url + "/quote", {
-        method: "POST",
-        redirect: "error",
-        signal,
-        headers: {
-          "content-type": "application/json",
-          authorization: "Bearer " + capability,
-        },
-        body: JSON.stringify({ request }),
-      });
-      if (response.status !== 201) fail("QUOTE_UNAVAILABLE");
-      const quote = await readJson(response);
-      const consumer = createBoundedConsumer({
-        url: url + "/operation",
-        expected,
-        walletAuthorize,
-        fetch: fetchImpl,
-        maxAmountBaseUnits: v.budget,
-        maxTotalAmountBaseUnits: v.budget,
-        timeoutMs: 30000,
-      });
-      const result = await consumer.consume({
-        request,
-        quote,
-        capability,
-        idempotencyKey: "live-smoke-" + quote.quoteId,
-        signal,
-      });
+      let result;
+      if (v["reconcile-only"]) {
+        const r = connection.reconciliation;
+        if (
+          !r ||
+          r.requestHash !== digestOf(request) ||
+          r.amountTinybars !== v.budget ||
+          r.payerKeyLoaded !== false ||
+          !r.quoteId ||
+          !r.transactionId
+        )
+          fail("ORIGINAL_PAYMENT_REQUIRED");
+        const response = await fetchImpl(url + "/operation", {
+          method: "POST",
+          redirect: "error",
+          signal,
+          headers: {
+            "content-type": "application/json",
+            authorization: "Bearer " + capability,
+            "idempotency-key": "live-smoke-" + r.quoteId,
+          },
+          body: JSON.stringify({ request, quoteId: r.quoteId }),
+        });
+        result = { status: response.status, body: await readJson(response) };
+        if (response.status === 200) {
+          const settlement = decodePaymentResponseHeader(
+            response.headers.get("payment-response"),
+          );
+          if (
+            !settlement.success ||
+            settlement.transaction !== r.transactionId ||
+            settlement.payer !== r.payer ||
+            settlement.network !== v.network ||
+            result.body.payment?.transactionRef !== r.transactionId
+          )
+            fail("RECONCILIATION_TRANSACTION_MISMATCH");
+        }
+      } else {
+        const response = await fetchImpl(url + "/quote", {
+          method: "POST",
+          redirect: "error",
+          signal,
+          headers: {
+            "content-type": "application/json",
+            authorization: "Bearer " + capability,
+          },
+          body: JSON.stringify({ request }),
+        });
+        if (response.status !== 201) fail("QUOTE_UNAVAILABLE");
+        const quote = await readJson(response);
+        const consumer = createBoundedConsumer({
+          url: url + "/operation",
+          expected,
+          walletAuthorize,
+          fetch: fetchImpl,
+          maxAmountBaseUnits: v.budget,
+          maxTotalAmountBaseUnits: v.budget,
+          timeoutMs: 30000,
+        });
+        result = await consumer.consume({
+          request,
+          quote,
+          capability,
+          idempotencyKey: "live-smoke-" + quote.quoteId,
+          signal,
+        });
+      }
       if (
         result.status !== 200 ||
         result.body?.payment?.status !== "settled" ||
