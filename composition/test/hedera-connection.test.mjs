@@ -7,8 +7,31 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
   preflightHedera,
+  waitForServingRestoration,
   startPaidCoreBridge,
 } from "../hedera-live-connection.mjs";
+test("serving cleanup waits for the daemon state, not only child exit", async () => {
+  let reads = 0;
+  assert.equal(
+    await waitForServingRestoration({
+      readStatus: () => (++reads < 3 ? { stale: true } : {}),
+      before: {},
+      timeoutMs: 100,
+      intervalMs: 1,
+    }),
+    true,
+  );
+  assert.equal(reads, 3);
+  assert.equal(
+    await waitForServingRestoration({
+      readStatus: () => ({ stillActive: true }),
+      before: {},
+      timeoutMs: 3,
+      intervalMs: 1,
+    }),
+    false,
+  );
+});
 const supported = {
   kinds: [
     {

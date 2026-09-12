@@ -83,6 +83,20 @@ function ts() {
   if (r.status !== 0) fail("TAILSCALE_STATUS_FAILED");
   return JSON.parse(r.stdout);
 }
+export async function waitForServingRestoration({
+  readStatus = ts,
+  before,
+  timeoutMs = 10000,
+  intervalMs = 100,
+}) {
+  // Child exit can precede the daemon's removal of the temporary serve entry.
+  const until = Date.now() + timeoutMs;
+  do {
+    if (JSON.stringify(readStatus()) === JSON.stringify(before)) return true;
+    await delay(intervalMs);
+  } while (Date.now() < until);
+  return false;
+}
 export async function preflightHedera({
   fetchImpl = globalThis.fetch,
   signal,
@@ -494,7 +508,8 @@ export async function createLivePaidConnection({
     funnel,
     closed = false,
     closePromise,
-    windowTimer;
+    windowTimer,
+    stage = "managed-application-start";
   const close = () => {
     if (closePromise) return closePromise;
     closed = true;
@@ -527,7 +542,7 @@ export async function createLivePaidConnection({
       let servingRestored = false,
         modelsUnloaded = false;
       try {
-        servingRestored = JSON.stringify(ts()) === JSON.stringify(before);
+        servingRestored = await waitForServingRestoration({ before });
       } catch {
         errors.push("SERVING_READBACK_FAILED");
       }
@@ -544,6 +559,7 @@ export async function createLivePaidConnection({
         servingRestored,
         modelsUnloaded,
         errors,
+        resourcesAfterClose: process.getActiveResourcesInfo(),
         closedAt: new Date().toISOString(),
       });
       if (!servingRestored || !modelsUnloaded || errors.length)
@@ -607,6 +623,7 @@ export async function createLivePaidConnection({
       port: tlsPort,
       upstreamTimeoutMs: 120000,
     });
+    stage = "loopback-tls-start";
     tls = await startApplicationHttps({ configFile: tlsFile });
     signal?.throwIfAborted();
     windowTimer = setTimeout(() => {
@@ -614,6 +631,7 @@ export async function createLivePaidConnection({
         process.exitCode = 1;
       });
     }, 540000);
+    stage = "funnel-start";
     funnel = spawn(
       "tailscale",
       ["funnel", "--tcp=8443", `tcp://127.0.0.1:${tlsPort}`],
@@ -628,7 +646,9 @@ export async function createLivePaidConnection({
     while (Date.now() < until) {
       signal?.throwIfAborted();
       if (closed) fail("PUBLIC_WINDOW_EXPIRED");
-      if (JSON.stringify(ts()).includes(`127.0.0.1:${tlsPort}`)) {
+      const observedServing = ts();
+      save(join(root, "funnel-observed.json"), observedServing);
+      if (JSON.stringify(observedServing).includes(`127.0.0.1:${tlsPort}`)) {
         ready = true;
         break;
       }
@@ -636,6 +656,7 @@ export async function createLivePaidConnection({
       await delay(100);
     }
     if (!ready) fail("PAID_FUNNEL_UNAVAILABLE");
+    stage = "public-dns-tls";
     const dns = await resolveFunnelAddress(signal),
       tlsObservation = await publicTlsObservation(dns.address, ORIGIN);
     save(join(root, "tls-observation.json"), tlsObservation);
@@ -732,7 +753,19 @@ export async function createLivePaidConnection({
       close,
     };
   } catch (e) {
-    await close();
+    const reason =
+      e.code ??
+      (/^[A-Z][A-Z0-9_]{0,100}$/.test(e.message) ? e.message : e.name);
+    save(join(root, "failure-" + Date.now() + ".json"), {
+      stage,
+      reason,
+      failedAt: new Date().toISOString(),
+    });
+    try {
+      await close();
+    } catch (cleanup) {
+      throw Object.assign(new Error(reason), { code: reason, cause: cleanup });
+    }
     throw e;
   }
 }
