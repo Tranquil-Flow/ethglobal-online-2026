@@ -1,6 +1,6 @@
 {
   "step": 6,
-  "status": "IMPLEMENTED_AND_LIVE_PAYMENT_CONSUMED_ROOT_GATE_PENDING",
+  "status": "PASSED_WITH_LOCAL_SAME_ATTEMPT_RECONCILIATION",
   "codeRevision": "11b3907fa8ef80ed821dbcbd0d2638d64ec73e92",
   "paymentEvidence": "docs/handoffs/hedera-live-2026-09-12.json",
   "componentEvidence": "docs/handoffs/wave5-step6-components.json",
@@ -9,7 +9,7 @@
     "paidApplicationRequest": "passed: same original paid attempt produced real Qwen output and signed receipt, recovered locally without new signing",
     "readOnlyRevalidation": "passed: scripts/revalidate-testnet.mjs --hedera-evidence docs/handoffs/hedera-live-2026-09-12.json --output artifacts/closeout/hedera-step6-readback.json",
     "submissionDraft": "updated in this closure",
-    "rootGate": "pending"
+    "rootGate": "passed: npm run check:all; 250/250 composition tests, no failures or skips"
   },
   "inferenceVerified": false,
   "verificationMethodSelected": false,
@@ -25,12 +25,16 @@
   "cleanup": {
     "publicServingRestored": true,
     "modelUnloadedAfterPaidCall": true,
-    "publicRecoveryWindow": "Requested without response; not authorized or opened"
+    "publicRecoveryWindow": "Requested without response; not authorized or opened",
+    "ownedLaptopTestServerStopped": true,
+    "evidence": "docs/handoffs/wave5-step6-root.json"
   },
   "remaining": [
-    "Final root gate",
     "Owner-only licensing/public source/demo video/submission decisions",
     "A public HTTPS response delivering the recovered paid result remains unqualified; no further public window is authorized."
   ],
-  "provenance": "AI-assisted continuation of inherited unfinished code. Existing pinned @x402/hedera/core and Hiero SDK are reused without copied upstream implementation. No shared DTO or verification algorithm changed."
+  "provenance": "AI-assisted continuation of inherited unfinished code. Existing pinned @x402/hedera/core and Hiero SDK are reused without copied upstream implementation. No shared DTO or verification algorithm changed.",
+  "rootGateEvidence": "docs/handoffs/wave5-step6-root.json",
+  "rootGateCodeRevision": "05df2227ae597673992a20c0c12c6f81c2ea608e",
+  "scopeDisposition": "Step 6 transfer/consuming-request/readback/documentation implementation is complete. Local recovery does not qualify delivery of a completed paid response over public HTTPS. Public source, licensing, narrated video and submission remain owner gates."
 }

@@ -293,26 +293,26 @@
   "externalGates": [
     {
       "id": "hedera-blocky402-live-payment",
-      "status": "blocked",
-      "reason": "Historical external evidence/grants are preserved in verificationHistory but do not qualify or authorize this application candidate. Exact current targets, fresh scoped approval and external qualification remain required.",
-      "evidence": "docs/APPLICATION_COMPLETION.md"
+      "status": "qualified",
+      "reason": "Exact one-tinybar native Blocky402 transfer initiated over public HTTPS and consumed by real Qwen inference after local same-attempt reconciliation. Public completed-result delivery and sponsor eligibility are not implied.",
+      "evidence": "docs/handoffs/hedera-live-2026-09-12.json"
     },
     {
       "id": "funded-wallet-approval",
-      "status": "blocked",
-      "reason": "Historical external evidence/grants are preserved in verificationHistory but do not qualify or authorize this application candidate. Exact current targets, fresh scoped approval and external qualification remain required.",
-      "evidence": "docs/APPLICATION_COMPLETION.md"
+      "status": "qualified",
+      "reason": "Owner-authorized one-tinybar allowance was exercised exactly once. It is now spent; this historical qualification is not authority for another transaction.",
+      "evidence": "docs/handoffs/hedera-live-2026-09-12.json"
     },
     {
       "id": "combined-app",
-      "status": "blocked",
-      "reason": "Current successor combined/public qualification is not complete. Historical qualified scope remains preserved in verificationHistory.",
-      "evidence": "docs/APPLICATION_COMPLETION.md"
+      "status": "qualified",
+      "reason": "Current composed paid request and canonical root gate passed on the recorded revision; payment/receipt/assessment meanings remain separate.",
+      "evidence": "docs/handoffs/wave5-step6-root.json"
     },
     {
       "id": "public-release",
       "status": "blocked",
-      "reason": "Direct owner approval now authorizes necessary non-verification completion work; actual release, licensing/eligibility reconciliation, deployed consumption and final candidate qualification remain unfinished. Verification-dependent guarantees remain disabled."
+      "reason": "No public-source push, license selection, final video or hackathon submission authorized. Temporary serving windows are closed."
     },
     {
       "id": "live-refund",
