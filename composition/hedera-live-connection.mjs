@@ -83,6 +83,41 @@ function ts() {
   if (r.status !== 0) fail("TAILSCALE_STATUS_FAILED");
   return JSON.parse(r.stdout);
 }
+export async function waitForPublicTls({
+  address,
+  origin,
+  observe = publicTlsObservation,
+  signal,
+  timeoutMs = 60000,
+  intervalMs = 1000,
+  onAttempt = () => {},
+}) {
+  const until = Date.now() + timeoutMs;
+  while (true) {
+    signal?.throwIfAborted();
+    try {
+      const result = await observe(address, origin);
+      signal?.throwIfAborted();
+      return result;
+    } catch (error) {
+      const reason = error.code ?? error.message;
+      onAttempt({ reason, observedAt: new Date().toISOString() });
+      if (
+        ![
+          "ECONNRESET",
+          "ECONNREFUSED",
+          "ETIMEDOUT",
+          "PUBLIC_TLS_TIMEOUT",
+        ].includes(reason) ||
+        Date.now() >= until
+      )
+        throw error;
+      await delay(Math.min(intervalMs, until - Date.now()), undefined, {
+        signal,
+      });
+    }
+  }
+}
 export async function waitForServingRestoration({
   readStatus = ts,
   before,
@@ -658,7 +693,18 @@ export async function createLivePaidConnection({
     if (!ready) fail("PAID_FUNNEL_UNAVAILABLE");
     stage = "public-dns-tls";
     const dns = await resolveFunnelAddress(signal),
-      tlsObservation = await publicTlsObservation(dns.address, ORIGIN);
+      tlsObservation = await waitForPublicTls({
+        address: dns.address,
+        origin: ORIGIN,
+        signal,
+        onAttempt: (attempt) => {
+          writeFileSync(
+            join(root, "tls-attempts.jsonl"),
+            JSON.stringify(attempt) + "\n",
+            { flag: "a", mode: 0o600 },
+          );
+        },
+      });
     save(join(root, "tls-observation.json"), tlsObservation);
     const walletAuthorize = createSingleTinybarWallet({
       journalFile: join(root, "wallet-journal.json"),

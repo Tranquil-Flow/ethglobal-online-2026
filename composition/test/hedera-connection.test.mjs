@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
 import {
   preflightHedera,
   waitForServingRestoration,
+  waitForPublicTls,
   startPaidCoreBridge,
 } from "../hedera-live-connection.mjs";
 test("serving cleanup waits for the daemon state, not only child exit", async () => {
@@ -31,6 +32,37 @@ test("serving cleanup waits for the daemon state, not only child exit", async ()
     }),
     false,
   );
+});
+test("public TLS waits through transient activation resets without bypassing certificate errors", async () => {
+  let calls = 0;
+  const result = await waitForPublicTls({
+    address: "fixture",
+    origin: "https://fixture.invalid",
+    intervalMs: 1,
+    timeoutMs: 100,
+    observe: async () => {
+      if (++calls < 3)
+        throw Object.assign(Error("reset"), { code: "ECONNRESET" });
+      return { authorized: true };
+    },
+  });
+  assert.equal(result.authorized, true);
+  assert.equal(calls, 3);
+  calls = 0;
+  await assert.rejects(
+    waitForPublicTls({
+      address: "fixture",
+      origin: "https://fixture.invalid",
+      intervalMs: 1,
+      timeoutMs: 100,
+      observe: async () => {
+        calls++;
+        throw Object.assign(Error("cert"), { code: "CERT_HAS_EXPIRED" });
+      },
+    }),
+    { code: "CERT_HAS_EXPIRED" },
+  );
+  assert.equal(calls, 1);
 });
 const supported = {
   kinds: [
