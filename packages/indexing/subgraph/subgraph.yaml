@@ -5,21 +5,21 @@ schema:
 dataSources:
   - kind: ethereum/contract
     name: Registry
-    network: localhost
+    network: sepolia
     source:
-      address: '0x0000000000000000000000000000000000000001'
+      address: '0x9fd43D7b41c82406A776b700702EEA3813ac426A'
       abi: Registry
-      startBlock: 1
+      startBlock: 11684790
     context:
       chainId:
         type: String
-        data: '31337'
+        data: '11155111'
       mode:
         type: Int
-        data: 0
+        data: 1
       publisher:
         type: Bytes
-        data: '0x0000000000000000000000000000000000000002'
+        data: '0xb4f0b42fbB0fCAf62703475039A7E26EF6dD5EaE'
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -40,18 +40,18 @@ dataSources:
       file: ./src/mapping.ts
   - kind: ethereum/contract
     name: RegistryV2
-    network: localhost
+    network: sepolia
     source:
-      address: '0x0000000000000000000000000000000000000003'
+      address: '0xCf14c9bf5657487F1dBF03C9eF0DE0FfdA959e34'
       abi: RegistryV2
-      startBlock: 1
+      startBlock: 11684790
     context:
       chainId:
         type: String
-        data: '31337'
+        data: '11155111'
       mode:
         type: Int
-        data: 0
+        data: 1
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
