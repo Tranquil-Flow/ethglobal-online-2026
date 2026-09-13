@@ -18,6 +18,7 @@ import {
   assertProfileAvailableBeforeQuote,
   loadProfileCapabilities,
 } from "./w6-profile-capabilities.mjs";
+import { resolveGateForProfile } from "./w6-stake-gate.mjs";
 
 const VERSION = 1;
 const MAX_FRAME_BYTES = 2 * 1024 * 1024;
@@ -429,6 +430,7 @@ export function createVerifierBridge({
   stateDir = env.W6_APP_STATE_DIR,
   timeoutMs = Number(env.W6_VERIFIER_TIMEOUT_MS ?? 10_000),
   fetchImpl = globalThis.fetch,
+  stakeGate,
 } = {}) {
   timeoutMs = validateTimeout(timeoutMs);
   if (typeof stateDir !== "string" || !stateDir)
@@ -445,6 +447,14 @@ export function createVerifierBridge({
   let journal;
   let closing = false;
   const inFlight = new Map();
+
+  // Resolve a stake gate for a given verifier profile. If the caller supplied a
+  // ready `stakeGate` factory (preferred for testing/DI) we use it directly;
+  // otherwise we build one on-demand from the profile's `stakeRequirement`.
+  function gateForProfile(profile) {
+    if (typeof stakeGate === "function") return stakeGate;
+    return resolveGateForProfile({ profile });
+  }
 
   async function start() {
     if (!started) {
@@ -464,13 +474,54 @@ export function createVerifierBridge({
   }
 
   async function observeNow(input) {
-    await start();
+    // L-STAKE-GATE: refuse providers whose on-chain stake is below the profile
+    // threshold. This check runs BEFORE we spawn the verifier worker — a
+    // rejected provider must not consume a transport slot. The gate is
+    // fail-closed: any RPC error is treated as "cannot prove stake" and
+    // surfaces as PROVIDER_NOT_STAKED.
+    //
+    // Profile lookup happens lazily here (only when a gate is configured).
+    // Most call sites do not inject a stakeGate, so we keep the no-gate path
+    // allocation-free.
+    if (stakeGate !== undefined) {
+      await start();
+      let profile;
+      try {
+        profile = assertProfileAvailableBeforeQuote(input.appProfileDigest, map);
+      } catch {
+        fail("VERIFIER_PROFILE_UNAVAILABLE");
+      }
+      const gate = gateForProfile(profile);
+      if (typeof gate === "function") {
+        const providerId =
+          typeof input.providerId === "string" && input.providerId.length > 0
+            ? input.providerId
+            : null;
+        if (providerId === null) {
+          fail("PROVIDER_NOT_STAKED");
+        }
+        let result;
+        try {
+          result = await gate(providerId);
+        } catch (error) {
+          // Gate threw unexpectedly — fail closed.
+          fail("PROVIDER_NOT_STAKED");
+        }
+        if (!result || result.ok !== true) {
+          fail("PROVIDER_NOT_STAKED");
+        }
+      }
+    } else {
+      await start();
+    }
+
     let profile;
     try {
       profile = assertProfileAvailableBeforeQuote(input.appProfileDigest, map);
     } catch {
       fail("VERIFIER_PROFILE_UNAVAILABLE");
     }
+
     const response = normalizeObservation(input, profile.verifierProfileSha256);
     const payloadMac = journal.mac(response);
     const retained = journal.get(response.request_id);
