@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "w6-reward-policy",
+  "description": "L-REWARD-SLASH: Provider reward split + escrow-on-attest policy for inference payments. Holds payment until TEE/verifier ensemble attests; on 3-negative escalation slashes the dishonest provider via MyceliumStakeEscrow.",
+  "version": "1.0.0",
+  "split": {
+    "inferenceProviderShare": 0.80,
+    "verifierEnsembleShare": 0.15,
+    "treasuryShare": 0.05
+  },
+  "splitNotes": "Shares MUST sum to 1.0. Integer-division remainder is allocated to treasury to make totals balance in base units.",
+  "escrow": {
+    "escrowHoldPeriodSeconds": 300,
+    "escrowHoldNotes": "Payment held in 'pending-attest' state for this many seconds awaiting ensemble attestation. Settled (split released) on OK attestation within window; refunded on FAIL or timeout. Composable with parent L-FANOUT (publishReceipt) and L-TEE-ENSEMBLE (attestation) flows."
+  },
+  "slashing": {
+    "trigger": "threeNegativeAuditEscalation",
+    "triggerNotes": "When ensemble reports three or more negative audit votes on the same jobId, payment is NOT released and the provider's staked amount is slashed via packages/economics/x1/src/MyceliumStakeEscrow.sol slash(provider, evidenceDigest). Slash is delegated to MyceliumStakeEscrow via dependency injection; this composition layer never broadcasts or signs.",
+    "contractInterface": {
+      "module": "packages/economics/x1/src/MyceliumStakeEscrow.sol",
+      "method": "slash(address provider, bytes32 evidenceDigest)",
+      "revertOn": ["notPaused", "activeStake(provider)", "verifierKeyAuthorized"]
+    }
+  },
+  "policyInvariants": [
+    "split shares sum to 1.0",
+    "BigInt payout[provider] + payout[verifier] + payout[treasury] === amountBaseUnits",
+    "Same jobId holdPayment is idempotent (no double-hold)",
+    "settled / refunded / slashed are terminal states"
+  ]
+}
