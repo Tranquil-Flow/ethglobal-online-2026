@@ -3,494 +3,165 @@ import assert from "node:assert/strict";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium } from "playwright";
-import { createFixtureServer, fixtureProfile } from "../src/fixture.mjs";
+import { createFixtureServer } from "../src/fixture.mjs";
 import { createViewerServer } from "../scripts/serve-viewer.mjs";
 import { developmentAuthorizer } from "../src/index.mjs";
-import { validate } from "../src/contracts.mjs";
 
-const evidenceDir = resolve(
-  new URL("../../../artifacts/access", import.meta.url).pathname,
-);
+const evidenceDir = resolve(new URL("../../../artifacts/access", import.meta.url).pathname);
 
-test("viewer real browser covers keyboard, mobile, states, XSS, streaming and evidence download", async (t) => {
-  await mkdir(evidenceDir, { recursive: true });
-  const fixture = createFixtureServer();
+async function launch({ fixtureMode = true, fixtureOptions = {}, pins = true } = {}) {
+  const fixture = createFixtureServer(fixtureOptions);
   const { url: apiUrl } = await fixture.listen({ host: "127.0.0.1", port: 0 });
-  t.after(() => fixture.close());
   const viewer = createViewerServer({
     apiUrl,
-    fixture: true,
-    pins: {
-      providerId: "safe.eth",
-      keyId: "fixture-key",
-      publicKeyJwk: fixture.publicKeyJwk,
-    },
+    fixture: fixtureMode,
+    pins: pins
+      ? { providerId: "safe.eth", keyId: "fixture-key", publicKeyJwk: fixture.publicKeyJwk }
+      : undefined,
   });
   const { url } = await viewer.listen({ host: "127.0.0.1", port: 0 });
   fixture.allowOrigin(url);
-  t.after(() => viewer.close());
+  return { fixture, viewer, apiUrl, url };
+}
+
+test("consumer viewer covers simple happy path, mobile, XSS and receipt download", async (t) => {
+  await mkdir(evidenceDir, { recursive: true });
+  const env = await launch();
+  t.after(() => env.fixture.close());
+  t.after(() => env.viewer.close());
   const browser = await chromium.launch({ headless: true });
   t.after(() => browser.close());
-  const context = await browser.newContext({
-    viewport: { width: 375, height: 844 },
-    acceptDownloads: true,
-  });
+  const context = await browser.newContext({ viewport: { width: 375, height: 844 }, acceptDownloads: true });
   const page = await context.newPage();
-  const dialogs = [],
-    consoleErrors = [];
-  page.on("pageerror", (e) => consoleErrors.push(e.message));
-  page.on("dialog", (dialog) => {
-    dialogs.push(dialog.message());
-    dialog.dismiss();
-  });
-  await page.goto(url);
-  await page.getByRole("heading", { name: "Choose how to start" }).waitFor();
-  for (const label of [
-    "Try hosted inference",
-    "Run your own swarm (Mac)",
-    "How verification works",
-  ])
-    assert.equal(await page.getByText(label, { exact: true }).count(), 1);
-  assert.match(
-    await page.locator("#identity-explainer").textContent(),
-    /session[\s\S]*wallet[\s\S]*swarm/i,
-  );
-  assert.equal(await page.locator("#quote-button").isDisabled(), true);
-  assert.match(await page.locator("#quote-reason").textContent(), /connect/i);
-  assert.equal(await page.locator("#submit").isDisabled(), true);
-  assert.equal(await page.locator("#cancel").isDisabled(), true);
-  assert.equal(await page.locator("#assess").isDisabled(), true);
-  assert.equal(await page.locator("#download").isDisabled(), true);
-  assert.equal(
-    await page.locator("#audit-status-panel").getAttribute("tabindex"),
-    "0",
-  );
-  assert.equal(
-    await page.getByText("DEVELOPMENT — synthetic conformance fixture").count(),
-    1,
-  );
-  assert.match(await page.getByRole("status").textContent(), /not connected/i);
-  await page.keyboard.press("Tab");
-  assert.equal(
-    await page.evaluate(() => document.activeElement?.id),
-    "entry-hosted",
-  );
-  await page.getByRole("button", { name: "Connect" }).press("Enter");
-  await page.getByLabel("Provider name").fill("safe.eth");
-  await page.getByLabel("Profile digest").fill(fixtureProfile.profileId);
-  await page.getByRole("button", { name: "Find provider" }).click();
-  await page.getByText("<img src=x onerror=alert(1)>").waitFor();
-  assert.equal(await page.locator("img").count(), 0);
-  assert.deepEqual(dialogs, []);
-  assert.equal(await page.locator("#quote-button").isDisabled(), true);
-  await page.getByLabel("Prompt").fill("viewer synthetic");
-  assert.equal(await page.locator("#quote-button").isDisabled(), false);
-  await page.getByRole("button", { name: "Get quote" }).click();
-  await page
-    .getByTestId("quote")
-    .filter({ hasText: /5 base units.*expires/i })
-    .waitFor();
-  assert.match(
-    await page.getByTestId("quote").textContent(),
-    /5 base units USDC.*Base Sepolia.*recipient.*expires/i,
-  );
-  assert.equal(await page.locator("#submit").isDisabled(), true);
-  assert.match(await page.locator("#submit-reason").textContent(), /consent/i);
-  assert.match(
-    await page.getByTestId("payment-state").textContent(),
-    /not authorized/i,
-  );
-  await page.locator("#submit").evaluate((button) => {
-    button.disabled = false;
-    button.click();
-  });
-  assert.match(await page.getByRole("alert").textContent(), /consent/i);
-  assert.equal(await page.locator("#budget").inputValue(), "10");
-  await page.locator("#consent").check();
-  assert.equal(await page.locator("#submit").isDisabled(), false);
-  // This is the preserved v1 fixture; encrypted recovery is exercised
-  // against actual v2 core/storage in application-recovery-browser.test.mjs.
-  await page.getByRole("button", { name: "Submit and stream" }).click();
-  // Recovered nine-step UI: open the advanced controls so the detailed
-  // job-state element becomes visible, then target it specifically.
-  await page.locator("#advanced-details").evaluate((d) => d.setAttribute("open", ""));
-  await page.getByTestId("job-state").filter({ hasText: /Completed/ }).waitFor();
-  await page.getByRole("status").filter({ hasText: /Stream finished/ }).waitFor();
+  const dialogs = [], pageErrors = [];
+  page.on("dialog", (dialog) => { dialogs.push(dialog.message()); dialog.dismiss(); });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+
+  await page.goto(env.url);
+  await page.getByRole("heading", { name: "Ask a model running on a network of everyday computers." }).waitFor();
+  for (const label of ["Try it", "Providers", "How it works", "Developers"])
+    assert.ok(await page.getByRole("link", { name: label }).count() || await page.getByText(label, { exact: true }).count());
+  assert.equal(await page.locator("#ask-button").isDisabled(), true);
+
+  await page.locator("#prompt").fill("viewer synthetic");
+  assert.equal(await page.locator("#ask-button").isDisabled(), false);
+  await page.locator("#ask-button").click();
+  await page.getByTestId("answer").filter({ hasText: /synthetic/ }).waitFor();
   const answer = await page.getByTestId("answer").textContent();
   assert.equal(answer, "synthetic <img src=x onerror=alert(1)>");
   assert.equal(await page.locator('[data-testid="answer"] img').count(), 0);
-  assert.match(
-    await page.getByTestId("payment-state").textContent(),
-    /authorized/i,
+  assert.deepEqual(dialogs, []);
+
+  const receipt = page.getByTestId("receipt-card");
+  await receipt.waitFor();
+  assert.match(await receipt.textContent(), /Signed ✓[\s\S]*checked in your browser/);
+  assert.match(await receipt.textContent(), /Paid[\s\S]*(Payment accepted|Paid)/);
+  assert.match(await receipt.textContent(), /Recorded[\s\S]*(Recording|Recorded|Public recording was turned off)/);
+  assert.match(await receipt.textContent(), /Audited[\s\S]*Not spot-checked yet/);
+
+  const visibleMain = await page.locator("main").innerText();
+  assert.doesNotMatch(
+    visibleMain,
+    /\b[A-Z]{3,}(_[A-Z]+)+\b|Not supplied|unqualified|non-economic|capability|digest|explicit retry/i,
   );
-  assert.match(
-    await page.getByTestId("assessment-state").textContent(),
-    /separate.*not requested/i,
-  );
-  assert.match(
-    await page.getByTestId("publication-state").textContent(),
-    /not published/i,
-  );
-  assert.equal(await page.locator("#cancel").isDisabled(), true);
-  assert.equal(await page.locator("#assess").isDisabled(), false);
-  assert.equal(await page.locator("#download").isDisabled(), false);
-  assert.match(
-    await page.locator("#runtime-card").textContent(),
-    /member[\s\S]*serving[\s\S]*executing[\s\S]*last success[\s\S]*freshness/i,
-  );
-  await page.locator("#digest-details > summary").click();
-  assert.match(
-    await page.locator("#digest-details").textContent(),
-    /profile digest[\s\S]*receipt digest/i,
-  );
+
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Download private evidence" }).click();
+  await page.getByRole("button", { name: "Download receipt" }).click();
   const download = await downloadPromise;
-  const target = resolve(evidenceDir, "viewer-evidence.json");
+  const target = resolve(evidenceDir, "viewer-consumer-receipt.json");
   await download.saveAs(target);
   const evidence = JSON.parse(await readFile(target, "utf8"));
-  assert.equal(evidence.request.prompt, "viewer synthetic");
-  await page.screenshot({
-    path: resolve(evidenceDir, "viewer-mobile.png"),
-    fullPage: true,
-  });
+  assert.equal(evidence.state.request.prompt, "viewer synthetic");
+
+  await page.screenshot({ path: resolve(evidenceDir, "viewer-consumer-mobile.png"), fullPage: true });
   assert.equal((await page.locator("body").boundingBox()).width, 375);
-  assert.equal(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
-    true,
-  );
-  assert.deepEqual(consoleErrors, []);
-  assert.equal(
-    await page.evaluate(() => localStorage.length + sessionStorage.length),
-    0,
-  );
-  await page.getByRole("button", { name: "Request assessment" }).click();
-  await page
-    .getByTestId("assessment-state")
-    .filter({ hasText: /unavailable/ })
-    .waitFor();
-  await page.setViewportSize({ width: 1280, height: 900 });
-  await page.screenshot({
-    path: resolve(evidenceDir, "viewer-desktop.png"),
-    fullPage: true,
-  });
-  await writeFile(
-    resolve(evidenceDir, "browser-observations.json"),
-    JSON.stringify(
-      {
-        browser: browser.version(),
-        mobileWidth: 375,
-        desktopWidth: 1280,
-        dialogs: dialogs.length,
-        pageErrors: consoleErrors.length,
-        storageEntries: 0,
-        xssRenderedAsText: true,
-        downloadValidated: true,
-        mode: "development",
-      },
-      null,
-      2,
-    ),
-  );
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  assert.deepEqual(pageErrors, []);
 });
 
-test("viewer renders sponsor identifiers from frozen DTOs, not invented counts or live claims", async (t) => {
-  const fixture = createFixtureServer();
-  const { url: apiUrl } = await fixture.listen();
-  t.after(() => fixture.close());
-  // Controlled HTTP observations only; not ENS, Graph, Hedera or Sepolia evidence.
-  const viewer = createViewerServer({ apiUrl });
-  const { url } = await viewer.listen();
-  fixture.allowOrigin(url);
-  t.after(() => viewer.close());
+test("receipt card renders only returned payment and publication identifiers", async (t) => {
+  const env = await launch({ fixtureMode: false });
+  t.after(() => env.fixture.close());
+  t.after(() => env.viewer.close());
   const browser = await chromium.launch();
   t.after(() => browser.close());
   const page = await browser.newPage();
-  page.setDefaultTimeout(5000);
+  page.setDefaultTimeout(10000);
   const tx = "0.0.123@1712345678.000000001";
   const publicationTx = "0x" + "a".repeat(64);
-  let historyUrl = "https://graph.example/query/fixture/public-version";
-  let published = true;
   const externalRequests = [];
   page.on("request", (r) => {
-    if (
-      ![new URL(apiUrl).origin, new URL(url).origin].includes(
-        new URL(r.url()).origin,
-      )
-    )
-      externalRequests.push(r.url());
+    if (![new URL(env.apiUrl).origin, new URL(env.url).origin].includes(new URL(r.url()).origin)) externalRequests.push(r.url());
   });
-  await page.route(apiUrl + "/v1/providers?**", async (route) => {
+  await page.route(env.apiUrl + "/v1/jobs/*/events", async (route) => {
     const response = await route.fetch();
-    const body = await response.json();
-    if (body.providers[0]) {
-      body.providers[0].historyEndpoint = historyUrl;
-      validate("Provider", body.providers[0]);
-    }
-    await route.fulfill({ response, json: body });
-  });
-  await page.route(apiUrl + "/v1/jobs/*/events", async (route) => {
-    const response = await route.fetch();
-    const body = (await response.text()).replace(
-      /^data: (.+)$/gm,
-      (line, json) => {
-        const data = JSON.parse(json);
-        if (!data.payment) return line;
-        data.payment.transactionRef = tx;
-        validate("Job", data);
-        return "data: " + JSON.stringify(data);
-      },
-    );
+    const body = (await response.text()).replace(/^data: (.+)$/gm, (line, json) => {
+      const data = JSON.parse(json);
+      if (!data.payment) return line;
+      data.payment.transactionRef = tx;
+      return "data: " + JSON.stringify(data);
+    });
     await route.fulfill({ response, body });
   });
-  await page.route(apiUrl + "/v1/jobs/*/publication", async (route) => {
-    const body = {
-      version: "1",
-      jobId: new URL(route.request().url()).pathname.split("/")[3],
-      consent: published,
-      events: published
-        ? [
-            {
-              kind: "receipt",
-              objectDigest: "sha256:" + "b".repeat(64),
-              status: "confirmed",
-              transactionRef: publicationTx,
-            },
-          ]
-        : [],
-    };
-    validate("PublicationState", body);
+  await page.route(env.apiUrl + "/v1/jobs/*/publication", async (route) => {
     await route.fulfill({
-      json: body,
-      headers: { "access-control-allow-origin": url },
+      json: {
+        version: "1",
+        jobId: new URL(route.request().url()).pathname.split("/")[3],
+        consent: true,
+        events: [{ kind: "receipt", objectDigest: "sha256:" + "b".repeat(64), status: "confirmed", transactionRef: publicationTx }],
+      },
+      headers: { "access-control-allow-origin": env.url },
     });
   });
   await page.exposeFunction("authorizeFixturePayment", developmentAuthorizer);
-  await page.goto(url);
+  await page.goto(env.url);
   await page.evaluate(async () => {
     const { setPaymentAuthorizer } = await import("/app.js");
     setPaymentAuthorizer((context) => window.authorizeFixturePayment(context));
   });
-  await page.getByRole("button", { name: "Connect", exact: true }).click();
-  await page
-    .getByRole("status")
-    .filter({ hasText: /Connected/ })
-    .waitFor();
-  await page.getByLabel("Profile digest").fill(fixtureProfile.profileId);
-  await page.getByRole("button", { name: "Find provider" }).click();
-  await page
-    .getByRole("status")
-    .filter({ hasText: /Provider selected/ })
-    .waitFor();
-  assert.match(
-    await page.locator("#provider-ens-name").textContent(),
-    /safe\.eth/,
-  );
-  assert.equal(
-    await page.locator("#history-url a").getAttribute("href"),
-    historyUrl,
-  );
-  assert.equal(await page.locator("#history-url a").textContent(), historyUrl);
-  assert.match(
-    await page.locator("#history-receipts-seen").textContent(),
-    /Receipts seen: 0 assessment observations/,
-  );
-  await page
-    .getByLabel("Prompt", { exact: true })
-    .fill("synthetic sponsor rendering");
-  await page.getByRole("button", { name: "Get quote" }).click();
-  await page
-    .getByTestId("quote")
-    .filter({ hasText: /expires/ })
-    .waitFor();
-  await page.getByLabel(/authorize up to/).check();
-  await page.getByRole("button", { name: "Submit and stream" }).click();
-  await page
-    .getByRole("status")
-    .filter({ hasText: /Stream finished/ })
-    .waitFor();
-  assert.equal(await page.locator("#payment-tx a").textContent(), tx);
-  assert.equal(
-    await page.locator("#payment-tx a").getAttribute("href"),
-    "https://hashscan.org/testnet/transaction/" + encodeURIComponent(tx),
-  );
-  assert.match(
-    await page.locator("#payment-tx").textContent(),
-    /Facilitator: Not supplied/,
-  );
-  assert.equal(
-    await page.locator("#publication-tx a").getAttribute("href"),
-    "https://sepolia.etherscan.io/tx/" + publicationTx,
-  );
-  assert.equal(
-    await page.locator("#publication-tx a").textContent(),
-    publicationTx,
-  );
-  for (const anchor of await page.locator("a.sponsor-link").all()) {
-    assert.match(await anchor.getAttribute("rel"), /noreferrer/);
-    assert.equal(await anchor.getAttribute("referrerpolicy"), "no-referrer");
-  }
-  assert.match(await page.locator("#mode").textContent(), /DEVELOPMENT/);
-  assert.match(
-    await page.locator("#output-state").textContent(),
-    /not computation-checked/,
-  );
-  await mkdir(evidenceDir, { recursive: true });
-  await page.screenshot({
-    path: resolve(evidenceDir, "viewer-sponsor-identifiers.png"),
-    fullPage: true,
-  });
-  published = false;
-  // Open advanced controls (collapsed by default in recovered UI) and then
-  // refresh publication state to assert the consent-off path.
-  await page.locator("#advanced-details").evaluate((d) => d.setAttribute("open", ""));
-  await page.getByRole("button", { name: "Refresh publication state" }).click();
-  await page
-    .getByTestId("publication-state")
-    .filter({ hasText: /consent off/ })
-    .waitFor();
-  assert.equal(await page.locator("#publication-tx a").count(), 0);
-  for (const unsafe of [
-    "javascript:alert(1)",
-    "https://name:private-canary@graph.example/query",
-  ]) {
-    historyUrl = unsafe;
-    await page.getByRole("button", { name: "Find provider" }).click();
-    await page
-      .getByRole("status")
-      .filter({ hasText: /Provider selected/ })
-      .waitFor();
-    assert.equal(await page.locator("#history-url a").count(), 0);
-    assert.doesNotMatch(
-      await page.locator("#history-url").textContent(),
-      /private-canary|javascript:/,
-    );
-  }
-  await page.getByLabel("Provider name").fill("missing.eth");
-  await page.getByRole("button", { name: "Find provider" }).click();
-  await page
-    .getByRole("alert")
-    .filter({ hasText: /unavailable/ })
-    .waitFor();
-  assert.equal(await page.locator("#history-url a").count(), 0);
-  assert.doesNotMatch(
-    await page.locator("#provider-ens-name").textContent(),
-    /safe\.eth/,
-  );
+  await page.locator("#prompt").fill("synthetic sponsor rendering");
+  await page.locator("#ask-button").click();
+  await page.getByTestId("receipt-card").filter({ hasText: /HashScan/ }).waitFor();
+  assert.equal(await page.locator('.receipt-row', { hasText: /Paid ✓/ }).locator("a").getAttribute("href"), "https://hashscan.org/testnet/transaction/" + encodeURIComponent(tx));
+  await page.getByTestId("receipt-card").filter({ hasText: /Indexed by The Graph/ }).waitFor();
+  assert.equal(await page.locator('.receipt-row', { hasText: /Recorded ✓/ }).locator("a").getAttribute("href"), "https://sepolia.etherscan.io/tx/" + publicationTx);
   assert.deepEqual(externalRequests, []);
 });
 
-test("viewer shows empty, loading, unavailable, error and cancelled paths accessibly", async (t) => {
-  const fixture = createFixtureServer({ delayMs: 300 });
-  const { url: apiUrl } = await fixture.listen({ host: "127.0.0.1", port: 0 });
-  t.after(() => fixture.close());
-  const viewer = createViewerServer({
-    apiUrl,
-    fixture: true,
-    pins: {
-      providerId: "safe.eth",
-      keyId: "fixture-key",
-      publicKeyJwk: fixture.publicKeyJwk,
-    },
-  });
-  const { url } = await viewer.listen({ host: "127.0.0.1", port: 0 });
-  fixture.allowOrigin(url);
-  t.after(() => viewer.close());
-  const browser = await chromium.launch({ headless: true });
+test("advanced mode persists and exposes controls without breaking simple mode", async (t) => {
+  const env = await launch();
+  t.after(() => env.fixture.close());
+  t.after(() => env.viewer.close());
+  const browser = await chromium.launch();
   t.after(() => browser.close());
   const page = await browser.newPage();
-  await page.goto(url);
-  assert.match(
-    await page.getByTestId("provider-state").textContent(),
-    /no provider selected/i,
-  );
-  await page.getByRole("button", { name: "Connect" }).click();
-  await page
-    .getByRole("status")
-    .filter({ hasText: /connecting/i })
-    .waitFor();
-  await page.screenshot({ path: resolve(evidenceDir, "viewer-loading.png") });
-  await page
-    .getByRole("status")
-    .filter({ hasText: /Connected —/ })
-    .waitFor();
-  await page.getByLabel("Provider name").fill("missing.eth");
-  await page.getByRole("button", { name: "Find provider" }).click();
-  await page
-    .getByRole("alert")
-    .filter({ hasText: /unavailable/i })
-    .waitFor();
-  assert.match(await page.getByRole("alert").textContent(), /unavailable/i);
-  assert.equal(await page.getByRole("button", { name: "Cancel" }).isDisabled(), true);
-  assert.match(await page.locator("#cancel-reason").textContent(), /no running job/i);
-  await page.screenshot({
-    path: resolve(evidenceDir, "viewer-states.png"),
-    fullPage: true,
-  });
+  await page.goto(env.url + "#/try?mode=advanced");
+  await page.getByTestId("advanced-panel").waitFor();
+  assert.ok(await page.getByLabel(/Answer length/).isVisible());
+  assert.ok(await page.getByText("Compare quotes from every provider").isVisible());
+  await page.reload();
+  await page.getByTestId("advanced-panel").waitFor();
+  await page.locator(".mode-toggle input").uncheck();
+  assert.equal(await page.getByTestId("advanced-panel").count(), 0);
 });
 
-test("viewer keeps independent verifier audits separate from receipt integrity", async (t) => {
-  const fixture = createFixtureServer();
-  const { url: apiUrl } = await fixture.listen({ host: "127.0.0.1", port: 0 });
-  t.after(() => fixture.close());
-  const viewer = createViewerServer({ apiUrl, fixture: true });
-  const { url } = await viewer.listen({ host: "127.0.0.1", port: 0 });
-  fixture.allowOrigin(url);
-  t.after(() => viewer.close());
-  const browser = await chromium.launch({ headless: true });
+test("providers, how and developers tabs render from live endpoints or honest fallback", async (t) => {
+  const env = await launch();
+  t.after(() => env.fixture.close());
+  t.after(() => env.viewer.close());
+  const browser = await chromium.launch();
   t.after(() => browser.close());
   const page = await browser.newPage();
-  const pageErrors = [];
-  page.on("pageerror", (error) => pageErrors.push(error.message));
-  await page.goto(url);
-  await page.evaluate(async () => {
-    const { setAuditStatusProvider } = await import("/app.js");
-    setAuditStatusProvider(() => window.syntheticAuditStatus);
-  });
-  for (const testCase of [
-    { status: "match", error_code: null, expected: /^Match/ },
-    { status: "mismatch", error_code: null, expected: /^Mismatch/ },
-    {
-      status: "inconclusive",
-      error_code: "numerical_near_tie",
-      expected: /numerical_near_tie/,
-    },
-    {
-      status: "unavailable",
-      error_code: "provider_timeout",
-      expected: /^Unavailable/,
-    },
-  ]) {
-    await page.evaluate((outcome) => {
-      window.syntheticAuditStatus = {
-        capability: "local",
-        audit: {
-          audit_id: "aud-synthetic-panel",
-          trigger_request_id: "origin-synthetic-panel",
-          outcome,
-        },
-      };
-    }, testCase);
-    await page.getByRole("button", { name: "Refresh audit status" }).click();
-    assert.match(await page.locator("#audit-summary").textContent(), testCase.expected);
-    assert.equal(
-      await page.locator("#audit-status-panel").getAttribute("data-outcome"),
-      testCase.status,
-    );
-    assert.notEqual(
-      await page.locator("#audit-id").textContent(),
-      await page.locator("#audit-trigger-id").textContent(),
-    );
-  }
-  assert.match(
-    await page.locator("#audit-scope").textContent(),
-    /a reference-sample audit of this provider/i,
-  );
-  assert.doesNotMatch(
-    await page.locator("#audit-status-panel").textContent(),
-    /this answer is verified/i,
-  );
-  assert.deepEqual(pageErrors, []);
+  await page.goto(env.url + "#/providers");
+  await page.getByRole("heading", { name: "Choose by public track record" }).waitFor();
+  await page.getByText(/Live public history is still loading|safe\.eth|configured providers/i).waitFor();
+  assert.match(await page.locator("main").innerText(), /safe\.eth|configured providers|Live public history/i);
+  await page.goto(env.url + "#/how");
+  await page.getByRole("heading", { name: "Receipts instead of blind trust" }).waitFor();
+  assert.match(await page.locator("main").innerText(), /What's live right now/);
+  await page.goto(env.url + "#/developers");
+  await page.getByRole("heading", { name: "Build against the public demo API" }).waitFor();
+  assert.match(await page.locator("main").innerText(), /providerMetrics_collection/);
+  assert.doesNotMatch(await page.locator("main").innerText(), /providerMetrics\(first:/);
 });

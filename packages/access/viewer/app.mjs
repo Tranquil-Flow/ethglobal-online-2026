@@ -1,5 +1,5 @@
 import { createTryFlow, modelOptionsFromConfig } from "./flow.mjs";
-import { friendlyError, codeLine } from "./errors.mjs";
+import { friendlyError } from "./errors.mjs";
 import {
   authorizeDemoPayment,
   configurePayments,
@@ -14,6 +14,8 @@ import { renderDetailsDrawer } from "./views/details.mjs";
 import { renderProviders } from "./views/providers.mjs";
 import { renderHow } from "./views/how.mjs";
 import { renderDevelopers } from "./views/developers.mjs";
+import { renderRequests } from "./views/requests.mjs";
+import { renderSwarm } from "./views/swarm.mjs";
 
 export { authorizeDemoPayment, setPaymentAuthorizer };
 export function setAuditStatusProvider() {}
@@ -65,7 +67,7 @@ const app = {
     providerId: null,
     prompt: "",
     paymentMethod: "demo",
-    maxOutputTokens: 64,
+    maxOutputTokens: 128,
     budget: "1",
     publishConsent: true,
     pauseSteps: false,
@@ -109,6 +111,16 @@ function syncFormPatch(patch, options = {}) {
 }
 
 function currentTheme() {
+  // localStorage is the source of truth; the <html> attribute is the
+  // pre-bundle bootstrap's first paint. Without this, a reload (or a page
+  // switch in a fresh load) silently falls back to cream.
+  let saved = null;
+  try {
+    saved = localStorage.getItem("mycelium.theme");
+  } catch {
+    saved = null;
+  }
+  if (saved === "mushroom" || saved === "cream") return saved;
   return document.documentElement.dataset.theme === "mushroom" ? "mushroom" : "cream";
 }
 
@@ -121,7 +133,7 @@ function applyTheme(theme, { persist = true } = {}) {
   }
   // Reveal or hide the pre-baked mycelium strand layer.
   const layer = document.querySelector(".mycelium-strands");
-  if (layer) layer.style.display = next === "mushroom" ? "block" : "none";
+  if (layer) layer.style.display = "block";
   // Update the toggle button label.
   const toggle = document.getElementById("theme-toggle");
   if (toggle) {
@@ -155,7 +167,9 @@ function buildShell() {
         el("a", { href: "#/try", text: "Try it", dataset: { route: "try" } }),
         el("a", { href: "#/providers", text: "Providers", dataset: { route: "providers" } }),
         el("a", { href: "#/how", text: "How it works", dataset: { route: "how" } }),
+        el("a", { href: "#/requests", text: "Requests", dataset: { route: "requests" } }),
         el("a", { href: "#/developers", text: "Developers", dataset: { route: "developers" } }),
+        el("a", { href: "#/swarm", text: "Run a swarm", dataset: { route: "swarm" } }),
       ]),
       themeToggleButton(),
       el("div", { id: "status-root", class: "status-root" }),
@@ -172,7 +186,7 @@ function buildShell() {
   document.body.append(app.root);
   // Reveal the pre-baked strand layer if the active theme is dark.
   const layer = document.querySelector(".mycelium-strands");
-  if (layer) layer.style.display = currentTheme() === "mushroom" ? "block" : "none";
+  if (layer) layer.style.display = "block";
   app.main = app.root.querySelector("#app-main");
   app.detailsRoot = app.root.querySelector("#details-root");
   app.statusRoot = app.root.querySelector("#status-root");
@@ -239,8 +253,15 @@ function showReview(review) {
 
 async function loadProviderStats() {
   if (app.config?.fixture) return;
+  // The stats route requires providers=<id1>,<id2> (1..32 ids) and answers a
+  // bare request with 400 MISSING_PROVIDERS. Swallowing that silently made the
+  // Graph-backed columns render as unknown for a reason that was ours, not the
+  // network's (verified 2026-09-13).
+  const ids = (app.config?.providers ?? []).map((p) => p.providerId).filter(Boolean);
+  if (!ids.length) return;
   try {
-    const response = await fetch("/v2/providers/stats", { cache: "no-store" });
+    const query = new URLSearchParams({ providers: ids.join(","), window: "7d" });
+    const response = await fetch(`/v2/providers/stats?${query}`, { cache: "no-store" });
     if (response.ok) app.providerStats = await response.json();
   } catch {}
 }
@@ -268,7 +289,7 @@ function flowOptions() {
     prompt: app.form.prompt.trim(),
     modelKey: app.form.modelKey === "auto" ? undefined : app.form.modelKey,
     providerId: app.form.providerId || undefined,
-    maxOutputTokens: Number(app.form.maxOutputTokens) || 64,
+    maxOutputTokens: Number(app.form.maxOutputTokens) || 128,
     budget: app.mode === "advanced" ? (app.form.budget || undefined) : undefined,
     publishConsent: app.form.publishConsent !== false,
   };
@@ -328,16 +349,29 @@ function renderDetails() {
 }
 
 function renderTryRoute() {
+  // Qwen3.8 27B is a declared route with no provider entry yet, so it cannot be
+  // selected. It is shown disabled with the real reason instead of hidden: the
+  // plan is to serve it once the native runtime supports its tensor layout
+  // (qwen3_5 / linear_attn) and a second host can hold a shard.
+  const models = [...(app.models ?? [])];
+  if (!models.some((model) => model.unavailable))
+    models.push({
+      key: "qwen3.8-27b-instruct",
+      label: "Qwen3.8 27B",
+      profileId: null,
+      unavailable: true,
+      reason: "Route not qualified yet — waiting on native 27B support and a second node.",
+    });
   renderTry(app.main, {
     form: app.form,
     mode: app.mode,
     config: app.config ?? {},
-    models: app.models,
+    models,
     flowState: app.flowState,
     providerStats: app.providerStats,
     paymentState: app.paymentState,
     hashpackAvailable: isHashPackAvailable(app.config ?? {}),
-    error: app.mode === "advanced" && app.error ? { ...app.error, message: `${app.error.message} ${codeLine(app.error)}`.trim() } : app.error,
+    error: app.error,
     onChange: syncFormPatch,
     onMode: setMode,
     onAsk: ask,
@@ -366,6 +400,12 @@ function render() {
   } else if (app.route === "developers") {
     app.detailsRoot.replaceChildren();
     renderDevelopers(app.main);
+  } else if (app.route === "requests") {
+    app.detailsRoot.replaceChildren();
+    renderRequests(app.main, { config: app.config });
+  } else if (app.route === "swarm") {
+    app.detailsRoot.replaceChildren();
+    renderSwarm(app.main);
   } else {
     renderTryRoute();
   }
@@ -374,7 +414,19 @@ function render() {
 async function init() {
   if (!document.body) return;
   app.mode = defaultMode();
+  // Restore the saved theme onto <html> so the pre-baked strand layer and
+  // every subsequent render agree with the persisted preference.
+  document.documentElement.dataset.theme = currentTheme();
   buildShell();
+  // Neutral boot state: never flash a real route before config lands.
+  if (app.main) {
+    app.main.replaceChildren(
+      el("section", { class: "boot-loading" }, [
+        el("p", { class: "eyebrow", text: "Mycelium" }),
+        el("p", { class: "muted", text: "Loading…" }),
+      ]),
+    );
+  }
   app.flow = createTryFlow({
     onEvent(event) {
       app.flowState = event.state;
@@ -392,7 +444,7 @@ async function init() {
   app.models = modelOptionsFromConfig(app.config);
   app.form.modelKey = app.models[0]?.key ?? "auto";
   app.form.providerId = null;
-  app.form.maxOutputTokens = app.config?.demoSponsor?.status === "available" ? 64 : 64;
+  app.form.maxOutputTokens = app.config?.demoSponsor?.status === "available" ? 128 : 128;
   app.form.budget = app.config?.demoSponsor?.status === "available" ? "1" : "0";
   app.paymentHost = configurePayments({
     config: app.config,

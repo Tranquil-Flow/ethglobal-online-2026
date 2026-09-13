@@ -1,5 +1,6 @@
 import { createServer, request as httpRequest } from "node:http";
 import { readFile, stat } from "node:fs/promises";
+import { tryHandleVerificationsRoute } from "./w12-verifications-endpoint.mjs";
 
 const debugFlag = (config, ...paths) => paths.some((path) => {
   let value = config;
@@ -161,6 +162,13 @@ export async function startLiveViewer({ coreUrl, port = 0, config, historyCompar
       }).catch(() => { if (!res.destroyed) json(res,"HISTORY_UNAVAILABLE",503); }).finally(() => clearTimeout(timer));
       return;
     }
+    // W12: demo verifications (in-memory only — see
+    // composition/w12-verifications-store.mjs and
+    // composition/w12-verifications-endpoint.mjs). Intercepted before
+    // the /v2/* proxy below so the store can serve these endpoints
+    // without forwarding to the core. Marked demo-only; never persisted
+    // to The Graph or HCS.
+    if (tryHandleVerificationsRoute(req, res)) return;
     if (
       pathname.startsWith("/v1/") ||
       pathname.startsWith("/v2/") ||

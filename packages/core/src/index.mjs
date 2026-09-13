@@ -85,6 +85,8 @@ export function createApp({
   assessor,
   offers,
   runtimeStatus,
+  observations,
+  hcsRecords,
 } = {}) {
   if (demoSponsor && typeof demoSponsor.authorizeForQuote !== "function")
     throw new Error("Invalid demoSponsor binding");
@@ -383,6 +385,9 @@ export function createApp({
       if (code) emit(id, "error", errorBody(code));
       emit(id, "done", { jobId: id });
     });
+    // After the receipt is durable: publish any per-request verdicts the
+    // observation source recorded for this job (gated inside).
+    if (receipt) publishRecordedVerdicts(rec);
     setImmediate(() => void maintain());
   }
   async function run(id) {
@@ -843,7 +848,18 @@ export function createApp({
             signal,
           }),
         );
-      } catch {
+      } catch (error) {
+        // The public code stays stable, but the underlying port error must be
+        // observable: swallowing it here is what made the browser's
+        // PAYMENT_UNAVAILABLE impossible to root-cause from either side.
+        console.error(
+          JSON.stringify({
+            status: "w6-debug-payment-authorize-error",
+            code: error?.code ?? null,
+            name: error?.name ?? null,
+            message: String(error?.message ?? error).slice(0, 300),
+          }),
+        );
         fail(503, "PAYMENT_UNAVAILABLE");
       }
       if (auth?.kind === "required") {
@@ -1064,6 +1080,169 @@ export function createApp({
     });
     return a;
   }
+  // W6-per-request verifier verdicts -> on-chain assessment claims.
+  //
+  // The demo classifier (composition/w6-paid-observation-bridge.mjs) and the
+  // TEE verifier path (composition/w6-verifier-bridge.mjs) produce per-request
+  // verdicts in the W12 vocabulary (match/mismatch/inconclusive/unavailable).
+  // Every recorded verdict for a completed job is ALSO published as an
+  // assessment claim so The Graph indexes it into ProviderMetrics
+  // match/mismatch buckets (w6-trust-v1). The DTO vocabulary is the frozen
+  // Assessment enum, so `match` maps to `passed`, which
+  // packages/indexing/src/common.mjs `eventCall` encodes as uint8 1
+  // (pending 0 / passed 1 / mismatch 2 / inconclusive 3 / unavailable 4).
+  const VERDICT_ASSESSMENT_OUTCOMES = Object.freeze({
+    match: "passed",
+    mismatch: "mismatch",
+    inconclusive: "inconclusive",
+    unavailable: "unavailable",
+  });
+  const VERDICT_LABEL = /^[A-Za-z0-9_.:-]{1,256}$/;
+  function recordVerdictAssessment(input) {
+    if (!isRecord(input)) fail(400, "INVALID_INPUT");
+    const { jobId, verdict, verifierId, method } = input;
+    if (
+      typeof jobId !== "string" ||
+      !jobId.length ||
+      jobId.length > 256 ||
+      !Object.hasOwn(VERDICT_ASSESSMENT_OUTCOMES, verdict) ||
+      typeof verifierId !== "string" ||
+      !VERDICT_LABEL.test(verifierId) ||
+      typeof method !== "string" ||
+      !VERDICT_LABEL.test(method)
+    )
+      fail(400, "INVALID_INPUT");
+    // Publication gate: claims are only recorded and enqueued when a live
+    // publication sink is configured. Without one the composition keeps
+    // recording verdicts as before (the W12 verifications store is
+    // independent) and core adds nothing.
+    if (c.mode !== "live" || !eventSink)
+      return Object.freeze({
+        recorded: false,
+        duplicate: false,
+        reason: "PUBLICATION_UNAVAILABLE",
+      });
+    const rec = store.get("jobs", jobId);
+    if (!rec || !rec.job || rec.job.executionStatus !== "succeeded")
+      return Object.freeze({
+        recorded: false,
+        duplicate: false,
+        reason: "JOB_UNAVAILABLE",
+      });
+    if (typeof rec.job.receiptDigest !== "string")
+      return Object.freeze({
+        recorded: false,
+        duplicate: false,
+        reason: "RECEIPT_UNAVAILABLE",
+      });
+    const receipt = store.get("receipts", jobId)?.receipt;
+    let verified = false;
+    try {
+      verified =
+        typeof signer?.verify === "function" &&
+        receipt !== undefined &&
+        signer.verify(receipt) === true;
+    } catch {
+      verified = false;
+    }
+    if (!verified)
+      return Object.freeze({
+        recorded: false,
+        duplicate: false,
+        reason: "RECEIPT_UNAVAILABLE",
+      });
+    // Digest-stable idempotency: the same verdict (same receipt, verifier and
+    // method) is one claim. A replay returns the first assessment and never
+    // enqueues a second outbox row.
+    const key = hash(
+      digestOf({
+        kind: "w6-verdict-assessment-v1",
+        jobId,
+        receiptDigest: rec.job.receiptDigest,
+        verdict,
+        verifierId,
+        method,
+      }),
+    );
+    const existing = store.get("assessments", jobId) || { items: [], keys: {} };
+    const old = existing.keys[key];
+    if (old)
+      return Object.freeze({
+        recorded: false,
+        duplicate: true,
+        assessment:
+          existing.items.find((x) => x.assessmentId === old.id) ?? null,
+      });
+    if (existing.items.length >= 1024)
+      return Object.freeze({
+        recorded: false,
+        duplicate: false,
+        reason: "ASSESSMENT_LIMIT",
+      });
+    const assessment = adapterChecked("Assessment", {
+      version: "1",
+      assessmentId: randomUUID(),
+      receiptDigest: rec.job.receiptDigest,
+      method,
+      profileId: rec.profileId,
+      verifierId,
+      outcome: VERDICT_ASSESSMENT_OUTCOMES[verdict],
+      mode: c.mode,
+      createdAt: iso(),
+    });
+    store.transaction(() => {
+      const current = store.get("assessments", jobId) || {
+        items: [],
+        keys: {},
+      };
+      if (current.keys[key]) return;
+      current.items.push(assessment);
+      current.keys[key] = { method, id: assessment.assessmentId };
+      store.set("assessments", jobId, current);
+      const owner = store.get("jobs", jobId);
+      if (owner) {
+        owner.job.assessmentIds.push(assessment.assessmentId);
+        save(owner);
+      }
+      emit(jobId, "assessment", assessment);
+      enqueuePublication(owner ?? rec, "assessment", assessment);
+    });
+    return Object.freeze({
+      recorded: true,
+      duplicate: false,
+      assessment: structuredClone(assessment),
+    });
+  }
+  // Called once per successful receipt. Publishes every per-request verdict
+  // the injected observation source (composition owns the W12 demo store)
+  // recorded for this job. Best-effort: a malformed row or a publication
+  // refusal must never change completion semantics.
+  function publishRecordedVerdicts(rec) {
+    if (c.mode !== "live" || !eventSink) return;
+    if (typeof observations?.list !== "function") return;
+    let rows;
+    try {
+      rows = observations.list({ limit: 256 });
+    } catch {
+      return;
+    }
+    if (!Array.isArray(rows)) return;
+    const jobId = rec.job.jobId;
+    for (const row of rows) {
+      if (!isRecord(row) || row.requestId !== jobId) continue;
+      if (row.providerId !== rec.providerId) continue;
+      if (typeof row.verifierId !== "string" || typeof row.method !== "string")
+        continue;
+      try {
+        recordVerdictAssessment({
+          jobId,
+          verdict: row.verdict,
+          verifierId: row.verifierId,
+          method: row.method,
+        });
+      } catch {}
+    }
+  }
   async function executionPreflight(r) {
     if (typeof executor?.preflightRequest !== "function") return;
     try {
@@ -1188,7 +1367,13 @@ export function createApp({
       rate("openai-global", c.requestRate);
       return openai.handle(req, res, url.pathname, s);
     }
-    if ([...url.searchParams.keys()].some((k) => k !== "name"))
+    // Query parameters are allowlisted per route, never globally: `name` for
+    // /v1/providers lookups, `limit` for the /v2/requests ledger page size.
+    // Anything else still fails closed so no route can be probed with
+    // unvalidated input.
+    const allowedQuery =
+      url.pathname === "/v2/requests" ? new Set(["limit"]) : new Set(["name"]);
+    if ([...url.searchParams.keys()].some((k) => !allowedQuery.has(k)))
       fail(400, "INVALID_QUERY");
     if (await recoveryRoutes.handle(req, res, url.pathname)) return;
     if (
@@ -1285,6 +1470,105 @@ export function createApp({
       if (!offers) fail(503, "OFFERS_UNAVAILABLE");
       return send(res, 200, await bounded((signal) => offers.list({ signal })));
     }
+    if (method === "GET" && url.pathname === "/v2/requests") {
+      // Unified Requests ledger: commitments and outcomes only. Prompt and
+      // output text never appear here — they stay in the session that made the
+      // request. The verifier verdicts come from an injected observation source
+      // (composition owns the W12 demo store); without one this route still
+      // answers honestly with verification: null on every row.
+      const rawLimit = url.searchParams.get("limit");
+      const limit = rawLimit === null ? 50 : Number(rawLimit);
+      if (!Number.isSafeInteger(limit) || limit < 1 || limit > 200)
+        fail(400, "INVALID_QUERY");
+      const verificationRows = observations?.list?.({ limit: 256 }) ?? [];
+      const byRequest = new Map();
+      const byReceipt = new Map();
+      for (const row of verificationRows) {
+        if (row.requestId) byRequest.set(row.requestId, row);
+        if (row.receiptDigest) byReceipt.set(row.receiptDigest, row);
+      }
+      const receiptRows = new Map(store.list("receipts").map((r) => [r.id, r.receipt]));
+      const publicationRows = new Map();
+      for (const row of store.list("outbox"))
+        if (!publicationRows.has(row.jobId)) publicationRows.set(row.jobId, row);
+      const rows = store
+        .list("jobs")
+        .map((record) => {
+          const job = record.job ?? record;
+          const receipt = receiptRows.get(record.id);
+          const receiptDigest = receipt ? digestOf(receipt) : null;
+          const verification =
+            byRequest.get(record.id) ??
+            (receiptDigest ? byReceipt.get(receiptDigest) : null) ??
+            null;
+          const publicationRow = publicationRows.get(record.id);
+          const hcs =
+            hcsRecords?.byJobId?.(record.id) ??
+            (receiptDigest
+              ? hcsRecords?.byReceiptDigest?.(receiptDigest)
+              : null) ??
+            null;
+          return {
+            jobId: record.id,
+            hcs: hcs
+              ? {
+                  topicId: hcs.topicId,
+                  sequenceNumber: hcs.sequenceNumber,
+                  transactionId: hcs.transactionId,
+                  verdictId: hcs.verdictId,
+                  kinds: hcs.kinds ?? null,
+                }
+              : null,
+            providerId: job.providerId ?? record.providerId ?? null,
+            executionStatus: job.executionStatus ?? null,
+            createdAt: job.createdAt ?? null,
+            payment: job.payment
+              ? {
+                  status: job.payment.status ?? null,
+                  transactionRef: job.payment.transactionRef ?? null,
+                }
+              : null,
+            receipt: receipt
+              ? { signed: true, keyId: receipt.keyId ?? null, digest: receiptDigest }
+              : { signed: false, keyId: null, digest: null },
+            verification: verification
+              ? {
+                  verdict: verification.verdict,
+                  observedAt: verification.observedAt ?? null,
+                  demoOnly: true,
+                }
+              : null,
+            publication: publicationRow
+              ? {
+                  status: publicationRow.status ?? null,
+                  kind: publicationRow.event?.kind ?? null,
+                  transactionRef: publicationRow.transactionRef ?? null,
+                }
+              : null,
+          };
+        })
+        // Chronological ledger: newest request first, regardless of the
+        // store's internal iteration order (which is insertion order, not
+        // time order). Rows without a timestamp sort to the end.
+        .sort((a, b) =>
+          String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")),
+        )
+        .slice(0, limit);
+      return send(res, 200, {
+        version: "1",
+        generatedAt: iso(),
+        ledger: {
+          limit,
+          returned: rows.length,
+          verified: rows.filter((r) => r.verification).length,
+          mismatched: rows.filter((r) => r.verification?.verdict === "mismatch")
+            .length,
+          demoVerifier: Boolean(observations?.list),
+        },
+        requests: rows,
+      });
+    }
+
     if (method === "POST" && url.pathname === "/v2/demo-sponsor/authorize") {
       if (!demoSponsor) fail(503, "DEMO_SPONSOR_UNAVAILABLE");
       const s = session(req);
@@ -1675,6 +1959,11 @@ export function createApp({
     return structuredClone(result);
   }
   return {
+    // W6-per-request verdict -> assessment claim recorder. Returns
+    // {recorded, duplicate, reason?, assessment?}; gated on live mode plus a
+    // configured publication sink, idempotent per
+    // (jobId, receiptDigest, verdict, verifierId, method).
+    recordVerdictAssessment,
     async listen({ host = "127.0.0.1", port = 4310 } = {}) {
       if (server) throw Error("Already listening");
       if (

@@ -1,0 +1,12 @@
+{
+  "name": "@mycelium/w6-isolated-free",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "27.0.0"
+  }
+}

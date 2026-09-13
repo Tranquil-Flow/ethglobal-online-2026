@@ -1,0 +1,125 @@
+type ReceiptClaim @entity(immutable: true) {
+  id: ID!
+  objectDigest: Bytes!
+  providerKey: Bytes!
+  mode: Int!
+  chainId: String!
+  contractAddress: Bytes!
+  publisher: Bytes!
+  transactionHash: Bytes!
+  blockNumber: BigInt!
+  blockHash: Bytes!
+  logIndex: BigInt!
+}
+type AssessmentClaim @entity(immutable: true) {
+  id: ID!
+  objectDigest: Bytes!
+  receiptDigest: Bytes!
+  providerKey: Bytes!
+  mode: Int!
+  chainId: String!
+  contractAddress: Bytes!
+  publisher: Bytes!
+  transactionHash: Bytes!
+  blockNumber: BigInt!
+  blockHash: Bytes!
+  logIndex: BigInt!
+  verifierKey: Bytes!
+  methodKey: Bytes!
+  outcome: Int!
+  publicMetadata: String!
+  valid: Boolean!
+}
+type OpenAssessmentClaim @entity(immutable: true) {
+  id: ID!
+  statementDigest: Bytes!
+  objectDigest: Bytes!
+  receiptDigest: Bytes!
+  providerKey: Bytes!
+  mode: Int!
+  chainId: String!
+  contractAddress: Bytes!
+  author: Bytes!
+  relayer: Bytes!
+  transactionHash: Bytes!
+  blockNumber: BigInt!
+  blockHash: Bytes!
+  logIndex: BigInt!
+  verifierKey: Bytes!
+  methodKey: Bytes!
+  outcome: Int!
+  linked: Boolean!
+  publicMetadata: String!
+  valid: Boolean!
+}
+type ProviderCount @entity(immutable: false) {
+  id: ID!
+  receiptCount: BigInt!
+  assessmentCount: BigInt!
+  invalidCount: BigInt!
+}
+type VerifierOutcomeCount @entity(immutable: false) {
+  id: ID!
+  providerKey: Bytes!
+  verifierKey: Bytes!
+  outcome: Int!
+  count: BigInt!
+}
+
+# W6 trust formula v1 (see docs/handoffs/w6-trust-formula.md).
+# Score is derived from indexed ReceiptClaim / AssessmentClaim /
+# OpenAssessmentClaim events only; not from private bodies, X1 verification-ledger
+# stats, Hedera, ENS, payment state, or local stores.
+type ProviderMetrics @entity(immutable: false) {
+  id: ID!                    # {chainId}:{contractAddress}:{providerKey}
+  providerKey: Bytes!
+  chainId: String!
+  contractAddress: Bytes!
+  mode: Int!
+
+  receiptCount: BigInt!
+  assessmentCount: BigInt!       # valid linked + valid open assessments counted after dedupe
+  invalidAssessmentCount: BigInt!
+  matchCount: BigInt!
+  mismatchCount: BigInt!
+  inconclusiveCount: BigInt!
+  unavailableCount: BigInt!
+
+  latestReceiptBlock: BigInt!
+  latestAssessmentBlock: BigInt!
+  latestActivityBlock: BigInt!
+  latestActivityTimestamp: BigInt!
+  latestActivityDay: BigInt!
+  activeReceiptDays7: BigInt!
+
+  passRatePpm: BigInt!           # 0..1_000_000
+  volumeConfidencePpm: BigInt!   # 0..1_000_000
+  recencyConfidencePpm: BigInt!  # 0..1_000_000
+  trustPpm: BigInt!              # 0..1_000_000
+  trustScore: BigInt!            # 0..1000, floor(trustPpm / 1000)
+  formulaVersion: String!        # "w6-trust-v1"
+}
+
+type ProviderTrustDay @entity(immutable: false) {
+  id: ID!                    # {ProviderMetrics.id}:day:{day}
+  providerKey: Bytes!
+  chainId: String!
+  contractAddress: Bytes!
+  mode: Int!
+  day: BigInt!               # floor(block.timestamp / 86400)
+  receiptCount: BigInt!
+  assessmentCount: BigInt!
+  matchCount: BigInt!
+  mismatchCount: BigInt!
+  inconclusiveCount: BigInt!
+  unavailableCount: BigInt!
+  invalidAssessmentCount: BigInt!
+  latestBlock: BigInt!
+  latestTimestamp: BigInt!
+}
+
+# Dedupes an assessment objectDigest so the same canonical payload cannot be
+# counted twice across linked + open paths.
+type ProviderTrustAssessmentSeen @entity(immutable: true) {
+  id: ID!                    # {ProviderMetrics.id}:assessment-object:{objectDigest}
+}

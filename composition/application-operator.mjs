@@ -27,6 +27,11 @@ import {
 import { fileRuntimeAccess } from "./operator-files.mjs";
 import { createMyceliumProfile } from "./mycelium-profile.mjs";
 import { createManagedHistory } from "./application-history.mjs";
+import { listObservations } from "./w12-verifications-store.mjs";
+import {
+  hcsByJobId,
+  hcsByReceiptDigest,
+} from "./w6-hcs-ledger.mjs";
 
 import {
   createEnsV2Discovery,
@@ -490,6 +495,17 @@ async function prepare(options, { start = false } = {}) {
   if (x.publication && options.eventSink !== undefined)
     fail("PUBLICATION_BINDING_CONFLICT");
   const bindings = {
+    // Per-request verifier verdicts for the /v2/requests ledger. The demo
+    // store is process-local and in-memory; the route degrades to
+    // verification: null when its ring is empty rather than inventing a
+    // verdict.
+    observations: { list: listObservations },
+    // HCS broadcast records for the same ledger: process-local map of
+    // confirmed topic submits, keyed by jobId / receiptDigest.
+    hcsRecords: {
+      byJobId: hcsByJobId,
+      byReceiptDigest: hcsByReceiptDigest,
+    },
     ...(options.createDemoSponsor !== undefined
       ? { createDemoSponsor: options.createDemoSponsor }
       : {}),

@@ -1,0 +1,16 @@
+{
+  "sepolia": {
+    "Registry": {
+      "address": "0x9fd43D7b41c82406A776b700702EEA3813ac426A",
+      "startBlock": 11660509
+    },
+    "RegistryV2": {
+      "address": "0xCf14c9bf5657487F1dBF03C9eF0DE0FfdA959e34",
+      "startBlock": 11681335
+    },
+    "VerificationLedger": {
+      "address": "0x9fd43D7b41c82406A776b700702EEA3813ac426A",
+      "startBlock": 11692748
+    }
+  }
+}

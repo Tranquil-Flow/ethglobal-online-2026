@@ -49,7 +49,7 @@ export function validateOfferPayload(p) {
     "maxPromptUtf8Bytes",
   ]);
   for (const [k, max] of Object.entries({
-    maxOutputTokens: 64,
+    maxOutputTokens: 128,
     maxPromptCharacters: 256,
     maxPromptUtf8Bytes: 1024,
   }))

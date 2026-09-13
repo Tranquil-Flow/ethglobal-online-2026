@@ -1,0 +1,20 @@
+{
+  "name": "@mycelium/w6-settlement-relayer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline-safe settlement relayer logic for W6 X2: outbox, verifier verdict consumption, transaction construction, and idempotency tests.",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./guard": "./w6-relayer-broadcast-guard.mjs"
+  },
+  "bin": {
+    "w6-settlement-relayer": "./bin/relayer.mjs"
+  },
+  "scripts": {
+    "test": "node --test --test-reporter=tap test/*.test.mjs"
+  },
+  "engines": {
+    "node": "22.22.2"
+  }
+}

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Mycelium owner console</title>
+  <link rel="stylesheet" href="/console.css">
+  <script src="/console.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to status panels</a>
+  <header class="masthead">
+    <div><p class="eyebrow">MYCELIUM · LOOPBACK OWNER SURFACE</p><h1>Owner console</h1></div>
+    <div class="binding"><span aria-hidden="true"></span>127.0.0.1:4360 only</div>
+  </header>
+  <main id="main" tabindex="-1">
+    <section class="notice" aria-label="Data boundary"><strong>Truth boundary:</strong> no synthetic production data. Values come from live probes/read-only retained stores, or say <em>unavailable</em>.</section>
+    <div class="toolbar"><p id="refresh-state" role="status" aria-live="polite">Loading current status…</p><button id="refresh" type="button">Refresh status</button></div>
+    <div id="panels" class="panels" aria-busy="true"></div>
+    <section class="panel feedback" id="owner-feedback" aria-labelledby="feedback-title">
+      <div class="panel-head"><div><p class="index">10</p><h3 id="feedback-title">Feedback</h3></div><span class="badge available">append-only</span></div>
+      <div data-panel-id="feedback" class="panel-body">
+        <form id="feedback-form">
+          <label for="feedback-text">What should change?</label>
+          <textarea id="feedback-text" name="text" rows="5" maxlength="4000" required placeholder="Describe what you saw and what you expected."></textarea>
+          <label for="screenshot-ref">Screenshot reference <span>(optional)</span></label>
+          <input id="screenshot-ref" name="screenshotRef" maxlength="512" placeholder="Filename or local evidence reference">
+          <button type="submit">Append feedback</button>
+          <p id="feedback-state" role="status" aria-live="polite"></p>
+        </form>
+        <h3>Recent feedback</h3>
+        <ol id="feedback-list" class="feedback-list"><li>Loading…</li></ol>
+      </div>
+    </section>
+  </main>
+  <footer>Private operator surface · no auth because the listener is literal loopback only</footer>
+</body>
+</html>

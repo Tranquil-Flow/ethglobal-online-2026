@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "bank_id": "w6-tee-verifier-worker-example-bank-v1",
+  "comment": "SYNTHETIC example reference bank for the W6 tee-verifier-worker smoke script and integration test. Keys are request digests = sha256(canonical_json({version, kind, request_id, provider_id, profile_sha256})) computed with tee_verifier_math.request_digest (or `python3 tee_verifier_worker.py request-digest ...`). Values are synthetic reference-model outputs; NO real model runs and NO private data are involved.",
+  "agreement": {
+    "alpha": 0.05,
+    "agreement_floor": 0.6,
+    "min_members": 3,
+    "chance_floor": 0.0
+  },
+  "entries": {
+    "cd88cd5def721f484755bf271254375efe6f9b78d99593daead16e650354894a": {
+      "profile_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "reference_outputs": [
+        { "member": "ref-0", "output_text": "honest answer: 42" },
+        { "member": "ref-1", "output_text": "honest answer: 42" },
+        { "member": "ref-2", "output_text": "honest answer: 42" }
+      ]
+    },
+    "5f5d74784885786c9b1c2b8af20d8fb11a054673c4299d79eeadfc11efc6fdb7": {
+      "profile_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "reference_outputs": [
+        { "member": "ref-0", "output_text": "honest answer: 42" },
+        { "member": "ref-1", "output_text": "honest answer: 42" },
+        { "member": "ref-2", "output_text": "honest answer: 42" }
+      ]
+    },
+    "f7b912a445dbf989f6c3f329cc41ab9770e14ce17f627d3a33f26d8f81d9a849": {
+      "profile_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "reference_outputs": [
+        { "member": "ref-0", "output_text": "honest answer: 42" },
+        { "member": "ref-1", "output_text": "honest answer: 42" },
+        { "member": "ref-2", "output_text": "honest answer: 42" }
+      ]
+    },
+    "219f8050591eef745f7b4bc48fc7921188d67e930764fa2c95a0b5edb8bd780d": {
+      "profile_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "reference_outputs": [
+        { "member": "ref-0", "output_text": "honest answer: 42" },
+        { "member": "ref-1", "output_text": "honest answer: 42" },
+        { "member": "ref-2", "output_text": "honest answer: 42" }
+      ]
+    }
+  }
+}

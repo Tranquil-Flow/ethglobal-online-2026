@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hedera Mirror Receipt — Mycelium Payment Verifier</title>
+  <link rel="stylesheet" href="/receipt.css" />
+</head>
+<body>
+  <header class="hdr">
+    <h1>Hedera Mirror Receipt</h1>
+    <p class="sub">Independent verification of a Mycelium payment — read from the public Hedera mirror node. No private keys, no signed payloads.</p>
+  </header>
+
+  <main class="main">
+    <section class="card">
+      <form id="probe-form" autocomplete="off">
+        <label for="tx-input">Hedera transaction ID</label>
+        <div class="row">
+          <input id="tx-input" name="tx" type="text" spellcheck="false" placeholder="0.0.<account>-<seconds>-<nanos>" />
+          <button id="probe-btn" type="submit">Verify</button>
+        </div>
+        <p class="hint">Default loads the canonical G01 receipt. You can paste any other Hedera tx ID; this server only ever makes GET requests to the public testnet mirror node.</p>
+      </form>
+    </section>
+
+    <section id="error-card" class="card error hidden" aria-live="polite">
+      <h2>Verification failed</h2>
+      <p id="error-detail">—</p>
+    </section>
+
+    <section id="result-card" class="card hidden" aria-live="polite">
+      <h2>
+        <span class="badge ok" id="result-badge">OK</span>
+        <span id="result-headline">Receipt</span>
+      </h2>
+
+      <dl class="kv">
+        <dt>Transaction ID</dt>
+        <dd id="r-tx">—</dd>
+
+        <dt>Result</dt>
+        <dd id="r-result">—</dd>
+
+        <dt>Operation</dt>
+        <dd id="r-name">—</dd>
+
+        <dt>Consensus timestamp</dt>
+        <dd id="r-ts">—</dd>
+
+        <dt>Valid-start timestamp</dt>
+        <dd id="r-valid-start">—</dd>
+
+        <dt>Payer (from tx id)</dt>
+        <dd id="r-payer">—</dd>
+
+        <dt>Recipient</dt>
+        <dd id="r-recipient">—</dd>
+
+        <dt>Operator alt</dt>
+        <dd id="r-operator">—</dd>
+
+        <dt>Amount</dt>
+        <dd id="r-amount">—</dd>
+
+        <dt>Max transaction fee</dt>
+        <dd id="r-max-fee">—</dd>
+
+        <dt>Charged tx fee</dt>
+        <dd id="r-fee">—</dd>
+
+        <dt>Memo (base64)</dt>
+        <dd><code id="r-memo-b64">—</code></dd>
+
+        <dt>Memo (utf-8, decoded independently)</dt>
+        <dd><code id="r-memo-utf8">—</code></dd>
+
+        <dt>Node</dt>
+        <dd id="r-node">—</dd>
+
+        <dt>Mirror URL queried</dt>
+        <dd><a id="r-mirror" target="_blank" rel="noopener">—</a></dd>
+
+        <dt>Hashscan</dt>
+        <dd><a id="r-hashscan" target="_blank" rel="noopener">—</a></dd>
+
+        <dt>Captured at</dt>
+        <dd id="r-captured">—</dd>
+      </dl>
+
+      <details class="raw">
+        <summary>Raw mirror response</summary>
+        <pre id="r-raw">—</pre>
+      </details>
+    </section>
+  </main>
+
+  <footer class="ftr">
+    <p>Loopback-only · 127.0.0.1:4364 · bounded 5s probe timeout · reads only from the public Hedera testnet mirror node.</p>
+  </footer>
+
+  <script src="/receipt.js" defer></script>
+</body>
+</html>

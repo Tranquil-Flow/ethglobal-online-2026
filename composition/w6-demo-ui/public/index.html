@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mycelium — Decentralized AI Inference With Receipts &amp; Provider Trust</title>
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">
+      <svg viewBox="0 0 32 32" width="28" height="28" role="img" aria-label="Mycelium logo">
+        <defs>
+          <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0" stop-color="#8be9fd"/>
+            <stop offset="1" stop-color="#a269f7"/>
+          </linearGradient>
+        </defs>
+        <circle cx="16" cy="16" r="14" fill="none" stroke="url(#g)" stroke-width="2"/>
+        <path d="M6 18 Q12 8 16 18 T26 18" fill="none" stroke="url(#g)" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="8" cy="18" r="2" fill="#8be9fd"/>
+        <circle cx="16" cy="18" r="2" fill="#bd93f9"/>
+        <circle cx="24" cy="18" r="2" fill="#ff79c6"/>
+      </svg>
+    </span>
+    <span class="brand-text">
+      <span class="brand-name">Mycelium</span>
+      <span class="brand-tag">ETHOnline 2026 — product demo</span>
+    </span>
+  </div>
+  <nav class="nav" aria-label="Sections">
+    <a href="#home" data-route="home">Home</a>
+    <a href="#inference" data-route="inference">Try Inference</a>
+    <a href="#receipts" data-route="receipts">Receipts</a>
+    <a href="#trust" data-route="trust">Provider Trust</a>
+    <a href="#tee" data-route="tee">Verifier / TEE</a>
+    <a href="#ens" data-route="ens">ENS / Provenance</a>
+    <a href="#how" data-route="how">How it works</a>
+    <a href="#judge" data-route="judge">Judge guide</a>
+  </nav>
+</header>
+
+<main id="main">
+
+<!-- HOME -->
+<section class="view" data-view="home">
+  <div class="hero">
+    <h1>Decentralized AI inference with receipts, provider verification, and user-checkable provenance.</h1>
+    <p class="lede">
+      Mycelium is a distributed inference network where prompts are served by real, declared providers,
+      every request is matched by an Ed25519 receipt, every provider is indexed on The Graph, and every
+      compute claim can be checked against a confidential-computing verifier. Open this page, run a
+      prompt, see the receipt, inspect the provider's history, and verify the verifier's TEE state.
+      Nothing here is mocked.
+    </p>
+    <div class="cta-row">
+      <a class="btn primary" href="#inference" data-route="inference">Try free inference</a>
+      <a class="btn" href="#receipts" data-route="receipts">View payment receipt</a>
+      <a class="btn" href="#trust" data-route="trust">Inspect provider trust</a>
+      <a class="btn" href="#how" data-route="how">How it works</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Live demo status</h2>
+    <p class="muted small">
+      Each badge reflects a real probe against a running surface — never a placeholder. Green = working,
+      Yellow = partial or pending, Red = broken.
+    </p>
+    <div id="status-badges" class="badges">
+      <div class="skel">Probing live surfaces…</div>
+    </div>
+    <p class="muted small">
+      Server: <code id="server-meta">probing…</code>
+      · Free app: <code id="freeapp-meta">probing…</code>
+      · Native route: <code id="native-meta">probing…</code>
+    </p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>What you can do here</h2>
+      <ul>
+        <li><strong>Try Inference:</strong> send a real prompt through the native 0.5B distributed route via the free isolated path.</li>
+        <li><strong>View the canonical paid G01 receipt:</strong> HashScan, mirror, memo, Ed25519 signature decoded.</li>
+        <li><strong>Inspect provider trust:</strong> live Graph probe showing deployment CID, block, schema, and entity indexing state.</li>
+        <li><strong>Probe the SEV-backed verifier:</strong> healthz and info; honest YELLOW on the missing tee-launcher endpoints.</li>
+        <li><strong>Check ENS/DNS provenance:</strong> current known state and explicitly what is not yet broadcast.</li>
+        <li><strong>Run the judge verification guide:</strong> every curl from the submission evidence, classified.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>What's actually true right now</h2>
+      <ul>
+        <li><strong>Submission floor GREEN:</strong> real Hedera testnet DEMO pay settled (tx <code>0.0.7162784@1789239567.211071753</code>), real 0.5B stream emitted real tokens, Ed25519 receipt written, HashScan live.</li>
+        <li><strong>Verifier VM is alive:</strong> SEV compute at <code>34.7.61.130:8765</code> answers <code>/healthz</code> and <code>/info</code>.</li>
+        <li><strong>Subgraph is deployed:</strong> v0.3 schema answers <code>_meta</code> with chain head block.</li>
+        <li><strong>Open work, not blocked:</strong> G1↔X1 ABI alignment, ENS broadcast, and final verifier-key/attestation contract binding — each surfaced as YELLOW or live-detected on its own page.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- INFERENCE -->
+<section class="view hidden" data-view="inference">
+  <h1>Try Inference</h1>
+  <p class="muted">
+    Submits a real prompt to the native 0.5B distributed route via the isolated-free loopback app
+    at <code>http://127.0.0.1:4350</code>. This UI's server handles the access handshake
+    server-to-server, so no private material crosses the browser. Default token limit is 1 for bounded demo.
+  </p>
+  <div class="card">
+    <form id="infer-form">
+      <label for="prompt">Prompt</label>
+      <textarea id="prompt" name="prompt" rows="3" maxlength="1024" required>Complete in one short sentence: A garden grows</textarea>
+      <div class="form-row">
+        <label for="mtok">Max output tokens
+          <input id="mtok" name="maxOutputTokens" type="number" min="1" max="8" value="1" />
+        </label>
+        <button type="submit" class="btn primary">Submit prompt</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Job lifecycle</h2>
+    <ol id="lifecycle" class="lifecycle"><li class="step pending">submitted</li><li class="step pending">running</li><li class="step pending">tokens</li><li class="step pending">complete / error</li></ol>
+    <div id="infer-result" class="resultbox"><span class="muted">No job yet — submit a prompt above.</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Paid path (separate)</h2>
+    <p>
+      The paid DEMO sponsor endpoint <code>/v2/demo-sponsor/authorize</code> is currently returning
+      <strong>503 UNAVAILABLE</strong> in OT1 (per submission report §5 / Y4). A fresh browser payment
+      cannot complete today. The <strong>canonical evidence</strong> the end-to-end paid path worked
+      is job <code>08020e41-1948-4e91-9d39-2efb8b49e517</code>, settled on Hedera testnet.
+    </p>
+    <p><a class="btn" href="#receipts" data-route="receipts">Open payment receipt</a>
+       <a class="btn" href="https://hashscan.io/testnet/transaction/0.0.7162784-1789239567-211071753" target="_blank" rel="noopener">HashScan canonical</a></p>
+  </div>
+</section>
+
+<!-- RECEIPTS -->
+<section class="view hidden" data-view="receipts">
+  <h1>Receipts &amp; Payments</h1>
+  <p class="muted">
+    Decoded from <code>artifacts/w6-v2/l2/paid-retry/g01-receipt.json</code> on the workbench,
+    plus on-chain readback from Hedera testnet mirror node. Memo, transfers, and Ed25519 receipt
+    signature are all rendered from the canonical receipt artifact — nothing here is fabricated.
+  </p>
+  <div id="receipt-detail" class="card"><div class="skel">Loading canonical receipt…</div></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>What a receipt proves</h2>
+      <ul>
+        <li><strong>It is signed:</strong> Ed25519 over a deterministic JSON body; <code>signature_present: true</code>.</li>
+        <li><strong>It is anchored:</strong> the on-chain Hedera <code>CRYPTOTRANSFER</code> carries a memo <code>ethonline:&lt;requestHash&gt;</code> keyed to the same request.</li>
+        <li><strong>It is auditable:</strong> anyone can replay <code>canonicalHash</code> + request and re-derive the payment id.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>How to verify it yourself</h2>
+      <pre><code>curl -sS 'https://testnet.mirrornode.hedera.com/api/v1/transactions/0.0.7162784-1789239567-211071753' | python3 -m json.tool | head -40</code></pre>
+      <p class="small muted">Expected: <code>result: SUCCESS, name: CRYPTOTRANSFER, memo → ethonline:287bb1f3…</code></p>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST / GRAPH -->
+<section class="view hidden" data-view="trust">
+  <h1>Provider Trust — live probe of The Graph</h1>
+  <p class="muted">
+    Live <code>_meta</code> from <code>api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.3.1-bytes32-reconcile</code>.
+    Provider / audit indexes are empty because the VerificationLedger contract isn't live on Sepolia yet
+    — schema is deployed, data sources are bound, but no provider events have been indexed.
+    Honest empty state is shown, not faked values.
+  </p>
+
+  <div id="trust-grid" class="grid-2">
+    <div class="card">
+      <h2>Subgraph _meta</h2>
+      <div id="graph-meta"><div class="skel">Probing…</div></div>
+    </div>
+    <div class="card">
+      <h2>Schema introspection</h2>
+      <div id="graph-types"><div class="skel">Probing…</div></div>
+    </div>
+    <div class="card">
+      <h2>Providers (top 10)</h2>
+      <div id="graph-providers"><div class="skel">Probing…</div></div>
+    </div>
+    <div class="card">
+      <h2>Audits (latest 5)</h2>
+      <div id="graph-audits"><div class="skel">Probing…</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Run your own GraphQL query</h2>
+    <p class="small muted">Copy and paste into curl/Postman/Subgraph Studio. Returns identical structure to what this page receives.</p>
+    <pre id="graph-queries"><code>{ _meta { block { number } deployment hasIndexingErrors } }</code></pre>
+    <p class="small">Endpoint: <code>https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.3.1-bytes32-reconcile</code></p>
+  </div>
+</section>
+
+<!-- TEE -->
+<section class="view hidden" data-view="tee">
+  <h1>Verifier / TEE</h1>
+  <p class="muted">
+    Live probes of <code>http://34.7.61.130:8765</code> (SEV compute) and <code>http://34.7.61.130:8766</code>
+    (T6 tee-launcher if launched). Green = reachable and matching expected bundle;
+    Yellow = reachable but with a documented capability gap.
+  </p>
+  <div id="tee-detail" class="card"><div class="skel">Probing TEE surfaces…</div></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>What is currently proven</h2>
+      <ul>
+        <li>SEV memory encryption on AMD EPYC Milan (kernel proof via dmesg).</li>
+        <li>Workload bundle SHA matches pinned runbook.</li>
+        <li>/healthz returns <code>{"state":"running","status":"ok"}</code>.</li>
+        <li>Code identity binding via image_digest (workload image published to <code>europe-west4-docker.pkg.dev/mycelium-demo/mycelium/verifier@sha256:35fec927…</code>).</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>What is honestly NOT proven / still distinct</h2>
+      <ul>
+        <li>Primary port <code>8765</code> is the original verifier Flask image; it does not itself expose <code>/attestation</code> or <code>/generate-key</code>.</li>
+        <li>If port <code>8766</code> is reachable, this page surfaces its T6 tee-launcher health, attestation, and generate-key state separately.</li>
+        <li>Final on-chain verifier-key registration / contract binding is still not complete in this UI.</li>
+        <li><code>verifier.mycelium.now</code> DNS rebind may still be pending (NXDOMAIN per submission Y6 unless updated elsewhere).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ENS -->
+<section class="view hidden" data-view="ens">
+  <h1>ENS / Provenance</h1>
+  <p class="muted">
+    The naming layer is intentionally a separate concern from compute. Today, DNS for <code>mycelium.now</code>
+    is resolvable via Cloudflare, but no ENS broadcast has occurred. The two domain targets are surfaced
+    below with their current honest state — no green paint over partial work.
+  </p>
+  <div id="ens-detail" class="card"><div class="skel">Loading…</div></div>
+
+  <div class="card">
+    <h2>Why ENS at all?</h2>
+    <ul>
+      <li><strong>Canonical naming:</strong> judge-facing URLs and content hashes pinned to a domain you can resolve and verify.</li>
+      <li><strong>Trust anchoring:</strong> ENS records point at the actual deployment, so trust lives in a verifiable registry, not in a marketing site.</li>
+      <li><strong>Composability:</strong> ENS-aware agents and wallets can route to the right surface automatically.</li>
+    </ul>
+    <p class="small muted">
+      The ENS repoint step (E1) is owner-only and is gated by the master plan: <em>"ENS repoint (E1) human-only"</em>.
+      No broadcast will be attempted from any subagent.
+    </p>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="view hidden" data-view="how">
+  <h1>How it works</h1>
+  <p class="muted">
+    A judge-friendly explanation. Every layer in the diagram below is real on the workbench today,
+    even if some are honest partials.
+  </p>
+
+  <div class="card">
+    <h2>The flow</h2>
+    <ol>
+      <li><strong>User writes a prompt.</strong> The browser posts it to the public app origin.</li>
+      <li><strong>Capability handshake.</strong> The access package verifies provider pins (Ed25519 JWK), issues a short-lived capability.</li>
+      <li><strong>Provider selection.</strong> For non-economic flow, the loopback app picks a pinned provider; for paid flow, the app quotes an x402 payment (Hedera, 1 tinybar).</li>
+      <li><strong>Submission.</strong> The browser POSTs <code>/v1/jobs</code> with the capability. The app returns a 202 + job id.</li>
+      <li><strong>Native inference.</strong> The 0.5B Instruct model runs across two node processes, returning real token IDs.</li>
+      <li><strong>Stream.</strong> The app pushes SSE events: <code>job</code>, <code>delta</code> (with tokenIds), and <code>done</code>.</li>
+      <li><strong>Receipt.</strong> An Ed25519 receipt is written to <code>core.sqlite</code>; for paid, the Hedera transfer carries a memo <code>ethonline:&lt;requestHash&gt;</code>.</li>
+      <li><strong>Verification ledger.</strong> Audits, stake events, and provider claims are indexed on The Graph (Sepolia <code>Registry</code> / <code>VerificationLedger</code>) — currently schema-deployed with empty provider collections.</li>
+      <li><strong>Verifier (TEE).</strong> The ensemble verifier runs in a GCP Confidential Space SEV VM; <code>/healthz</code> and <code>/info</code> answer on <code>8765</code>. If T6 is live on <code>8766</code>, this UI separately detects <code>/healthz</code>, <code>/attestation</code>, and <code>/generate-key</code>.</li>
+      <li><strong>ENS discovery.</strong> Canonical surfaces are pinned to <code>mycelium.now</code> and <code>verifier.mycelium.now</code>; ENS broadcast is human-only (E1).</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Architecture (current state)</h2>
+    <svg viewBox="0 0 900 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Architecture diagram">
+      <defs>
+        <linearGradient id="bb" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stop-color="#3b4252"/>
+          <stop offset="1" stop-color="#2b2b3a"/>
+        </linearGradient>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#8be9fd"/>
+        </marker>
+      </defs>
+      <rect x="0" y="0" width="900" height="360" fill="#0e0e1a"/>
+      <!-- boxes -->
+      <g font-family="ui-monospace, SFMono-Regular, monospace" font-size="13">
+        <rect x="20"  y="40"  width="160" height="56" rx="8" fill="url(#bb)" stroke="#8be9fd" stroke-width="1.2"/>
+        <text x="100" y="68" text-anchor="middle" fill="#cdd6f4">Judge / Browser</text>
+        <text x="100" y="86" text-anchor="middle" fill="#7f849c" font-size="11">demo UI · 127.0.0.1:4362</text>
+
+        <rect x="220" y="40"  width="180" height="56" rx="8" fill="url(#bb)" stroke="#bd93f9" stroke-width="1.2"/>
+        <text x="310" y="68" text-anchor="middle" fill="#cdd6f4">Public App (free / paid)</text>
+        <text x="310" y="86" text-anchor="middle" fill="#7f849c" font-size="11">loopback 4350 / paid 4352</text>
+
+        <rect x="440" y="40"  width="180" height="56" rx="8" fill="url(#bb)" stroke="#ff79c6" stroke-width="1.2"/>
+        <text x="530" y="68" text-anchor="middle" fill="#cdd6f4">Native 0.5B Route</text>
+        <text x="530" y="86" text-anchor="middle" fill="#7f849c" font-size="11">node-0 + node-2 · 8876/8877</text>
+
+        <rect x="660" y="40"  width="220" height="56" rx="8" fill="url(#bb)" stroke="#50fa7b" stroke-width="1.2"/>
+        <text x="770" y="68" text-anchor="middle" fill="#cdd6f4">Verifier (SEV TEE)</text>
+        <text x="770" y="86" text-anchor="middle" fill="#7f849c" font-size="11">34.7.61.130:8765 · /healthz</text>
+
+        <rect x="20"  y="170" width="220" height="56" rx="8" fill="url(#bb)" stroke="#f1fa8c" stroke-width="1.2"/>
+        <text x="130" y="198" text-anchor="middle" fill="#cdd6f4">Hedera Testnet</text>
+        <text x="130" y="216" text-anchor="middle" fill="#7f849c" font-size="11">0.0.7162784 — paid memo OK</text>
+
+        <rect x="280" y="170" width="240" height="56" rx="8" fill="url(#bb)" stroke="#8be9fd" stroke-width="1.2"/>
+        <text x="400" y="198" text-anchor="middle" fill="#cdd6f4">Sepolia (Registry/VerifLedger)</text>
+        <text x="400" y="216" text-anchor="middle" fill="#7f849c" font-size="11">on-chain events → Graph</text>
+
+        <rect x="560" y="170" width="320" height="56" rx="8" fill="url(#bb)" stroke="#bd93f9" stroke-width="1.2"/>
+        <text x="720" y="198" text-anchor="middle" fill="#cdd6f4">Subgraph Studio (v0.3)</text>
+        <text x="720" y="216" text-anchor="middle" fill="#7f849c" font-size="11">queryable · providers empty (yet)</text>
+
+        <rect x="220" y="280" width="420" height="56" rx="8" fill="url(#bb)" stroke="#ff79c6" stroke-width="1.2"/>
+        <text x="430" y="308" text-anchor="middle" fill="#cdd6f4">ENS · mycelium.now · verifier.mycelium.now</text>
+        <text x="430" y="326" text-anchor="middle" fill="#7f849c" font-size="11">DNS up (Cloudflare) · ENS broadcast pending E1 (owner)</text>
+      </g>
+      <!-- arrows -->
+      <g stroke="#8be9fd" stroke-width="1.6" fill="none" marker-end="url(#ar)">
+        <line x1="180" y1="68"  x2="220" y2="68"/>
+        <line x1="400" y1="68"  x2="440" y2="68"/>
+        <line x1="620" y1="68"  x2="660" y2="68"/>
+        <line x1="220" y1="92"  x2="130" y2="170"/>
+        <line x1="310" y1="92"  x2="400" y2="170"/>
+        <line x1="530" y1="92"  x2="720" y2="170"/>
+        <line x1="770" y1="96"  x2="720" y2="170"/>
+        <line x1="220" y1="170" x2="430" y2="280"/>
+      </g>
+      <g font-family="ui-monospace, SFMono-Regular, monospace" font-size="11" fill="#7f849c">
+        <text x="195" y="64">prompt</text>
+        <text x="415" y="64">authorize</text>
+        <text x="635" y="64">audit</text>
+        <text x="160" y="160">pay (memo)</text>
+        <text x="345" y="160">events</text>
+        <text x="595" y="160">graphql</text>
+        <text x="690" y="160">verdicts</text>
+      </g>
+    </svg>
+  </div>
+</section>
+
+<!-- JUDGE -->
+<section class="view hidden" data-view="judge">
+  <h1>Judge verification guide</h1>
+  <p class="muted">
+    Every curl below is the same one the submission evidence report uses, plus some that hit this
+    demo UI's own API. Click the "Run via API" button to execute the probe through the demo server
+    and see the result classified GREEN / YELLOW / RED.
+  </p>
+  <div id="judge-curls" class="card"><div class="skel">Loading judge curls…</div></div>
+
+  <div class="card">
+    <h2>Evidence report index</h2>
+    <p>Every claim on this site traces to a file path + SHA-256 in the workbench evidence manifest. Rendered live from <code>artifacts/w6-v2/l6/evidence-sha256.txt</code>:</p>
+    <div id="evidence-list"><div class="skel">Loading manifest…</div></div>
+  </div>
+
+  <div class="card">
+    <h2>What <em>not</em> to expect</h2>
+    <ul>
+      <li><strong>No fresh paid payment today.</strong> OT1's DEMO sponsor authorize endpoint returns 503 (Y4). The canonical G01 was a prior job that <em>did</em> succeed end-to-end.</li>
+      <li><strong>No signed TEE attestation.</strong> Y3 — T6 tee-launcher plumbing is pending; this UI reports it as YELLOW, not GREEN.</li>
+      <li><strong>No fresh ENS broadcast.</strong> E1 is human-only; this UI explicitly labels ENS as pending.</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div>Mycelium ETHOnline 2026 · product demo UI · port 4362</div>
+  <div class="small muted">Standalone, read-only. No payments, no signatures, no ENS broadcasts.</div>
+</footer>
+
+<script src="/app.js" defer></script>
+</body>
+</html>

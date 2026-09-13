@@ -29,9 +29,10 @@ async function fetchConfig() {
 // Numbers below are real shapes observed by the driver (sig length ~1.1 KB
 // and Hedera transaction IDs of the form 0.0.<account>@<seconds>.<nanos>).
 
-const PROVIDER_ID = "service.ethonline-node-a.eth";
-const PROFILE_ID =
-  "sha256:e5f80f1c1d2d756506e151a41c41a19a4ab20de889a620b13fd8894a1a78bc0c";
+const DEFAULT_PROVIDER_ID = "service.ethonline-node-a.eth";
+
+const PROVIDER_ID = DEFAULT_PROVIDER_ID;
+const PROFILE_ID_PLACEHOLDER = "sha256:…";
 
 const DEMO_DRIVER_SOURCE = `// W6 demo-sponsor end-to-end driver
 // Runs against the local paid app (default http://127.0.0.1:4352).
@@ -50,7 +51,7 @@ import { randomUUID, webcrypto } from "node:crypto";
 
 const BASE_URL  = process.env.W6_DEMO_BASE_URL ?? "http://127.0.0.1:4352";
 const PROVIDER  = "${PROVIDER_ID}";
-const PROFILE   = "${PROFILE_ID}";
+const PROFILE   = "${PROFILE_ID_PLACEHOLDER}";
 const NONCE_HEX = (() => { const a = new Uint8Array(32); webcrypto.getRandomValues(a);
   return [...a].map(b => b.toString(16).padStart(2, "0")).join(""); })();
 
@@ -75,8 +76,8 @@ const quote = (await http("POST", "/v1/quotes", {
   headers: auth,
   body: { request: {
     version: "1", nonce: NONCE_HEX, providerId: PROVIDER, profileId: PROFILE,
-    prompt: "hello mycelium", maxOutputTokens: 8, seed: 0,
-    sampling: "greedy", publishConsent: false,
+    prompt: "hello mycelium", maxOutputTokens: 128, seed: 0,
+    sampling: "greedy", publishConsent: true,
   } },
 })).json;
 
@@ -230,11 +231,24 @@ export async function renderDevelopers(container) {
       el("p", { class: "lede", text: "The public endpoints below are read-only until the quote/job step, where x402 payment authorization is required." }),
       el("section", {}, [
         el("h2", { text: "API quickstart" }),
-        code(`# health\ncurl -fsS ${origin}/healthz\n\n# signed offers\ncurl -fsS ${origin}/v2/offers\n\n# provider stats\ncurl -fsS ${origin}/v2/providers/stats\n\n# create a browser/API session\ncurl -fsS -X POST ${origin}/v1/sessions -H 'content-type: application/json' -d '{}'\n\n# paid steps: create quote, then submit job with the payment header returned by your x402 authorizer`),
+        code(`# health\ncurl -fsS ${origin}/healthz\n\n# signed offers\ncurl -fsS ${origin}/v2/offers\n\n# provider stats (provider ids are required; window is 1d|7d|30d|all)\ncurl -fsS "${origin}/v2/providers/stats?providers=<provider-id>&window=7d"\n\n# create a browser/API session\ncurl -fsS -X POST ${origin}/v1/sessions -H 'content-type: application/json' -d '{}'\n\n# paid steps: create quote, then submit job with the payment header returned by your x402 authorizer`),
+      ]),
+      el("section", {}, [
+        el("h2", { text: "For agents" }),
+        el("p", { text: "An agent can use this site the same way the browser does — a plain HTTP client is enough. Keep these rules in mind:" }),
+        el("ul", { class: "agent-rules" }, [
+          el("li", {}, [el("strong", { text: "One session per client. " }), el("span", { text: "POST /v1/sessions returns a capability bearer; every private call carries it in the authorization header." })]),
+          el("li", {}, [el("strong", { text: "Payment is two-phase. " }), el("span", { text: "POST /v1/jobs without a payment-signature returns 402 with the challenge; your x402 authorizer signs it (your own Hedera wallet, or the demo sponsor at POST /v2/demo-sponsor/authorize), then resubmit the same job with the header." })]),
+          el("li", {}, [el("strong", { text: "Reads are rate-limited. " }), el("span", { text: "Public GETs carry per-IP buckets; a 429 always includes Retry-After. Honour it rather than retrying immediately." })]),
+          el("li", {}, [el("strong", { text: "Verification runs in the TEE. " }), el("span", { text: "Per-request verdicts (match/mismatch) come from the TEE verifier: it holds the ensemble statistical tests and runs the classifier that checks each answer. Three consecutive mismatches trigger an automatic audit." })]),
+          el("li", {}, [el("strong", { text: "Commitments are public and irreversible. " }), el("span", { text: "With publishConsent on, the receipt digest lands on the Hedera HCS topic and The Graph. Only digests leave your session — never prompts or outputs." })]),
+          el("li", {}, [el("strong", { text: "Signed receipts, not trust. " }), el("span", { text: "Check the receipt signature against the provider's pinned public key (published in /config.json) before believing the answer came from that provider." })]),
+        ]),
+        el("p", { class: "muted", text: "Endpoint catalogue: /llms.txt lists the public read-only routes; the five-call driver above is the full paid journey." }),
       ]),
       el("section", {}, [
         el("h2", { text: "SDK snippet" }),
-        code(`import { createClient, createRequest } from "@ethonline/access";\n\nconst client = createClient({\n  baseUrl: "${origin}",\n  pins: { providerId: "${providerName}", publicKeyJwk: /* provider key */ {} },\n});\nawait client.connect();\nconst request = await createRequest({\n  providerId: "${providerName}",\n  profileId: "${profileId}",\n  prompt: "Explain Mycelium in one sentence",\n  maxOutputTokens: 64,\n  publishConsent: true,\n});\nconst quote = await client.createQuote(request);`),
+        code(`import { createClient, createRequest } from "@ethonline/access";\n\nconst client = createClient({\n  baseUrl: "${origin}",\n  pins: { providerId: "${providerName}", publicKeyJwk: /* provider key */ {} },\n});\nawait client.connect();\nconst request = await createRequest({\n  providerId: "${providerName}",\n  profileId: "${profileId}",\n  prompt: "Explain Mycelium in one sentence",\n  maxOutputTokens: 128,\n  publishConsent: true,\n});\nconst quote = await client.createQuote(request);`),
       ]),
       el("section", {}, [
         el("h2", { text: "MCP" }),
@@ -250,8 +264,8 @@ export async function renderDevelopers(container) {
       ]),
       el("section", {}, [
         el("h2", { text: "Provider stats HTTP API" }),
-        code(`GET ${origin}/v2/providers/stats?model=<alias-or-digest>&window=7d\nGET ${origin}/v2/providers/${encodeURIComponent(providerName)}/stats?window=30d`),
-        el("p", {}, [el("a", { href: "/llms.txt", text: "/llms.txt" }), " lists the public read-only endpoints for agent clients."]),
+        code(`GET ${origin}/v2/providers/stats?providers=<provider-id>&window=7d\nGET ${origin}/v2/providers/${encodeURIComponent(providerName)}/stats?window=30d`),
+        el("p", {}, [el("a", { href: "/llms.txt", text: "/llms.txt" }), " lists the public read-only endpoints for developer clients."]),
       ]),
       el("section", {}, [
         el("h2", { text: "GraphQL example" }),

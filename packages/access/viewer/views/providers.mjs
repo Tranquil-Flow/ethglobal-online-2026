@@ -13,6 +13,12 @@
 // expandable detail. The badge never replaces the closed Provider DTO
 // returned by /v1/providers; it sits next to it as a read-only provenance
 // surface.
+//
+// W6 graph history: the page also renders one "Graph history" block with a
+// card per configured provider, populated by a single bounded
+// /v2/providers/stats?providers=…&window=all read per view render (never one
+// per card). Failures render "Graph history unavailable" with the honest
+// reason — numbers are never invented.
 
 import {
   fetchEnsDiscovery,
@@ -111,8 +117,221 @@ function isColdStart(row) {
 
 // --- data assembly ---------------------------------------------------------
 
+/**
+ * Fetch the closed provider-stats response from the public edge.
+ * Returns `{ok:true, stats:[...]}` on success or
+ * `{ok:false, reason, stats:[...]}` when the upstream is degraded.
+ *
+ * Server-side: the subgraph credentials are never exposed to the browser.
+ * The /v2/providers/stats route (composition/w6-provider-stats-endpoint.mjs)
+ * proxies createProviderStats() and forwards a sanitised DTO.
+ *
+ * NEVER fabricate stats: when the subgraph is missing, the upstream
+ * response returns providerMissing rows which the renderer turns into
+ * "New provider" (per the C5a spec) rather than zeros.
+ *
+ * Bounded: AbortController timeout (default 10s) + catch — callers always
+ * get an object back. 429 rate-limited GETs carry Retry-After; it is
+ * surfaced as `retryAfter` so the UI can say when a retry is allowed.
+ */
+async function fetchProviderStats({ providerIds, window = "7d", timeoutMs = 10_000 } = {}) {
+  if (!Array.isArray(providerIds) || providerIds.length === 0) {
+    return { ok: false, reason: "MISSING_PROVIDERS", stats: [] };
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const url = new URL("/v2/providers/stats", globalThis.location?.origin ?? "");
+    url.searchParams.set("providers", providerIds.join(","));
+    url.searchParams.set("window", window);
+    const response = await fetch(url, {
+      cache: "no-store",
+      headers: { accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      return {
+        ok: false,
+        reason: `HTTP_${response.status}`,
+        retryAfter: response.headers.get("retry-after") ?? null,
+        stats: [],
+      };
+    }
+    const body = await response.json();
+    return body ?? { ok: false, reason: "EMPTY_BODY", stats: [] };
+  } catch (error) {
+    return {
+      ok: false,
+      reason: error?.name === "AbortError" ? "TIMEOUT" : (error?.message ?? "FETCH_FAILED"),
+      stats: [],
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// --- W6 graph history (TheGraph) -------------------------------------------
+//
+// Dedicated all-window stats block for the providers page. ONE bounded
+// request per view render — never one per card — for the provider ids
+// configured for this deployment:
+//
+//   GET /v2/providers/stats?providers=<id1,id2,…>&window=all
+//
+// The subgraph (api.studio.thegraph.com …/ethonline-sepolia-receipts/v0.3.2)
+// is read server-side by the public edge; the browser only sees the closed
+// DTO. Nothing here fabricates numbers: when the read fails, the block says
+// "Graph history unavailable" with the honest reason instead.
+
+const SUBGRAPH_LABEL = "TheGraph · Sepolia receipts (v0.3.2)";
+
+// --- Live verification adjustment ------------------------------------------
+// The subgraph trust score only sees on-chain assessment claims. Until the
+// assessment-publication feed is live, per-request verdicts are merged here
+// so a provider that keeps failing verification cannot outrank honest ones.
+// Honest labelling: the raw subgraph score is always in the tooltip.
+let verificationAdjustments = new Map(); // providerId -> {mismatchCount, audited}
+
+const ADJ_MISMATCH_PENALTY = 250;
+const ADJ_AUDITED_PENALTY = 250;
+
+async function loadVerificationAdjustments(providerIds) {
+  const ids = (providerIds ?? []).filter(Boolean);
+  await Promise.all(
+    ids.map(async (id) => {
+      try {
+        const data = await fetchJson(`/v2/providers/${encodeURIComponent(id)}/verifications`);
+        const v = data?.verifications ?? data;
+        const mismatchCount = Number.isFinite(v?.mismatchCount) ? v.mismatchCount : 0;
+        verificationAdjustments.set(id, {
+          mismatchCount,
+          audited: v?.audited === true,
+        });
+      } catch {
+        // No verdict data — leave the map entry absent (raw score stands).
+      }
+    }),
+  );
+}
+
+function adjustedTrustFor(providerId, raw) {
+  if (!Number.isFinite(raw)) return { value: raw, adjusted: false, mismatches: 0, audited: false };
+  const adj = verificationAdjustments.get(providerId);
+  if (!adj || (adj.mismatchCount === 0 && !adj.audited))
+    return { value: raw, adjusted: false, mismatches: adj?.mismatchCount ?? 0, audited: adj?.audited ?? false };
+  const penalty =
+    ADJ_MISMATCH_PENALTY * Math.min(adj.mismatchCount, 3) +
+    (adj.audited ? ADJ_AUDITED_PENALTY : 0);
+  return {
+    value: Math.max(0, Math.min(1000, Math.round(raw - penalty))),
+    adjusted: true,
+    mismatches: adj.mismatchCount,
+    audited: adj.audited,
+  };
+}
+
+const GRAPH_REASON_TEXT = {
+  MISSING_PROVIDERS: "no provider ids were configured",
+  FIXTURE: "the local development fixture does not read the public subgraph",
+  TIMEOUT: "the stats read timed out",
+  HTTP_429: "the public edge rate-limited the stats read",
+  HTTP_503: "the subgraph endpoint is unavailable",
+};
+
+function loadGraphStats({ providerIds, fixture = false, timeoutMs = 10_000 } = {}) {
+  const ids = (providerIds ?? []).filter(Boolean).slice(0, 32);
+  if (fixture) return Promise.resolve({ ok: false, reason: "FIXTURE", retryAfter: null, stats: [] });
+  if (!ids.length) return Promise.resolve({ ok: false, reason: "MISSING_PROVIDERS", retryAfter: null, stats: [] });
+  return fetchProviderStats({ providerIds: ids, window: "all", timeoutMs });
+}
+
+function graphRowErrored(row) {
+  return !row || (Array.isArray(row.historyReasons) &&
+    row.historyReasons.some((r) => String(r?.code ?? "").startsWith("stats.subgraph.error")));
+}
+
+function graphRowMissing(row) {
+  return Array.isArray(row.historyReasons) &&
+    row.historyReasons.some((r) => String(r?.code ?? "").startsWith("stats.provider.missing"));
+}
+
+function graphCard(providerId, row) {
+  const card = el("article", {
+    class: "provider-card",
+    dataset: { provider: providerId, source: "/v2/providers/stats?window=all" },
+  }, [
+    el("div", { class: "provider-card-head" }, [
+      el("h3", { text: providerId }),
+      el("span", { class: "ledger-chip", title: `window=all · ${SUBGRAPH_LABEL}`, text: "All-time" }),
+    ]),
+  ]);
+  if (graphRowErrored(row)) {
+    card.append(
+      el("p", { class: "c5a-new", text: "Graph history unavailable" }),
+      el("small", {
+        class: "field-hint",
+        text: row?.historyReasons?.[0]?.detail ?? "The subgraph read failed for this provider.",
+      }),
+    );
+    return card;
+  }
+  if (graphRowMissing(row)) {
+    card.append(
+      el("p", { class: "c5a-new", text: "No Graph history yet" }),
+      el("small", { class: "field-hint", text: "This provider has no indexed receipts in the Sepolia subgraph yet." }),
+    );
+    return card;
+  }
+  const rawTrust = Number(row.trustScore);
+  const trustAdj = Number.isFinite(rawTrust) ? adjustedTrustFor(providerId, rawTrust) : null;
+  const receipts = Number(row.receiptCount);
+  card.append(
+    el("dl", { class: "provider-metrics" }, [
+      el("dt", { text: "Receipts (all-time)" }),
+      el("dd", {}, [el("strong", { text: Number.isFinite(receipts) ? String(receipts) : "—" })]),
+      el("dt", { text: "Trust score" }),
+      el("dd", {}, trustAdj
+        ? [
+            el("span", { class: "trust-score", title: trustAdj.adjusted ? `Raw subgraph score ${rawTrust}/1000 · ${trustAdj.mismatches} verification mismatch${trustAdj.mismatches === 1 ? "" : "es"}${trustAdj.audited ? " · audited" : ""}` : `Raw subgraph score ${rawTrust}/1000`, text: String(trustAdj.value) }),
+            el("span", { class: "c5a-trust-of", text: "/1000" }),
+            trustAdj.adjusted ? el("span", { class: "c5a-adj", title: "Adjusted for live verification outcomes (raw subgraph score in the tooltip).", text: "adjusted" }) : null,
+          ]
+        : [el("span", { class: "muted", text: "—" })]),
+      el("dt", { text: "Last active" }),
+      el("dd", { title: row.lastActiveAt ?? "No activity recorded.", text: row.lastActiveAt ? formatRelative(row.lastActiveAt) : "—" }),
+    ]),
+    el("small", { class: "field-hint", text: `Source: ${SUBGRAPH_LABEL}` }),
+  );
+  return card;
+}
+
+function renderGraphStatsBody({ response, providerIds }) {
+  if (response?.ok !== true) {
+    const reason = response?.reason ?? "unknown";
+    const friendly = GRAPH_REASON_TEXT[reason] ?? reason;
+    const retry = reason === "HTTP_429" && response?.retryAfter ? `, retry after ${response.retryAfter}s` : "";
+    return [el("p", { class: "c5a-empty", text: `Graph history unavailable (${friendly}${retry}).` })];
+  }
+  if (!providerIds.length) {
+    return [el("p", { class: "c5a-empty", text: "No configured providers — nothing to read from the Graph." })];
+  }
+  const byId = new Map((response.stats ?? []).map((s) => [s.providerId, s]));
+  const nodes = [
+    el("div", { class: "provider-list" }, providerIds.map((id) => graphCard(id, byId.get(id) ?? null))),
+  ];
+  const cache = response.cache ?? null;
+  if (cache && !["fresh", "miss"].includes(cache.state)) {
+    const age = Number.isFinite(cache.ageMs) ? ` · ${Math.round(cache.ageMs / 1000)}s old` : "";
+    nodes.push(el("p", {
+      class: "muted",
+      text: `Stats cache: ${cache.state}${age}${cache.refreshError ? ` · refresh failed: ${cache.refreshError}` : ""}.`,
+    }));
+  }
+  return nodes;
+}
+
 async function loadAllSources({ config } = {}) {
-  // Fan out to all five endpoints the table can read from. Each becomes a
+  // Fan out to all six endpoints the table can read from. Each becomes a
   // data-source label for the cell that depends on it.
   const [offers, v1Providers, configRes, runtime] = await Promise.all([
     fetchJson("/v2/offers"),
@@ -131,6 +350,20 @@ async function loadAllSources({ config } = {}) {
   for (const p of v1Providers.data?.providers ?? []) add(p.providerId ?? p.ensName);
   for (const p of liveConfig?.providers ?? []) add(p.providerId);
   for (const p of runtime.data?.providers ?? []) add(p.providerId);
+  const providerIds = [...seen];
+
+  // Step 7 — fetch the closed provider-stats response ONCE for every
+  // discovered provider. The stats route proxies createProviderStats()
+  // server-side; the browser never sees subgraph credentials. Cold-start
+  // providers (subgraph returns providerMissing) flow through unchanged —
+  // isColdStart() turns them into the "New provider" label, never zeros.
+  const statsResponse = await fetchProviderStats({
+    providerIds,
+    window: "7d",
+  });
+  const statsByProvider = new Map(
+    (statsResponse.stats ?? []).map((s) => [s.providerId, s]),
+  );
 
   // Per-provider history (best-effort, parallel).
   const providers = await Promise.all([...seen].map(async (providerId) => {
@@ -141,19 +374,31 @@ async function loadAllSources({ config } = {}) {
     const v1Row = (v1Providers.data?.providers ?? []).find((p) => (p.providerId ?? p.ensName) === providerId) ?? null;
     const historyRes = await fetchJson(`/v1/providers/${encodeURIComponent(providerId)}/history`);
     const history = historyRes.data ?? null;
+    // Step 7 — provider-stats record (if the subgraph had a row for this id).
+    // The stats endpoint is the closed source for Trust / Receipts /
+    // Spot-checks / Last-active — it wraps createProviderStats() server-side
+    // and uses the existing w6-trust-v1 score from packages/indexing.
+    const stats = statsByProvider.get(providerId) ?? null;
+    const statsMissing = Boolean(
+      stats && Array.isArray(stats.historyReasons) &&
+      stats.historyReasons.some((r) => r?.code === "stats.provider.missing"),
+    );
 
-    // Trust score: prefer v1 providers stats then config-supplied then null.
-    const trustScore = v1Row?.trustScore ?? v1Row?.trust?.score ?? null;
+    // Trust score: prefer stats (w6-trust-v1 via the subgraph) then v1.
+    // A provider-stats row marked `providerMissing` is treated as cold-start,
+    // NOT as a zero — the cell renders "New provider" via isColdStart().
+    const trustScore = statsMissing
+      ? null
+      : (stats?.trustScore ?? v1Row?.trustScore ?? v1Row?.trust?.score ?? null);
 
-    // Receipt counts from v1 providers (if any) or history.observations length.
+    // Receipt counts from stats (closed) then v1 providers then history.
     const observationCount = Array.isArray(history?.observations) ? history.observations.length : 0;
-    const receiptCount =
-      v1Row?.receiptCount ??
-      v1Row?.history?.receiptCount ??
-      (observationCount > 0 ? observationCount : 0);
+    const receiptCount = statsMissing
+      ? 0
+      : (stats?.receiptCount ?? v1Row?.receiptCount ?? v1Row?.history?.receiptCount ?? (observationCount > 0 ? observationCount : 0));
 
-    // Spot-check match/mismatch/inconclusive — either from v1 stats or
-    // synthesized from history.observations[i].result if needed.
+    // Spot-check match/mismatch/inconclusive — either from stats (preferred)
+    // or synthesized from history.observations[i].result if needed.
     const obs = Array.isArray(history?.observations) ? history.observations : [];
     const synthMatches = obs.filter((o) => o.result === "match").length;
     const synthMismatch = obs.filter((o) => o.result === "mismatch").length;
@@ -161,9 +406,10 @@ async function loadAllSources({ config } = {}) {
     const matchCount = v1Row?.matchCount ?? v1Row?.history?.matchCount ?? synthMatches;
     const mismatchCount = v1Row?.mismatchCount ?? v1Row?.history?.mismatchCount ?? synthMismatch;
     const inconclusiveCount = v1Row?.inconclusiveCount ?? v1Row?.history?.inconclusiveCount ?? synthInc;
-    const assessmentCount =
-      v1Row?.assessmentCount ?? v1Row?.history?.assessmentCount ??
-      (matchCount + mismatchCount + inconclusiveCount);
+    const assessmentCount = statsMissing
+      ? 0
+      : (stats?.assessmentCount ?? v1Row?.assessmentCount ?? v1Row?.history?.assessmentCount ??
+         (matchCount + mismatchCount + inconclusiveCount));
 
     // 7d receipts (last 168h).
     const sevenDayCutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -172,10 +418,11 @@ async function loadAllSources({ config } = {}) {
       return Number.isFinite(t) && t >= sevenDayCutoff;
     }).length;
 
-    // Last active timestamp from history (most recent observation) or v1.
-    const lastActiveAt =
-      v1Row?.lastActiveAt ?? v1Row?.history?.lastActiveAt ??
-      obs.map((o) => o.observedAt ?? o.timestamp).filter(Boolean).sort().pop() ?? null;
+    // Last active timestamp from stats (preferred) then history / v1.
+    const lastActiveAt = statsMissing
+      ? null
+      : (stats?.lastActiveAt ?? v1Row?.lastActiveAt ?? v1Row?.history?.lastActiveAt ??
+         obs.map((o) => o.observedAt ?? o.timestamp).filter(Boolean).sort().pop() ?? null);
 
     // Price: offer carries no amountBaseUnits, so look at v1 providers quote / config.
     const priceBaseUnits = v1Row?.amountBaseUnits ?? v1Row?.price?.amountBaseUnits ?? null;
@@ -235,6 +482,9 @@ async function loadAllSources({ config } = {}) {
       config: config.ok ? "/config.json" : `unavailable (${config.status})`,
       runtime: runtime.ok ? "/v2/runtime-status" : `unavailable (${runtime.status})`,
       history: "/v1/providers/<ens>/history (per provider)",
+      providerStats: statsResponse.ok
+        ? "/v2/providers/stats (w6-trust-v1)"
+        : `/unavailable (${statsResponse.reason ?? "unknown"})`,
     },
   };
 }
@@ -246,11 +496,11 @@ const COLUMNS = [
   { key: "key",           label: "Key",                   source: "/v2/offers.keyId" },
   { key: "models",        label: "Models",                source: "/v2/offers.aliases" },
   { key: "state",         label: "Live state",            source: "/v2/runtime-status" },
-  { key: "trust",         label: "Trust",                 source: "/v1/providers.trustScore" },
+  { key: "trust",         label: "Trust",                 source: "/v2/providers/stats (w6-trust-v1) · /v1/providers.trustScore" },
   { key: "trustParts",    label: "Components",            source: "/v1/providers.trust.{passRate,volume,recency}" },
-  { key: "receipts",      label: "Receipts (7d / all)",   source: "/v1/providers · /v1/providers/<ens>/history" },
-  { key: "assessments",   label: "Spot-checks (✓ / ✗ / ?)", source: "/v1/providers.<ens>/history.observations" },
-  { key: "lastActive",    label: "Last active",           source: "/v1/providers.<ens>/history.observations" },
+  { key: "receipts",      label: "Receipts (7d / all)",   source: "/v2/providers/stats · /v1/providers/<ens>/history" },
+  { key: "assessments",   label: "Spot-checks (✓ / ✗ / ?)", source: "/v2/providers.stats.assessmentCount · /v1/providers.<ens>/history.observations" },
+  { key: "lastActive",    label: "Last active",           source: "/v2/providers/stats.lastActiveAt · /v1/providers.<ens>/history.observations" },
   { key: "price",         label: "Price",                 source: "/v1/providers.price · /v2/offers" },
   { key: "keyContinuity", label: "Key continuity",        source: "/v2/offers.keyId issuedAt" },
   { key: "freshness",     label: "Indexing freshness",    source: "/v1/providers.<ens>/history.freshness" },
@@ -262,7 +512,8 @@ function sortValue(row, key) {
     case "ens":           return (row.providerId ?? "").toLowerCase();
     case "key":           return row.keyId ?? "";
     case "state":         return row.state ?? "unknown";
-    case "trust":         return row.trustScore ?? -1;          // null/undefined sinks
+    case "trust":
+      return adjustedTrustFor(row.providerId, row.trustScore).value ?? -1; // null/undefined sinks
     case "trustParts":    return row.trustComponents?.passRate ?? -1;
     case "receipts":      return row.history.receiptCount ?? 0;
     case "lastActive":    return row.history.lastActiveAt ? Date.parse(row.history.lastActiveAt) : 0;
@@ -337,12 +588,29 @@ function cellState(row) {
 
 function cellTrust(row) {
   const td = el("td", { class: "c5a-cell c5a-cell-num" });
-  sourceLabel(td, "/v1/providers.trustScore");
+  sourceLabel(td, "/v2/providers/stats.trustScore (w6-trust-v1) · /v1/providers.trustScore");
   if (row.trustScore === null || row.trustScore === undefined) {
     td.append(el("span", { class: "c5a-new", text: "New provider" }));
     return td;
   }
-  td.append(el("strong", { class: "c5a-trust-score", text: `${row.trustScore}` }), el("span", { class: "c5a-trust-of", text: "/1000" }));
+  const adj = adjustedTrustFor(row.providerId, row.trustScore);
+  td.append(
+    el("strong", {
+      class: "c5a-trust-score",
+      title: adj.adjusted
+        ? `Raw subgraph score ${row.trustScore}/1000 · ${adj.mismatches} verification mismatch${adj.mismatches === 1 ? "" : "es"}${adj.audited ? " · audited" : ""}`
+        : `Raw subgraph score ${row.trustScore}/1000`,
+      text: `${adj.value}`,
+    }),
+    el("span", { class: "c5a-trust-of", text: "/1000" }),
+    adj.adjusted
+      ? el("span", {
+          class: "c5a-adj",
+          title: `Adjusted for live verification outcomes: ${adj.mismatches} mismatch${adj.mismatches === 1 ? "" : "es"}${adj.audited ? " + audited" : ""}. Raw subgraph score: ${row.trustScore}/1000.`,
+          text: "adjusted",
+        })
+      : null,
+  );
   return td;
 }
 
@@ -364,7 +632,7 @@ function cellTrustParts(row) {
 
 function cellReceipts(row) {
   const td = el("td", { class: "c5a-cell c5a-cell-num" });
-  sourceLabel(td, "/v1/providers.<ens>/history.observations + /v1/providers.history.receiptCount");
+  sourceLabel(td, "/v2/providers/stats.receiptCount (7d window=all vs last 168h of /v1/providers/<ens>/history.observations)");
   if (isColdStart(row)) {
     td.append(el("span", { class: "c5a-new", text: "New provider" }));
     return td;
@@ -378,7 +646,7 @@ function cellReceipts(row) {
 
 function cellAssessments(row) {
   const td = el("td", { class: "c5a-cell c5a-cell-num" });
-  sourceLabel(td, "/v1/providers.<ens>/history.observations[].result");
+  sourceLabel(td, "/v2/providers/stats.assessmentCount · /v1/providers.<ens>/history.observations[].result");
   const { matchCount, mismatchCount, inconclusiveCount } = row.history;
   if ((matchCount + mismatchCount + inconclusiveCount) === 0) {
     td.append(el("span", { class: "muted", text: "None yet" }));
@@ -394,7 +662,7 @@ function cellAssessments(row) {
 
 function cellLastActive(row) {
   const td = el("td", { class: "c5a-cell" });
-  sourceLabel(td, "/v1/providers.<ens>/history.observations[].observedAt");
+  sourceLabel(td, "/v2/providers/stats.lastActiveAt · /v1/providers.<ens>/history.observations[].observedAt");
   td.append(el("span", { text: row.history.lastActiveAt ? formatRelative(row.history.lastActiveAt) : "—" }));
   return td;
 }
@@ -628,8 +896,41 @@ export async function renderProviders(container, { config, onSelectProvider } = 
     el("div", { class: "skeleton-list" }, [el("span"), el("span"), el("span")]),
   ]));
 
+  // W6 — the graph history block. One stats read for the configured provider
+  // ids (`window=all`), kicked off in parallel with the table's own sources;
+  // the block is populated once that single read settles (never per card).
+  // Bounded + catch-all: on failure the block renders "Graph history
+  // unavailable" with the honest reason rather than inventing numbers.
+  const graphProviderIds = (config?.providers ?? []).map((p) => p.providerId).filter(Boolean);
+  // Kick the live-verdict merge in parallel with the graph read; both are
+  // bounded and the page renders before either resolves. The graph cards
+  // and the table re-render once verdict data lands so the adjusted trust
+  // is shown in both surfaces.
+  const adjustmentsPromise = loadVerificationAdjustments(graphProviderIds).catch(() => {});
+  adjustmentsPromise.then(() => {
+    if (container.isConnected) rerender();
+  });
+  const graphStatsPromise = Promise.all([
+    loadGraphStats({
+      providerIds: graphProviderIds,
+      fixture: config?.fixture === true,
+    }),
+    adjustmentsPromise,
+  ]).then(([response]) => response);
+
   const loaded = await loadAllSources({ config });
   const allRows = loaded.providers;
+
+  const graphBody = el("div");
+  const graphSection = el("section", { class: "graph-panel", "data-testid": "graph-history" }, [
+    el("h2", { text: "Graph history" }),
+    el("p", {
+      class: "muted",
+      text: "All-time receipts, trust score and last activity, read once from the public Sepolia receipts subgraph (window=all). When that read fails this block says so — it never invents numbers.",
+    }),
+    graphBody,
+  ]);
+  graphBody.append(el("p", { class: "muted", text: "Loading Graph history…" }));
 
   const header = (col, key) => {
     const isSort = state.sortKey === key;
@@ -723,11 +1024,13 @@ export async function renderProviders(container, { config, onSelectProvider } = 
     el("summary", { text: "Where does each cell come from?" }),
     el("ul", {}, [
       el("li", {}, [el("code", { text: "ENS, Key, Models, Key continuity" }), " ← ", el("code", { text: loaded.sources.offers })]),
-      el("li", {}, [el("code", { text: "Trust, Components, Receipts, Spot-checks, Last active, Picked because…" }), " ← ", el("code", { text: loaded.sources.v1Providers })]),
+      el("li", {}, [el("code", { text: "Trust, Receipts, Spot-checks, Last active" }), " ← ", el("code", { text: loaded.sources.providerStats })]),
+      el("li", {}, [el("code", { text: "Components" }), " ← ", el("code", { text: loaded.sources.v1Providers })]),
       el("li", {}, [el("code", { text: "Live state" }), " ← ", el("code", { text: loaded.sources.runtime })]),
       el("li", {}, [el("code", { text: "Indexing freshness, Receipts (all)" }), " ← ", el("code", { text: loaded.sources.history })]),
       el("li", {}, [el("code", { text: "Price (base units + HBAR)" }), " ← ", el("code", { text: `${loaded.sources.v1Providers} (price)` })]),
       el("li", {}, [el("code", { text: "ENSv2 badge · detail" }), " ← ", el("code", { text: "/v2/ens-discovery" })]),
+      el("li", {}, [el("code", { text: "Graph history (all-time block)" }), " ← ", el("code", { text: "/v2/providers/stats (window=all, w6-trust-v1)" })]),
     ]),
     el("p", { class: "muted", text: "Hover any cell to see its exact source." }),
   ]);
@@ -743,8 +1046,9 @@ export async function renderProviders(container, { config, onSelectProvider } = 
     el("p", { class: "eyebrow", text: "Providers" }),
     el("h1", { text: "Choose by public track record" }),
     el("p", { class: "lede", text: "Ranked with the provider-stats API and the shared selection policy. Sort any column and filter the chips." }),
+    graphSection,
     chipbar,
-    banner,
+    ensBanner,
     legend,
     table,
     footer,
@@ -760,6 +1064,22 @@ export async function renderProviders(container, { config, onSelectProvider } = 
   loadEns().catch((error) => {
     state.ensError = error?.message ?? String(error);
   });
+
+  // Populate the graph history block once the single window=all read
+  // settles. The stale-view guard keeps a completed read from mutating a
+  // block that a newer render has already replaced.
+  graphStatsPromise
+    .then((response) => {
+      if (!graphBody.isConnected) return;
+      graphBody.replaceChildren(...renderGraphStatsBody({ response, providerIds: graphProviderIds }));
+    })
+    .catch((error) => {
+      if (!graphBody.isConnected) return;
+      graphBody.replaceChildren(...renderGraphStatsBody({
+        response: { ok: false, reason: error?.message ?? "FETCH_FAILED" },
+        providerIds: graphProviderIds,
+      }));
+    });
 
   // Wire the legacy hook so app.mjs's onSelectProvider still resolves.
   // (No-op when called directly via hash navigation.)

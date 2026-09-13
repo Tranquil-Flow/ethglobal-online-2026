@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>now.mycelium.owner-console</string>
+  <key>ProgramArguments</key>
+  <array><string>/Users/evinova-self/Library/Application Support/Mycelium/w6-workbench/composition/w6-owner-console/run-owner-console.sh</string></array>
+  <key>EnvironmentVariables</key>
+  <dict><key>W6_SUPERVISOR_ENV_FILE</key><string>/Users/evinova-self/.config/mycelium/w6-supervisors.env</string></dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>10</integer>
+  <key>ProcessType</key><string>Background</string>
+  <key>StandardOutPath</key><string>/Users/evinova-self/Library/Logs/mycelium-owner-console.log</string>
+  <key>StandardErrorPath</key><string>/Users/evinova-self/Library/Logs/mycelium-owner-console.log</string>
+</dict>
+</plist>

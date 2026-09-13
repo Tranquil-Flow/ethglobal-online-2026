@@ -7,10 +7,13 @@
     <title>Mycelium — models on a network of everyday computers</title>
     <link rel="stylesheet" href="/style.css" />
     <!--
-      Pre-bundle bootstrap: pick theme before paint to avoid FOUC, and
-      generate the C9a mycelium strand background layer procedurally.
-      The strands are pure SVG, no network cost, and hidden when
-      prefers-reduced-motion: reduce or when the cream theme is active.
+      Pre-bundle bootstrap: pick the theme before paint to avoid FOUC, and
+      generate the C9a mycelium strand layer procedurally.
+
+      The layer renders in BOTH themes (owner request 2026-09-13: white webs on
+      the light UI). It is pure SVG and deterministic — an LCG seeded at 1729 so
+      the same strands appear on every reload — and it is skipped entirely under
+      prefers-reduced-motion: reduce.
     -->
     <script>
       (function () {
@@ -28,19 +31,16 @@
                 : "cream";
           document.documentElement.dataset.theme = theme;
 
-          // Build the strand layer only for the dark theme and only when the
-          // user has not asked for reduced motion. Pure SVG, deterministic.
           var reduced =
             window.matchMedia &&
             window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-          if (theme === "mushroom" && !reduced) {
+          if (!reduced) {
             // LCG-based deterministic PRNG so the layer is stable across reloads.
             var seed = 1729;
             function rand() {
               seed = (seed * 1664525 + 1013904223) >>> 0;
               return seed / 0xffffffff;
             }
-            function pick(arr) { return arr[Math.floor(rand() * arr.length)]; }
             function between(a, b) { return a + (b - a) * rand(); }
             function quad(x1, y1, cx1, cy1, cx2, cy2, x2, y2) {
               return "M " + x1 + " " + y1 + " C " + cx1 + " " + cy1 + ", " + cx2 + " " + cy2 + ", " + x2 + " " + y2;
@@ -81,9 +81,7 @@
               }
               var forks = 1 + Math.floor(rand() * 3);
               for (var f = 0; f < forks; f++) {
-                var newAngle = angle + between(-1.0, 1.0);
-                var newLength = length * between(0.45, 0.78);
-                branch(nx, ny, depth + 1, newAngle, newLength);
+                branch(nx, ny, depth + 1, angle + between(-1.0, 1.0), length * between(0.45, 0.78));
               }
             }
             for (var n = 0; n < nodes.length; n++) {
@@ -101,9 +99,7 @@
               '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
             ];
             for (var s = 0; s < strands.length; s++) {
-              svgParts.push(
-                '<path class="' + strands[s].cls + '" d="' + strands[s].d + '"></path>'
-              );
+              svgParts.push('<path class="' + strands[s].cls + '" d="' + strands[s].d + '"></path>');
             }
             for (var k = 0; k < nodes.length; k++) {
               var nd = nodes[k];

@@ -62,6 +62,15 @@ export function createEventSink({config={},signer,store}={}){
      checkAbort(sig);
      try{await call(provider.broadcastTransaction(entry.raw));}catch(error){
       if(error.code==='ABORTED')throw error;
+      // A stale signed transaction (nonce already consumed / tx already
+      // known) can never land. Drop the stored entry so the next retry
+      // re-signs at the current pending nonce instead of looping forever.
+      const message=String(error?.message ?? error ?? '').toLowerCase();
+      if(/(nonce too low|nonce has already been used|already known|already in the|replacement transaction underpriced)/.test(message)){
+       delete data.entries[key];
+       await save();
+       throw failure('PUBLICATION_RETRY_RESIGN',true);
+      }
       // Ambiguous broadcast is pending, never confirmed; retain raw bytes, no new nonce.
      }
      receipt=await call(provider.getTransactionReceipt(entry.hash));
@@ -72,7 +81,14 @@ export function createEventSink({config={},signer,store}={}){
      if(receipt.hash!==entry.hash||receipt.blockNumber<deployment.startBlock||receipt.to?.toLowerCase()!==deployment.address.toLowerCase()||receipt.from.toLowerCase()!==sender.toLowerCase())throw failure('RECEIPT_MISMATCH');
      const block=await call(provider.getBlock(receipt.blockNumber));
      const tip=Number(BigInt(await call(provider.send('eth_blockNumber',[]))));
-     if(block?.hash===receipt.blockHash&&tip-receipt.blockNumber+1>=deployment.confirmations)result.status='confirmed';
+     if(block?.hash===receipt.blockHash&&tip-receipt.blockNumber+1>=deployment.confirmations){
+      result.status='confirmed';
+      // A confirmed transaction no longer consumes the publication budget.
+      // Prune it so the journal only ever holds in-flight entries — otherwise
+      // a full journal would exhaust the budget forever even though nothing
+      // is pending on-chain.
+      if(data.entries[key]){delete data.entries[key];await save();}
+     }
     }
     // Always recheck canonical block on retries, including previously confirmed entries.
     return result;

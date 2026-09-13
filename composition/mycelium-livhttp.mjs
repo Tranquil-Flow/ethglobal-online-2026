@@ -27,15 +27,23 @@ function checkedQualification(q, { expectedEvidenceClass, maxQualificationAgeMs,
 export function createNativeMyceliumExecutor({
   baseUrl, bearerToken, profile: suppliedProfile, providerId, resolvedCommit,
   qualificationPath = "/v1/qualification/current", expectedEvidenceClass = "physical_qualification",
-  // Native ui/web/src/app/contracts.ts accepts one hour; RouteHealthSource
-  // refreshes at 55 minutes while checking live route health on every read.
+  // The bound on how old an accepted qualification may be. RouteHealthSource
+  // renews at 55 minutes while checking live route health on every read, and
+  // the W6 serve keeps a proactive refresher on the gateway, so this is a
+  // resilience bound for a demo whose fleet stays up: 1 h left an unattended
+  // demo one silently-failed renewal away from STALE_QUALIFICATION on every
+  // request, while the native gateway binds on qualification_id equality and
+  // does not reject by age (mycelium_live/router_port.py build only stamps a
+  // fresh monotonic command deadline). Default stays at one hour; the
+  // supervised W6 apps pin 72 h in operator.json via
+  // scripts/w6-set-qualification-age.mjs.
   timeoutMs=30000, maxQualificationAgeMs=3600000, maxOutputBytes=65536,
   workloadProfileId="interactive_chat_v1", qosClass="interactive", ...unknown
 } = {}) {
   if (Object.keys(unknown).length || qualificationPath!=="/v1/qualification/current" ||
       typeof providerId!=="string" || !providerId || typeof resolvedCommit!=="string" || !resolvedCommit ||
       !["physical_qualification","synthetic_test_fixture"].includes(expectedEvidenceClass) ||
-      !Number.isSafeInteger(maxQualificationAgeMs) || maxQualificationAgeMs<1 || maxQualificationAgeMs>3600000 ||
+      !Number.isSafeInteger(maxQualificationAgeMs) || maxQualificationAgeMs<1 || maxQualificationAgeMs>259200000 ||
       !Number.isSafeInteger(maxOutputBytes) || maxOutputBytes<1 || maxOutputBytes>1048576 ||
       workloadProfileId!=="interactive_chat_v1" || qosClass!=="interactive") fail("INVALID_NATIVE_OPTIONS");
   validate("Profile", suppliedProfile);
@@ -47,7 +55,7 @@ export function createNativeMyceliumExecutor({
   function validateRequest(request) {
     validate("Request",request);
     if (request.profileId!==profileId || request.providerId!==providerId) fail("PROFILE_MISMATCH");
-    if (!request.prompt || !request.prompt.isWellFormed() || Buffer.byteLength(request.prompt)>1024 || request.maxOutputTokens>64 || request.seed!==0 || request.sampling!=="greedy") fail("UNSUPPORTED_EXECUTION_REQUEST");
+    if (!request.prompt || !request.prompt.isWellFormed() || Buffer.byteLength(request.prompt)>1024 || request.maxOutputTokens>128 || request.seed!==0 || request.sampling!=="greedy") fail("UNSUPPORTED_EXECUTION_REQUEST");
   }
   let busy=false;
   let lastStatus={status:"not-contacted",tokenIdsAvailable:false,executionVerified:false};
@@ -109,6 +117,7 @@ export function createNativeMyceliumExecutor({
           yield {type:"completed",output,profileId,evidenceDigest:digestOf(observation)};
         } catch(e) {
           lastStatus={status:signal.aborted?"cancelled-or-unconfirmed":"failed",code:timedOut?"NATIVE_TIMEOUT":e.code??e.message,tokenIdsAvailable:false,executionVerified:false};
+          console.error(JSON.stringify({status:"w6-native-execution-error", code:lastStatus.code, message:String(e?.message ?? e).slice(0,200)}));
           if(timedOut) fail("NATIVE_TIMEOUT"); throw e;
         } finally {
           clearTimeout(timer);signal.removeEventListener("abort",abort);

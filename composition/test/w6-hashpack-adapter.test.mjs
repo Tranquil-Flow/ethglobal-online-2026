@@ -1,6 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { installHashPackProvider, __internals } from "../w6-hashpack-adapter.mjs";
+import {
+  installHashPackProvider,
+  installDemoHashPackProvider,
+  resetDemoHashPackProvider,
+  __internals,
+  DEMO_HASHPACK_CONST,
+} from "../w6-hashpack-adapter.mjs";
 
 function fakeWindow(hp) {
   return { hashpack: hp, __w6HashPackState: undefined };
@@ -113,4 +119,102 @@ test("byte helpers round-trip", () => {
   const bytes = new Uint8Array([72, 101, 108, 108, 111]);
   const b64 = __internals.b64FromBytes(bytes);
   assert.deepEqual(Array.from(__internals.bytesFromB64(b64)), Array.from(bytes));
+});
+
+// ----- A7 — [demo-only] mock provider -----------------------------------
+
+test("installDemoHashPackProvider requires browser window", () => {
+  delete globalThis.window;
+  assert.throws(() => installDemoHashPackProvider({}), /BROWSER_REQUIRED/);
+  globalThis.window = {};
+  resetDemoHashPackProvider();
+  delete globalThis.window;
+});
+
+test("DEMO_HASHPACK_CONST is frozen with a stable account id", () => {
+  assert.ok(Object.isFrozen(DEMO_HASHPACK_CONST));
+  assert.match(DEMO_HASHPACK_CONST.accountId, /^0\.0\./);
+  assert.equal(DEMO_HASHPACK_CONST.network, "testnet");
+});
+
+test("installDemoHashPackProvider is idempotent and marks __demoOnly", () => {
+  globalThis.window = {};
+  resetDemoHashPackProvider();
+  const p1 = installDemoHashPackProvider({});
+  const p2 = installDemoHashPackProvider({});
+  assert.equal(p1, p2);
+  assert.equal(p1.__demoOnly, true);
+  assert.equal(p1.__demoProviderKind, "hashpack-mock");
+  resetDemoHashPackProvider();
+  delete globalThis.window;
+});
+
+test("demo provider connect returns deterministic account + advances stepper", async () => {
+  globalThis.window = {};
+  resetDemoHashPackProvider();
+  const seen = [];
+  const p = installDemoHashPackProvider({ onPending: (s) => seen.push(s) });
+  const r = await p.connect({ network: "hedera:testnet" });
+  assert.equal(r.network, "hedera:testnet");
+  assert.equal(r.accountId, DEMO_HASHPACK_CONST.accountId);
+  assert.ok(seen.includes("connecting"));
+  assert.ok(seen.includes("connected"));
+  assert.equal(await p.accountId(), DEMO_HASHPACK_CONST.accountId);
+  resetDemoHashPackProvider();
+  delete globalThis.window;
+});
+
+test("demo provider signTransaction produces a non-empty marked signature", async () => {
+  globalThis.window = {};
+  resetDemoHashPackProvider();
+  const p = installDemoHashPackProvider({});
+  const fakeTx = __internals.b64FromBytes(
+    new TextEncoder().encode("demo-transaction-bytes"),
+  );
+  const r = await p.signTransaction({
+    transactionBytesBase64: fakeTx,
+    accountId: DEMO_HASHPACK_CONST.accountId,
+    network: "hedera:testnet",
+  });
+  assert.equal(r.__demoOnly, true);
+  assert.equal(r.__demoProvider, "hashpack-mock");
+  assert.equal(r.accountId, DEMO_HASHPACK_CONST.accountId);
+  assert.equal(r.network, "testnet");
+  assert.ok(typeof r.signedTransactionBytesBase64 === "string");
+  assert.ok(r.signedTransactionBytesBase64.length > 0);
+  // The signature should be deterministic for the same input bytes.
+  const r2 = await p.signTransaction({
+    transactionBytesBase64: fakeTx,
+    accountId: DEMO_HASHPACK_CONST.accountId,
+    network: "hedera:testnet",
+  });
+  assert.equal(r.signedTransactionBytesBase64, r2.signedTransactionBytesBase64);
+  resetDemoHashPackProvider();
+  delete globalThis.window;
+});
+
+test("demo provider signTransaction rejects empty input", async () => {
+  globalThis.window = {};
+  resetDemoHashPackProvider();
+  const p = installDemoHashPackProvider({});
+  await assert.rejects(
+    () =>
+      p.signTransaction({
+        transactionBytesBase64: "",
+        accountId: DEMO_HASHPACK_CONST.accountId,
+        network: "hedera:testnet",
+      }),
+    /HASHPACK_INVALID_INPUT/,
+  );
+  resetDemoHashPackProvider();
+  delete globalThis.window;
+});
+
+test("resetDemoHashPackProvider only clears demo providers", () => {
+  globalThis.window = {};
+  resetDemoHashPackProvider();
+  const p = installDemoHashPackProvider({});
+  resetDemoHashPackProvider();
+  assert.equal(globalThis.window.__w6WalletProvider, undefined);
+  delete globalThis.window;
 });

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mycelium Trust Cards</title>
+  <link rel="stylesheet" href="/trust-cards.css">
+  <script src="/trust-cards.js" defer></script>
+</head>
+<body>
+  <main class="trust-cards-shell" id="mycelium-trust-cards">
+    <header class="trust-cards-hero">
+      <p class="eyebrow">Mycelium public provenance</p>
+      <h1>Full-stack trust cards</h1>
+      <p class="lede">Live Graph indexing status, ENS publication state, and hosted 0.5B provider trust data are shown separately from inference output so judges can see what is verified, what is pending, and what is empty.</p>
+      <nav class="trust-cards-nav" aria-label="Trust cards navigation">
+        <a href="/">Back to inference UI</a>
+        <a href="https://thegraph.com/studio/subgraph/ethonline-sepolia-receipts" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Open The Graph Studio</a>
+      </nav>
+    </header>
+
+    <section class="trust-cards-grid" aria-label="Trust evidence cards">
+      <article class="trust-card" data-card="graph-stats">
+        <header class="trust-card-header">
+          <p class="card-kicker">G1 / G2</p>
+          <h3>The Graph stats</h3>
+        </header>
+        <div class="trust-card-body" data-card-id="graph-stats" aria-live="polite">
+          <p class="loading">Loading Graph stats…</p>
+        </div>
+      </article>
+
+      <article class="trust-card" data-card="ens-info">
+        <header class="trust-card-header">
+          <p class="card-kicker">E1 / TEE</p>
+          <h3>ENS resolver</h3>
+        </header>
+        <div class="trust-card-body" data-card-id="ens-info" aria-live="polite">
+          <p class="loading">Loading ENS info…</p>
+        </div>
+      </article>
+
+      <article class="trust-card" data-card="provider-trust">
+        <header class="trust-card-header">
+          <p class="card-kicker">X6 / hosted 0.5B</p>
+          <h3>Provider trust</h3>
+        </header>
+        <div class="trust-card-body" data-card-id="provider-trust" aria-live="polite">
+          <p class="loading">Loading provider trust…</p>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

@@ -375,6 +375,19 @@ const paidStateDir = process.env.W6_APP_STATE_DIR ?? join(appRoot, "w6-paid-stat
 if (mode === "paid") {
   mkdirSync(paidStateDir, { recursive: true, mode: 0o700 });
   process.env.W6_APP_STATE_DIR = paidStateDir;
+  // Phase 1 durability: the demo verifications trail (per-request verdicts,
+  // suspicion counters, audits) survives app restarts via a sanitized JSON
+  // state file in the paid-state dir. Without this every restart emptied the
+  // W12 store and the Requests ledger lost its verdicts.
+  {
+    const { attachPersistence } = await import("../w12-verifications-store.mjs");
+    const persisted = attachPersistence({
+      path: join(paidStateDir, "w12-verifications-state.json"),
+    });
+    console.log(
+      JSON.stringify({ status: "w12-persistence-attached", loaded: persisted.loaded }),
+    );
+  }
   for (const provider of operator.providers ?? []) {
     if (!provider.payment?.config) continue;
     const path = join(
@@ -464,6 +477,235 @@ const app = await startManagedApplication({
       }
     : {}),
 });
+
+// ---- Phase 5 — HCS receipt trail (paid mode) ----
+// Every completed job emits a canonical digest-only HCS message; every
+// non-match W12 demo verdict emits its own verdict message, with the
+// escalation (audit-triggering) verdict carrying a recognisable verdictId.
+// Broadcast requires W6_HCS_BROADCAST=1 AND W6_HCS_TOPIC_ID AND a loadable
+// operator key — anything less stays in dry-run (journal only, no egress).
+if (mode === "paid") {
+  const { setup: setupHcsFanout } = await import("../w6-fanout-wiring.mjs");
+  const { buildHcsOperator } = await import("../w6-hcs-go-live.mjs");
+  const { submitHcs } = await import("../../packages/payments/scripts/hcs-adapter.mjs");
+  const { listObservations, listAudits } = await import("../w12-verifications-store.mjs");
+  const { recordHcs } = await import("../w6-hcs-ledger.mjs");
+  const { attachHcsPersistence } = await import("../w6-hcs-ledger.mjs");
+  const hcsPersisted = attachHcsPersistence({ path: join(paidStateDir, "w6-hcs-ledger-state.json") });
+  console.log(JSON.stringify({ status: "hcs-persistence-attached", loaded: hcsPersisted.loaded }));
+
+  let hcsSubmit = null;
+  let hcsOperator = null;
+  if (process.env.W6_HCS_BROADCAST === "1") {
+    try {
+      hcsOperator = await buildHcsOperator(process.env);
+      hcsSubmit = (input) =>
+        submitHcs(input, {
+          signer: hcsOperator.signer,
+          logger: { info: (o) => console.log(JSON.stringify({ kind: "hcs-submit", ...o })) },
+        });
+    } catch (error) {
+      console.log(
+        JSON.stringify({
+          status: "hcs-operator-unavailable",
+          code: error?.code ?? error?.message ?? String(error),
+        }),
+      );
+    }
+  }
+
+  const fanout = setupHcsFanout(app, {
+    submitHcs: hcsSubmit ?? undefined,
+    dryRun: true, // the Registry publisher is out of scope here (Graph publication is a separate lane)
+    env: process.env,
+    logger: { warn: (o) => console.log(JSON.stringify({ kind: "hcs-gate-incomplete", ...o })) },
+  });
+  console.log(
+    JSON.stringify({
+      status: "hcs-fanout-wired",
+      mode: fanout.hcs.mode,
+      topicId: fanout.hcs.topicId,
+      broadcast: fanout.hcs.broadcast,
+    }),
+  );
+
+  // Escalation verdict fanout. The verified executor records W12 demo
+  // verdicts BEFORE the workbench dispatches receipt completion, so at
+  // dispatch time the observation (and any audit it triggered) is already in
+  // the store. Registration replaces the fanout listener in the single slot
+  // and forwards to it, keeping exactly one listener total.
+  async function emitVerdictsFor(completion, wiring) {
+    const observation = listObservations({ limit: 64 }).find(
+      (o) => o.requestId === completion.jobId,
+    );
+    if (!observation || observation.verdict === "match") return [];
+    const audit = listAudits(32).find(
+      (a) =>
+        a.providerId === observation.providerId &&
+        a.receiptDigest === observation.receiptDigest,
+    );
+    const verdictId = audit
+      ? `w12-escalation-${audit.auditId}`
+      : `w12-obs-${completion.jobId}`;
+    return [
+      await wiring.emitVerdict({
+        verdictId,
+        receiptDigest: completion.receiptDigest,
+        payment: completion.payment,
+        verifierOutcome: observation.verdict,
+      }),
+    ];
+  }
+
+  if (process.env.W12_DEMO_VERIFIER === "1") {
+    app.onReceiptCompletion(async (completion) => {
+      const results = await Promise.allSettled([
+        fanout.listener(completion),
+        emitVerdictsFor(completion, fanout),
+      ]);
+      for (const result of results) {
+        if (result.status !== "rejected") continue;
+        try {
+          console.error(
+            "hcs_fanout_listener_failed",
+            result.reason?.code ?? result.reason?.message ?? String(result.reason),
+          );
+        } catch {
+          // Never throw into the workbench dispatch path.
+        }
+      }
+      // Record confirmed broadcasts so the Requests ledger can surface
+      // topic/sequence/transaction for this job instead of "unavailable".
+      const fanoutResult =
+        results[0]?.status === "fulfilled" ? results[0].value : null;
+      const receiptAudit = fanoutResult?.audit ?? null;
+      if (receiptAudit?.transactionId) {
+        try {
+          recordHcs({
+            receiptDigest: completion.receiptDigest,
+            jobId: completion.jobId,
+            kind: "receipt",
+            topicId: fanout.hcs.topicId,
+            sequenceNumber: receiptAudit.topicSequenceNumber,
+            transactionId: receiptAudit.transactionId,
+          });
+        } catch {
+          // Ledger surfacing must never break dispatch.
+        }
+      }
+      const verdictResults =
+        results[1]?.status === "fulfilled" && Array.isArray(results[1].value)
+          ? results[1].value
+          : [];
+      for (const verdict of verdictResults) {
+        const verdictAudit = verdict?.audit ?? null;
+        if (!verdictAudit?.transactionId) continue;
+        try {
+          recordHcs({
+            receiptDigest: verdictAudit.receiptDigest ?? completion.receiptDigest,
+            jobId: completion.jobId,
+            kind: "verdict",
+            topicId: fanout.hcs.topicId,
+            sequenceNumber: verdictAudit.topicSequenceNumber,
+            transactionId: verdictAudit.transactionId,
+            verdictId: verdictAudit.verdictId ?? null,
+          });
+        } catch {
+          // Ledger surfacing must never break dispatch.
+        }
+      }
+    });
+    console.log(JSON.stringify({ status: "hcs-verdict-fanout-wired" }));
+  }
+
+  // Phase 8: inject the Graph history reader into the audit-selection seam.
+  // The reader is refresh-then-read: an async bounded refresh freezes a
+  // snapshot; the seam accessors are pure sync reads of that snapshot, so
+  // /v2/audits/selection stays responsive and honest (unweighted until the
+  // first snapshot lands, then weighted-graph-v1 with published inputs).
+  {
+    const { createGraphHistoryReader } = await import("../w6-graph-history-reader.mjs");
+    const { setAuditSelectionHistory } = await import("../w12-verifications-endpoint.mjs");
+    const graphReader = createGraphHistoryReader({});
+    const providerIds = (operator.providers ?? []).map((p) => p.providerId);
+    setAuditSelectionHistory({
+      receipts: (id) => graphReader.receipts(id),
+      uptimeDays: (id) => graphReader.uptimeDays(id),
+      graphInputs: () => graphReader.graphInputs(),
+    });
+    console.log(
+      JSON.stringify({ status: "graph-audit-history-injected", providerCount: providerIds.length }),
+    );
+    const refreshGraph = () =>
+      graphReader
+        .refresh({ providerIds })
+        .catch((e) =>
+          console.log(
+            JSON.stringify({
+              status: "graph-audit-refresh-failed",
+              error: e?.code ?? e?.message ?? String(e),
+            }),
+          ),
+        );
+    refreshGraph();
+    setInterval(refreshGraph, 5 * 60 * 1000).unref();
+
+    // Scheduled audits: the weighted Graph draw runs on a schedule and the
+    // result lands in the same store the Requests ledger reads. First draw
+    // 90 s after boot (so a fresh demo boot shows one quickly), then at most
+    // one recorded audit per period (default 6 h, env-tunable).
+    {
+      const { selectAuditTarget } = await import("../w12-audit-selection.mjs");
+      const { recordScheduledAudit, listProviders } = await import("../w12-verifications-store.mjs");
+      const periodMs = Number.parseInt(process.env.W6_SCHEDULED_AUDIT_PERIOD_MS ?? "21600000", 10);
+      const safePeriodMs = Number.isFinite(periodMs) && periodMs >= 60_000 ? periodMs : 21600000;
+      let lastRecordedAt = 0;
+      const runScheduledAudit = () => {
+        try {
+          const nowMs = Date.now();
+          if (nowMs - lastRecordedAt < safePeriodMs) return;
+          const providers = listProviders().map((row) => ({
+            providerId: row.providerId,
+            receipts: graphReader.receipts(row.providerId),
+            mismatches: row.mismatchCount ?? 0,
+            uptimeDays: graphReader.uptimeDays(row.providerId),
+            lastAuditedAtMs: row.auditedAt ? Date.parse(row.auditedAt) : null,
+          }));
+          const selection = selectAuditTarget({
+            providers,
+            graph: graphReader.graphInputs(),
+            nowMs,
+          });
+          if (selection.method === "weighted-graph-v1" && selection.selected) {
+            const audit = recordScheduledAudit({
+              providerId: selection.selected,
+              method: selection.method,
+              seed: selection.seed,
+            });
+            lastRecordedAt = nowMs;
+            console.log(
+              JSON.stringify({
+                status: "scheduled-audit-recorded",
+                auditId: audit?.auditId ?? null,
+                selected: selection.selected,
+                seed: selection.seed,
+              }),
+            );
+          }
+        } catch (error) {
+          console.log(
+            JSON.stringify({
+              status: "scheduled-audit-failed",
+              error: error?.message ?? String(error),
+            }),
+          );
+        }
+      };
+      setTimeout(runScheduledAudit, 90 * 1000).unref();
+      setInterval(runScheduledAudit, 30 * 60 * 1000).unref();
+    }
+  }
+}
 console.log(JSON.stringify({ status: `${mode}-app-resumed`, url: app.url }));
 for (const signal of ["SIGINT", "SIGTERM"]) {
   process.once(signal, async () => {

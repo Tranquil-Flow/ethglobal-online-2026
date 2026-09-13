@@ -1,0 +1,100 @@
+<!--
+  A13 panel — "Run your own A13 swarm"
+  Lane A13-UI-Wiring-Stub. Additive HTML fragment; does not modify
+  any other file in composition/w6-demo-ui/. Designed to be loaded
+  into the w6 demo UI as a sibling surface so judges see the A13 path
+  before the A13 worker closes.
+
+  State is driven by GET /api/a13/status. POST /api/a13/swarm
+  triggers a placeholder run; GET /api/a13/receipt/<runId> surfaces
+  the (eventually TEE-verified) receipt.
+-->
+<section id="a13-panel" class="a13-panel" aria-labelledby="a13-panel-title">
+  <header class="a13-panel__header">
+    <h2 id="a13-panel-title">Run your own A13 swarm</h2>
+    <p class="a13-panel__sub">
+      A13 multi-Mac swarm. A judge (or anyone) installs the A13 package on two
+      Macs, runs a swarm against a prompt, and gets a TEE-verified receipt.
+      Status below is driven by the A13 worktree on disk.
+    </p>
+  </header>
+
+  <div class="a13-panel__status" data-state="loading" id="a13-status-card">
+    <div class="a13-panel__badge" id="a13-status-badge">Loading…</div>
+    <div class="a13-panel__message" id="a13-status-message">Probing A13 worktree…</div>
+    <dl class="a13-panel__meta" id="a13-status-meta" hidden>
+      <div><dt>Worktree path</dt><dd id="a13-meta-path">—</dd></div>
+      <div><dt>Version</dt><dd id="a13-meta-version">—</dd></div>
+      <div><dt>Last run</dt><dd id="a13-meta-lastrun">—</dd></div>
+      <div><dt>State</dt><dd id="a13-meta-state">—</dd></div>
+    </dl>
+  </div>
+
+  <form class="a13-panel__form" id="a13-swarm-form" autocomplete="off">
+    <label class="a13-panel__field">
+      <span>Node count</span>
+      <input
+        type="number"
+        id="a13-input-nodecount"
+        min="1"
+        max="16"
+        step="1"
+        value="2"
+        required
+      />
+    </label>
+    <label class="a13-panel__field">
+      <span>Prompt</span>
+      <textarea
+        id="a13-input-prompt"
+        rows="2"
+        maxlength="512"
+        placeholder="What should the swarm answer?"
+      >Complete in one short sentence: A garden grows</textarea>
+    </label>
+    <label class="a13-panel__field">
+      <span>Max new tokens</span>
+      <input
+        type="number"
+        id="a13-input-maxtokens"
+        min="1"
+        max="64"
+        step="1"
+        value="1"
+        required
+      />
+    </label>
+    <div class="a13-panel__actions">
+      <button type="submit" id="a13-swarm-submit" class="a13-btn a13-btn--primary" disabled>
+        Run swarm
+      </button>
+      <button type="button" id="a13-swarm-refresh" class="a13-btn a13-btn--ghost">
+        Refresh status
+      </button>
+    </div>
+  </form>
+
+  <div class="a13-panel__output" id="a13-output" hidden>
+    <h3>Run output</h3>
+    <dl>
+      <div><dt>Run ID</dt><dd id="a13-out-runid">—</dd></div>
+      <div><dt>Started</dt><dd id="a13-out-started">—</dd></div>
+      <div><dt>State</dt><dd id="a13-out-state">—</dd></div>
+      <div><dt>Receipt</dt><dd id="a13-out-receipt">—</dd></div>
+    </dl>
+    <pre id="a13-out-receipt-json" hidden></pre>
+  </div>
+
+  <footer class="a13-panel__footer">
+    <p>
+      <strong>Integration note:</strong>
+      <span id="a13-integration-note">
+        Placeholder panel. Backend stubs <code>/api/a13/status</code>,
+        <code>/api/a13/swarm</code>, and <code>/api/a13/receipt/&lt;runId&gt;</code>.
+        See <code>artifacts/w6-v2/a13-ui-stub/integration-contract.md</code>
+        for how to wire the real A13 swarm once the owner per-lifetime request
+        quota fix lands.
+      </span>
+    </p>
+  </footer>
+</section>

@@ -142,11 +142,10 @@ function demoFlowDiagram() {
 
 function demoFlowSection() {
   return el("section", { class: "page-section w6-demo-flow" }, [
-    el("p", { class: "eyebrow", text: "W6 demo sponsor" }),
-    el("h1", { text: "The 5 steps the demo actually performs" }),
-    el("p", { class: "lede", text: "Plain-language walkthrough of the running demo. Every step has a live state badge; the diagram below mirrors the same five states." }),
+    el("p", { class: "eyebrow", text: "Demo walkthrough" }),
+    el("h1", { text: "What this public demo actually performs" }),
+    el("p", { class: "lede", text: "The steps above are the protocol. This public site additionally runs a live two-node demo on Hedera testnet, and the five steps below are what a request on this demo performs today — sponsored testnet payment included." }),
     el("div", { class: "demo-flow-steps" }, DEMO_FLOW.map(demoStepCard)),
-    demoFlowDiagram(),
   ]);
 }
 
@@ -160,19 +159,19 @@ export async function renderHow(container) {
   ]));
   const live = await loadLiveStatus().catch(() => ({ rows: [] }));
   container.replaceChildren(
-    // New demo-sponsor explainer first so judges see it above the fold.
-    demoFlowSection(),
     el("section", { class: "page-section how-page" }, [
       el("p", { class: "eyebrow", text: "How it works" }),
       el("h1", { text: "Receipts instead of blind trust" }),
-      el("p", { class: "lede", text: "AI models run on ordinary computers owned by different people. You pay per question. Every answer comes with a receipt, so providers build a public reputation you can check instead of asking you to trust one company." }),
+      el("p", { class: "lede", text: "Models run on ordinary computers owned by different people. You pay per question. Every answer comes with a receipt, so providers build a public reputation you can check instead of asking you to trust one company." }),
       el("div", { class: "how-steps" }, [
-        explainerStep("Find", "Providers have names like websites.", "The demo can use ENSv2 records on Sepolia or the current configured provider list."),
-        explainerStep("Price", "The provider quotes a price that expires quickly.", "The browser binds a signed provider offer to a short-lived quote."),
-        explainerStep("Pay", "Demo credit covers a tiny Hedera testnet payment here.", "The paid path uses x402 and Hedera testnet tokens with no real value."),
-        explainerStep("Run", "The model may be split across several Macs.", "Mycelium routes the request through its runtime; this helps bigger models fit, not every answer become faster."),
-        explainerStep("Receipt", "The provider signs what it did.", "Your browser checks the Ed25519 receipt signature before showing the signed row."),
-        explainerStep("Track record", "A public fingerprint can be indexed for reputation.", "Sepolia events and The Graph turn receipts and spot-checks into provider history."),
+        explainerStep("Step 1/8 — Discover a provider", "Providers have names like websites.", "A provider is resolved through ENSv2 on Sepolia (or a direct signed offer). The resolved record pins the providerId, the exact model profile, the receipt-signing key and the payment terms for everything that follows."),
+        explainerStep("Step 2/8 — Create a quote", "A bounded, short-lived price.", "POST /v1/quotes returns a quote bound to one request hash: amount, asset, network, receiver and an expiry. A quote is only ever about the request you already wrote — it cannot be replayed against a different prompt."),
+        explainerStep("Step 3/8 — Pay for the quote", "Your wallet authorizes only this quote.", "Payment follows x402: submitting the job without a payment-signature returns 402 with the challenge, and your Hedera wallet signs the header authorizing exactly the quote's amount, asset and receiver — nothing more. (On this demo, sponsored demo credit is available as a secondary fallback so anyone can try the flow without a wallet.)"),
+        explainerStep("Step 4/8 — Inference runs across a group of nodes", "The model is split across member machines.", "Each member machine stages its share of the weights, proves what it loaded, and the whole route qualifies together before it is allowed to serve. Your request is executed by the distributed group, not by a single server."),
+        explainerStep("Step 5/8 — Inference returns to you", "Streamed, bounded, and receipted.", "Tokens stream back bounded by the quote's token cap. The provider signs an Ed25519 receipt over exactly what it served, and your browser checks that signature against the provider's pinned public key before showing the result as signed."),
+        explainerStep("Step 6/8 — Verified by the TEE", "Ensemble statistical tests, inside a TEE.", "The output is verified by TEE-held verification: statistical agreement tests compare the served answer against reference-model ensembles. A failed check counts against the provider's public suspicion counter — and three consecutive mismatches trigger an automatic audit of that provider."),
+        explainerStep("Step 7/8 — Payment is released", "Settlement follows verification.", "Payment held for the quote is released to the provider after the verification step succeeds. (Honest demo note: today's public demo settles the sponsor payment at submission time; escrow-then-release is the protocol's intended settlement flow.)"),
+        explainerStep("Step 8/8 — Receipt settlement on Hedera", "The public trail is irreversible.", "The receipt digest is committed to the Hedera consensus topic (HCS) — a digest-only, ordered record — and The Graph indexes the on-chain receipt claims into the provider's public track record. Commitments are public and cannot be erased."),
       ]),
       el("section", { class: "split" }, [
         el("div", {}, [
@@ -181,27 +180,17 @@ export async function renderHow(container) {
             el("li", { text: "Who answered the request." }),
             el("li", { text: "What was paid on testnet." }),
             el("li", { text: "Whether public history has seen the receipt." }),
+            el("li", { text: "Whether the answer passed verification, and how often a provider fails it." }),
           ]),
         ]),
         el("div", {}, [
           el("h2", { text: "What it does not prove" }),
           el("ul", {}, [
-            el("li", { text: "That the answer is true." }),
+            el("li", { text: "That the answer is factually true." }),
             el("li", { text: "That every future answer from a provider is honest." }),
             el("li", { text: "That your prompt is hidden from the provider." }),
           ]),
         ]),
-      ]),
-      el("section", {}, [
-        el("h2", { text: "What's live right now" }),
-        el("ul", { class: "live-status-list" }, live.rows.map(statusRow)),
-      ]),
-      el("section", { class: "faq" }, [
-        el("h2", { text: "FAQ" }),
-        explainerStep("Is this real money?", "No — this public demo uses testnet tokens with no real value.", "HashPack, when enabled, is still testnet-only for this demo."),
-        explainerStep("Can the provider see my prompt?", "Yes. Don't send secrets.", "Receipts make behavior accountable; they do not encrypt the prompt from the provider."),
-        explainerStep("Why is the answer short or slow?", "The demo uses small open models and a live experimental runtime.", "Provider availability and answer length are visible in Advanced mode."),
-        explainerStep("Can I run a node?", "A Mac app is coming soon.", "The project is open source under AGPL-3.0-or-later."),
       ]),
     ]),
   );

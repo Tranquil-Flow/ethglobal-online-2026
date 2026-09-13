@@ -1,0 +1,77 @@
+specVersion: 1.0.0
+description: Development-only attributed claims; not proof of execution or payment.
+schema:
+  file: schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: Registry
+    network: sepolia
+    source:
+      address: "0x9fd43D7b41c82406A776b700702EEA3813ac426A"
+      abi: Registry
+      startBlock: 11684790
+    context:
+      chainId:
+        type: String
+        data: "11155111"
+      mode:
+        type: Int
+        data: 1
+      publisher:
+        type: Bytes
+        data: "0xb4f0b42fbB0fCAf62703475039A7E26EF6dD5EaE"
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - ReceiptClaim
+        - AssessmentClaim
+        - ProviderCount
+        - VerifierOutcomeCount
+        - ProviderMetrics
+        - ProviderTrustDay
+        - ProviderTrustAssessmentSeen
+      abis:
+        - name: Registry
+          file: Registry/Registry.json
+      eventHandlers:
+        - event: ReceiptPublished(indexed bytes32,indexed bytes32,uint8)
+          handler: handleReceipt
+        - event: AssessmentPublished(indexed bytes32,indexed bytes32,indexed
+            bytes32,bytes32,bytes32,uint8,uint8,string)
+          handler: handleAssessment
+      file: Registry/Registry.wasm
+  - kind: ethereum/contract
+    name: RegistryV2
+    network: sepolia
+    source:
+      address: "0xCf14c9bf5657487F1dBF03C9eF0DE0FfdA959e34"
+      abi: RegistryV2
+      startBlock: 11684790
+    context:
+      chainId:
+        type: String
+        data: "11155111"
+      mode:
+        type: Int
+        data: 1
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - OpenAssessmentClaim
+        - ProviderCount
+        - VerifierOutcomeCount
+        - ProviderMetrics
+        - ProviderTrustDay
+        - ProviderTrustAssessmentSeen
+      abis:
+        - name: RegistryV2
+          file: RegistryV2/RegistryV2.json
+      eventHandlers:
+        - event: OpenAssessmentPublished(indexed bytes32,indexed bytes32,indexed
+            bytes32,address,address,bytes32,bytes32,uint8,uint8,bool,string)
+          handler: handleOpenAssessment
+      file: RegistryV2/RegistryV2.wasm

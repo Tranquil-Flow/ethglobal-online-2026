@@ -335,7 +335,10 @@ export function createClient({
     retryBaseMs > 1000 ||
     !Number.isInteger(timeoutMs) ||
     timeoutMs < 1 ||
-    timeoutMs > 120000
+    // W6 demo: long generations must be allowed to run to completion. The
+    // practical ceiling on mycelium.now is Cloudflare's ~100 s proxy timeout;
+    // on localhost this is the real bound.
+    timeoutMs > 600000
   )
     fail("INVALID_CONFIG");
   let capability = initialCapability;
@@ -366,7 +369,7 @@ export function createClient({
   }
   function scope(options = {}) {
     const ms = options.timeoutMs ?? timeoutMs;
-    if (!Number.isInteger(ms) || ms < 1 || ms > 120000) fail("INVALID_INPUT");
+    if (!Number.isInteger(ms) || ms < 1 || ms > 600000) fail("INVALID_INPUT");
     const controller = new AbortController();
     let timedOut = false;
     const aborted = () => controller.abort();
@@ -1234,7 +1237,7 @@ export function createClient({
     async *streamJob(jobId, options = {}) {
       const guard = scope({
         ...options,
-        timeoutMs: options.timeoutMs ?? 120000,
+        timeoutMs: options.timeoutMs ?? 600000,
       });
       let cursor = options.lastEventId ?? 0,
         finalJob = false,

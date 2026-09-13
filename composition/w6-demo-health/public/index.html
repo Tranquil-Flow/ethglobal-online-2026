@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mycelium demo-health dashboard</title>
+  <link rel="stylesheet" href="/dashboard.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="dot" id="overallDot"></span>
+      <h1>Mycelium demo-health</h1>
+      <span class="overall-label" id="overallLabel">—</span>
+    </div>
+    <div class="meta">
+      <span class="captured" id="captured">probing…</span>
+      <button id="refresh" type="button">Refresh</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="legend">
+      <span class="chip chip-green">GREEN</span> surface is up &amp; healthy
+      <span class="chip chip-yellow">YELLOW</span> reachable but degraded (see reason)
+      <span class="chip chip-red">RED</span> unreachable / 5xx / probe timeout
+    </section>
+
+    <table id="matrix" aria-label="Demo surface health matrix">
+      <thead>
+        <tr>
+          <th class="col-idx">#</th>
+          <th class="col-name">Surface</th>
+          <th class="col-url">Probe URL</th>
+          <th class="col-state">State</th>
+          <th class="col-reason">Reason</th>
+        </tr>
+      </thead>
+      <tbody id="rows">
+        <tr class="placeholder"><td colspan="5">Loading…</td></tr>
+      </tbody>
+    </table>
+  </main>
+
+  <footer>
+    <span>w6-demo-health · 127.0.0.1:4363 · bounded probe 5s/surface · judge-facing view</span>
+  </footer>
+
+  <script type="module" src="/dashboard.js"></script>
+</body>
+</html>

@@ -175,3 +175,156 @@ test("submitHcs default adapter is offline and returns SUCCESS (dry-run contract
   assert.equal(out.status, "SUCCESS");
   assert.ok(out.transactionId);
 });
+
+test("publishAuditMessage forwards a validated topic id and surfaces the sequence number", async () => {
+  const calls = [];
+  const submitHcs = async (input) => {
+    calls.push(input);
+    return {
+      status: "SUCCESS",
+      transactionId: "0.0.7162784@1789299999.000000001",
+      topicSequenceNumber: "7",
+    };
+  };
+  const journal = inMemoryJournal();
+  const r = await publishAuditMessage(
+    { receiptDigest: DIGEST, paymentTxId: PAYMENT_TX },
+    { journal, submitHcs, topicId: "0.0.7000123" },
+  );
+  assert.equal(r.broadcast, true);
+  assert.equal(r.topicSequenceNumber, "7");
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].topicId, "0.0.7000123");
+  assert.ok(Buffer.isBuffer(calls[0].message));
+
+  await assert.rejects(
+    publishAuditMessage(
+      { receiptDigest: "sha256:" + "b".repeat(64), paymentTxId: PAYMENT_TX },
+      { journal, submitHcs, topicId: "0.0.0" },
+    ),
+    /INVALID_TOPIC_ID/,
+  );
+  await assert.rejects(
+    publishAuditMessage(
+      { receiptDigest: "sha256:" + "c".repeat(64), paymentTxId: PAYMENT_TX },
+      { journal, submitHcs, topicId: "not-a-topic" },
+    ),
+    /INVALID_TOPIC_ID/,
+  );
+  // Invalid topic id is rejected even in the dry-run (no submitHcs) path.
+  await assert.rejects(
+    publishAuditMessage(
+      { receiptDigest: "sha256:" + "d".repeat(64), paymentTxId: PAYMENT_TX },
+      { journal, topicId: "nope" },
+    ),
+    /INVALID_TOPIC_ID/,
+  );
+});
+
+test("deps.broadcast=false force-disables submit even with submitHcs injected", async () => {
+  let calls = 0;
+  const logs = [];
+  const journal = inMemoryJournal();
+  const r = await publishAuditMessage(
+    { receiptDigest: DIGEST, paymentTxId: PAYMENT_TX },
+    {
+      journal,
+      submitHcs: async () => {
+        calls += 1;
+        throw new Error("NETWORK_CALL_ATTEMPTED");
+      },
+      broadcast: false,
+      logger: { info: (o) => logs.push(o) },
+    },
+  );
+  assert.equal(calls, 0);
+  assert.equal(r.broadcast, false);
+  assert.equal(r.transactionId, null);
+  assert.equal(r.topicSequenceNumber, null);
+  assert.equal(logs.length, 1);
+  assert.equal(logs[0].mode, "dry-run");
+  assert.equal(logs[0].broadcast, false);
+});
+
+test("escalation verdicts key idempotency by verdictId, carry the outcome, and never suppress the receipt message", async () => {
+  const journal = inMemoryJournal();
+  const messages = [];
+  const submitHcs = async ({ message }) => {
+    messages.push(JSON.parse(message.toString("utf8")));
+    return {
+      status: "SUCCESS",
+      transactionId: `0.0.7162784@1789299999.${messages.length}`,
+      topicSequenceNumber: String(messages.length),
+    };
+  };
+  const opts = { journal, submitHcs, topicId: "0.0.7000123", broadcast: true };
+
+  // Receipt message first — keyed by the receipt digest.
+  const a = await publishAuditMessage(
+    { receiptDigest: DIGEST, paymentTxId: PAYMENT_TX },
+    opts,
+  );
+  assert.equal(a.idempotent, false);
+  assert.equal(a.journalKey, DIGEST);
+
+  // Verdict message for the same receipt — its own key, not suppressed.
+  const v1 = await publishAuditMessage(
+    {
+      receiptDigest: DIGEST,
+      paymentTxId: PAYMENT_TX,
+      verifierOutcome: "mismatch",
+      verdictId: "esc-3neg-0001",
+    },
+    opts,
+  );
+  assert.equal(v1.idempotent, false);
+  assert.equal(v1.journalKey, `${DIGEST}#verdict:esc-3neg-0001`);
+  assert.equal(v1.verifierOutcome, "mismatch");
+  assert.equal(v1.topicSequenceNumber, "2");
+
+  // Repeat verdict → idempotent, no second message.
+  const v1b = await publishAuditMessage(
+    {
+      receiptDigest: DIGEST,
+      paymentTxId: PAYMENT_TX,
+      verifierOutcome: "mismatch",
+      verdictId: "esc-3neg-0001",
+    },
+    opts,
+  );
+  assert.equal(v1b.idempotent, true);
+  assert.equal(v1b.broadcast, false);
+
+  // Repeat receipt completion → idempotent too.
+  const a2 = await publishAuditMessage(
+    { receiptDigest: DIGEST, paymentTxId: PAYMENT_TX },
+    opts,
+  );
+  assert.equal(a2.idempotent, true);
+
+  assert.equal(messages.length, 2);
+  assert.equal(messages[0].verdictId, undefined);
+  assert.equal(messages[1].verdictId, "esc-3neg-0001");
+  assert.equal(messages[1].verifierOutcome, "mismatch");
+  assert.equal(journal.entries().length, 2);
+
+  await assert.rejects(
+    publishAuditMessage(
+      { receiptDigest: "sha256:" + "f".repeat(64), paymentTxId: PAYMENT_TX, verdictId: "esc-1" },
+      { journal },
+    ),
+    /VERDICT_REQUIRES_OUTCOME/,
+  );
+  await assert.rejects(
+    publishAuditMessage(
+      {
+        receiptDigest: "sha256:" + "e".repeat(64),
+        paymentTxId: PAYMENT_TX,
+        verifierOutcome: "match",
+        verdictId: "has space",
+      },
+      { journal },
+    ),
+    /INVALID_VERDICT_ID/,
+  );
+});

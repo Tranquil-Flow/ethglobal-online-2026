@@ -10,8 +10,11 @@
 // a real signer + funded operator at broadcast time.
 //
 // Contract (matches hcs-audit.mjs):
-//   submitHcs(input, deps?) -> { status: "SUCCESS", transactionId }
-//   input = { transaction | { message | kind: "createHcsTopic", memo, operatorAccountId, submitKey }, network, maxAmountBaseUnits, signal }
+//   submitHcs(input, deps?) -> { status: "SUCCESS", transactionId, topicSequenceNumber }
+//   input = { transaction | { message, topicId?, kind: "createHcsTopic", memo, operatorAccountId, submitKey }, network, maxAmountBaseUnits, signal }
+//   `topicId` (when supplied) is validated as a Hedera account-form id; the real path requires
+//   it for bare-message submits and fails HCS_TOPIC_REQUIRED without one. The confirmed
+//   topicSequenceNumber is surfaced from the receipt and never embedded in the message body.
 //
 // This module is the *adapter* — it knows how to build a TopicMessageSubmitTransaction or
 // TopicCreateTransaction, set max transaction fee against `maxAmountBaseUnits` tinybars,
@@ -22,10 +25,14 @@
 // integration owner swap in the real signer at deploy time.
 
 import { isAbsolute } from "node:path";
-import { fail, amount as parseAmount } from "../src/safety.mjs";
+import { fail, amount as parseAmount, account } from "../src/safety.mjs";
 
 const NETWORK = "hedera:testnet";
-const DEFAULT_FEE_TINYBARS = "100000"; // 0.001 HBAR — well below the testnet default max fee
+// Testnet submit messages cost ~327K tinybars and topic creates ~26.5M
+// under the current fee schedule (verified via mirror node 2026-09-13);
+// the fallback cap must sit above the real price or transactions fail
+// INSUFFICIENT_TX_FEE.
+const DEFAULT_FEE_TINYBARS = "500000";
 
 function checkNetwork(value) {
   if (value !== undefined && value !== NETWORK) fail("INVALID_NETWORK");
@@ -56,6 +63,11 @@ export async function submitHcs(input, deps = {}) {
   // Enforce budget as an absolute tinybar ceiling — same constraint as hcs-audit.mjs --budget.
   parseAmount(input.maxAmountBaseUnits ?? DEFAULT_FEE_TINYBARS);
 
+  // The topic id (when supplied by the caller) is validated here; it comes from
+  // the run configuration (env W6_HCS_TOPIC_ID at the composition layer), never
+  // from the message content.
+  if (input.topicId !== undefined) account(input.topicId);
+
   const logger = deps.logger ?? { info: () => {} };
 
   // Pre-built transaction path — matches the existing hcs-audit.mjs contract.
@@ -85,6 +97,7 @@ export async function submitHcs(input, deps = {}) {
     return {
       status: "SUCCESS",
       transactionId: `0.0.0@${Date.now()}.000000000`,
+      topicSequenceNumber: null,
       topicId: input.kind === "createHcsTopic" ? "0.0.7000001" : undefined,
     };
   }
@@ -98,10 +111,15 @@ export async function submitHcs(input, deps = {}) {
     tx = new sdk.TopicCreateTransaction()
       .setTopicMemo(input.memo ?? "mycelium-ethonline-audit-v1")
       .setMaxTransactionFee(feeCap);
-    if (input.operatorAccountId)
-      tx = tx.setAdminKey(input.operatorAccountId);
-    if (input.submitKey === "operator")
-      tx = tx.setSubmitKey(input.operatorAccountId);
+    // NO admin key: the topic becomes immutable — nobody, not even the
+    // operator, can update or delete it afterwards. For a public receipt
+    // trail this is the strongest property. (setAdminKey takes a Key
+    // object, never an account id string.)
+    if (input.submitKey === "operator") {
+      const submitKey = deps.signer.publicKey ?? deps.signer.accountId;
+      if (!submitKey || !submitKey._toProtobufKey) fail("HCS_SIGNER_PUBLIC_KEY_REQUIRED");
+      tx = tx.setSubmitKey(submitKey);
+    }
   } else {
     if (!input.topicId) fail("HCS_TOPIC_REQUIRED");
     tx = new sdk.TopicMessageSubmitTransaction()
@@ -116,13 +134,17 @@ export async function submitHcs(input, deps = {}) {
   return {
     status: "SUCCESS",
     transactionId: signed.transactionId?.toString?.() ?? null,
+    topicSequenceNumber: receipt.topicSequenceNumber?.toString?.() ?? null,
     topicId: input.kind === "createHcsTopic" ? receipt.topicId?.toString?.() : undefined,
   };
 }
 
 async function loadSdk() {
   // Absolute-path check keeps the parent honest — we never resolve relative modules.
-  const sdkUrl = new URL("../node_modules/@hiero-ledger/sdk/index.js", import.meta.url);
+  // The package root has no index.js; its ESM entry lives at lib/index.js
+  // (exports["."].import). Resolved here by exact path so no bare specifier
+  // resolution is required from the composition layer.
+  const sdkUrl = new URL("../node_modules/@hiero-ledger/sdk/lib/index.js", import.meta.url);
   if (!isAbsolute(sdkUrl.pathname)) fail("INVALID_SDK_PATH");
   return await import(sdkUrl.href);
 }

@@ -307,7 +307,19 @@ export function createPayments({
     // Mirror nodes can lag consensus. Keep retries short enough for the caller's
     // job deadline and re-read durable state after every backoff so a recorded
     // worker outcome is terminal rather than an invitation to authorize again.
-    const delays = [0, 250, 750, 1500];
+    //
+    // MEASURED (Hedera testnet, 2026-09-13): consensus arrives 7-11 s after the
+    // transaction's validStart, plus mirror indexing lag. The original
+    // [0, 250, 750, 1500] window (~2.5 s of waits) therefore reported
+    // PAYMENT_PENDING for payments that HAD already settled — the sponsor paid,
+    // the job never ran, and the payer saw PAYMENT_UNAVAILABLE. Two such cases
+    // are retained in this deployment's payment stores
+    // (0.0.7162784@1789297846.249007961, @1789297923.122295850) and a third on
+    // the demo attacker route. Each confirmedTransfer attempt is bounded by
+    // min(config.timeoutMs, 5000); this schedule keeps the whole authorize call
+    // inside the 30 s submit budget while covering consensus + indexing.
+    const delays = [0, 750, 2000, 4000, 7000];
+    let observed = { attempts: 0, confirmed: null, mirrorError: null };
     for (const delay of delays) {
       if (delay) await retryDelay(delay, signal);
       checkAbort(signal);
@@ -326,8 +338,17 @@ export function createPayments({
         });
       } catch (error) {
         if (error instanceof PaymentError && error.code === "ABORTED") throw error;
+        observed.mirrorError = error?.code ?? String(error?.message ?? error).slice(0, 120);
         checkAbort(signal);
       }
+      observed = {
+        ...observed,
+        attempts: observed.attempts + 1,
+        confirmed,
+        phase: current?.phase ?? null,
+        status: current?.payment?.status ?? null,
+        failureCode: current?.payment?.failureCode ?? null,
+      };
 
       current = db.transaction(() => {
         const latest = db.getPayment(r.payment.paymentId);
@@ -343,6 +364,14 @@ export function createPayments({
       const result = reconciled(current);
       if (result) return result;
     }
+    console.error(
+      JSON.stringify({
+        status: "w6-debug-payment-reconcile-exhausted",
+        transactionId: r.transactionId,
+        payer: r.payer,
+        ...observed,
+      }),
+    );
     fail("PAYMENT_PENDING", true);
   }
   return safePort({
@@ -549,9 +578,26 @@ export function createPayments({
           result.network !== c.network ||
           result.transaction !== r.transactionId ||
           result.payer !== r.payer
-        )
+        ) {
+          console.error(
+            JSON.stringify({
+              status: "w6-debug-payment-settle-mismatch",
+              success: result?.success ?? null,
+              network: result?.network ?? null,
+              transactionMatches: result?.transaction === r.transactionId,
+              payerMatches: result?.payer === r.payer,
+            }),
+          );
           fail("INVALID_FACILITATOR");
-      } catch {
+        }
+      } catch (error) {
+        console.error(
+          JSON.stringify({
+            status: "w6-debug-payment-settle-error",
+            code: error?.code ?? null,
+            message: String(error?.message ?? error).slice(0, 200),
+          }),
+        );
         db.transaction(() => {
           const current = db.getPayment(r.payment.paymentId);
           if (current.payment.status === "pending") {

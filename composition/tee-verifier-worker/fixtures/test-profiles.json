@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "profiles": [
+    {
+      "id": "synthetic-tee-worker",
+      "appProfileDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "verifierProfileSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "pinReason": "Synthetic profile pinned for the W6 tee-verifier-worker local integration test only.",
+      "contract": {
+        "model": "synthetic/tee-worker-fixture",
+        "revision": "synthetic",
+        "runtimeDtype": "float32",
+        "quantization": "none",
+        "selector": "synthetic",
+        "seed": 0,
+        "maxOutputTokens": 16
+      },
+      "audits": {
+        "referenceSamples": true,
+        "ensembleScorer": true
+      }
+    }
+  ]
+}

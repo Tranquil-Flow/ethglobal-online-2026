@@ -4,7 +4,7 @@
 // verifier outcome. NEVER includes prompts, model output, session data, or keys.
 //
 // API:
-//   publishAuditMessage({ receiptDigest, paymentTxId, registryTxHash?, verifierOutcome? }, deps?)
+//   publishAuditMessage({ receiptDigest, paymentTxId, registryTxHash?, verifierOutcome?, verdictId? }, deps?)
 //     -> { broadcast: boolean, journaled: true, idempotent: boolean, ... }
 //   createHcsTopic({ memo?, operatorAccountId? }, deps?)
 //     -> { topicId, transactionId, dryRun }
@@ -14,9 +14,19 @@
 // Properties enforced:
 //   - digest-only payload via canonicalBytes (no string concat, no prompt leakage)
 //   - idempotent by receiptDigest (within the running process journal)
+//   - escalation-verdict messages (`verdictId` set) get their own journal key
+//     `<receiptDigest>#verdict:<verdictId>` so a verdict never suppresses — and
+//     is never suppressed by — the receipt message for the same receipt
 //   - journaled (returns the journal entry; never silently drops messages)
 //   - DRY-RUN DEFAULT: if no submitHcs is injected, the message is only logged
-//     and `broadcast` is false. The parent supplies the real submitHcs later.
+//     and `broadcast` is false. `deps.broadcast === false` force-disables the
+//     submit branch even when a submitHcs was injected.
+//   - `deps.topicId` (Hedera topic id, e.g. 0.0.1234567) is validated here and
+//     forwarded to submitHcs so the real adapter can build the submit tx.
+//     The topic id comes from env W6_HCS_TOPIC_ID at the composition layer —
+//     this module never reads env vars itself.
+//   - `topicSequenceNumber` from the submit result is surfaced and journalled,
+//     never embedded in the message body.
 
 import { canonicalBytes } from "../packages/contracts/index.mjs";
 import { textId, fail } from "../packages/payments/src/safety.mjs";
@@ -56,6 +66,28 @@ function requireOutcome(value) {
   return value;
 }
 
+function requireTopicId(value) {
+  // Hedera topic ids are `0.0.<num>`. The real submit adapter also accepts a
+  // shard.realm.num form; we keep the strict three-part account form because
+  // that is what W6_HCS_TOPIC_ID carries.
+  if (
+    typeof value !== "string" ||
+    !/^0\.0\.(0|[1-9][0-9]{0,18})$/.test(value) ||
+    value === "0.0.0"
+  )
+    fail("INVALID_TOPIC_ID");
+  return value;
+}
+
+function requireVerdictId(value) {
+  // Opaque code for an escalation-verdict message. It is the per-message
+  // idempotency key, so it must never carry text — same conservative charset
+  // as textId, but kept local to this module for a distinct error code.
+  if (typeof value !== "string" || !/^[A-Za-z0-9:._@-]{1,128}$/.test(value))
+    fail("INVALID_VERDICT_ID");
+  return value;
+}
+
 /**
  * Publish a digest-only audit message to HCS.
  *
@@ -64,8 +96,13 @@ function requireOutcome(value) {
  * @param {string} args.paymentTxId            hedera tx id of the payment   (required)
  * @param {string} [args.registryTxHash]       0x<64hex> sepolia tx hash of publishReceipt (optional)
  * @param {string} [args.verifierOutcome]      match|mismatch|inconclusive|unavailable (optional)
+ * @param {string} [args.verdictId]            opaque code for an escalation-verdict message;
+ *                                             requires verifierOutcome, keys idempotency as
+ *                                             `<receiptDigest>#verdict:<verdictId>`
  * @param {object} [deps]
  * @param {object} [deps.submitHcs]            real submitHcs adapter; if absent, dry-run logs only
+ * @param {string} [deps.topicId]              Hedera topic id forwarded to submitHcs
+ * @param {boolean} [deps.broadcast]           when false, never submits even with submitHcs
  * @param {object} [deps.journal]              { record(entry), has(digest) }; default = in-memory Map
  * @param {object} [deps.logger]               { info(obj) }; default = console.log
  */
@@ -73,14 +110,33 @@ export async function publishAuditMessage(args, deps = {}) {
   const receiptDigest = requireDigest(args?.receiptDigest);
   const paymentTxId = requireTxId(args?.paymentTxId);
   const registryTxHash =
-    args?.registryTxHash === undefined
+    args?.registryTxHash === undefined || args?.registryTxHash === null
       ? null
       : requireHash(args.registryTxHash);
   const verifierOutcome =
-    args?.verifierOutcome === undefined ? null : requireOutcome(args.verifierOutcome);
+    args?.verifierOutcome === undefined || args?.verifierOutcome === null
+      ? null
+      : requireOutcome(args.verifierOutcome);
+  const verdictId =
+    args?.verdictId === undefined || args?.verdictId === null
+      ? null
+      : requireVerdictId(args.verdictId);
+  if (verdictId !== null && verifierOutcome === null)
+    fail("VERDICT_REQUIRES_OUTCOME");
+
+  const topicId =
+    deps.topicId === undefined || deps.topicId === null
+      ? null
+      : requireTopicId(deps.topicId);
+
+  // Receipt messages are idempotent by receiptDigest. Escalation-verdict
+  // messages carry their own journal key so a verdict and the receipt message
+  // for the same receipt are each emitted exactly once.
+  const journalKey =
+    verdictId === null ? receiptDigest : `${receiptDigest}#verdict:${verdictId}`;
 
   const journal = deps.journal ?? defaultJournal();
-  if (journal.has(receiptDigest)) {
+  if (journal.has(journalKey)) {
     return {
       broadcast: false,
       journaled: true,
@@ -89,6 +145,8 @@ export async function publishAuditMessage(args, deps = {}) {
       paymentTxId,
       registryTxHash,
       verifierOutcome,
+      verdictId,
+      journalKey,
       note: "already_journaled",
     };
   }
@@ -101,24 +159,31 @@ export async function publishAuditMessage(args, deps = {}) {
     paymentTxId,
     registryTxHash,
     verifierOutcome,
+    ...(verdictId === null ? {} : { verdictId }),
     submittedAt: new Date().toISOString(),
   };
 
   const messageBytes = canonicalBytes(payload);
-  const submitHcs = deps.submitHcs ?? null;
+  const submitHcs = typeof deps.submitHcs === "function" ? deps.submitHcs : null;
+  // `broadcast: false` is a hard off-switch: even an injected submitHcs is
+  // never invoked. Only an explicit true/undefined lets the submit branch run.
+  const allowSubmit = submitHcs !== null && deps.broadcast !== false;
   const logger = deps.logger ?? { info: (o) => console.log(JSON.stringify(o)) };
 
   let result = null;
   let broadcast = false;
-  if (submitHcs) {
+  if (allowSubmit) {
     result = await submitHcs({
       message: messageBytes,
       network: NETWORK,
+      topicId,
       // submitHcs adapter in packages/payments/scripts/hcs-adapter.mjs is
       // responsible for building + signing the TopicMessageSubmitTransaction,
       // honoring maxAmountBaseUnits as a max tx fee cap, and waiting for a
       // SUCCESS receipt. Here we just hand it the canonical bytes.
-      maxAmountBaseUnits: deps.maxAmountBaseUnits ?? "100000",
+      // (Testnet submit messages currently cost ~327K tinybars — the cap
+      // must sit above that or every message fails INSUFFICIENT_TX_FEE.)
+      maxAmountBaseUnits: deps.maxAmountBaseUnits ?? "500000",
       signal: deps.signal,
     });
     if (result?.status !== "SUCCESS")
@@ -133,6 +198,7 @@ export async function publishAuditMessage(args, deps = {}) {
       messageBytes: messageBytes.length,
       receiptDigest,
       paymentTxId,
+      ...(verdictId === null ? {} : { verdictId }),
     });
   }
 
@@ -141,12 +207,15 @@ export async function publishAuditMessage(args, deps = {}) {
     paymentTxId,
     registryTxHash,
     verifierOutcome,
+    verdictId,
+    journalKey,
     messageBytes: messageBytes.length,
     broadcast,
     transactionId: result?.transactionId ?? null,
+    topicSequenceNumber: result?.topicSequenceNumber ?? null,
     submittedAt: payload.submittedAt,
   };
-  journal.record(receiptDigest, entry);
+  journal.record(journalKey, entry);
 
   return {
     broadcast,
@@ -156,8 +225,11 @@ export async function publishAuditMessage(args, deps = {}) {
     paymentTxId,
     registryTxHash,
     verifierOutcome,
+    verdictId,
+    journalKey,
     messageBytes: messageBytes.length,
     transactionId: result?.transactionId ?? null,
+    topicSequenceNumber: result?.topicSequenceNumber ?? null,
   };
 }
 
@@ -195,7 +267,7 @@ export async function createHcsTopic(args = {}, deps = {}) {
       operatorAccountId,
       submitKey: "operator",
       network: NETWORK,
-      maxAmountBaseUnits: deps.maxAmountBaseUnits ?? "500000",
+      maxAmountBaseUnits: deps.maxAmountBaseUnits ?? "60000000",
       signal: deps.signal,
     });
     if (!result?.topicId) fail("HCS_TOPIC_NOT_CONFIRMED");

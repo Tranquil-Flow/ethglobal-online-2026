@@ -12,6 +12,39 @@
 // All data is untrusted DATA, never spending authority.
 
 import { AccessError } from "./errors.mjs";
+import { createHash } from "node:crypto";
+
+/**
+ * The v0.3.2 subgraph keys ProviderMetrics by `providerKey`:
+ * "0x" + sha256 of the JSON-encoded provider id string (the workbench
+ * digestOf convention, with a 0x prefix).
+ */
+export function providerKeyOf(providerId) {
+  return (
+    "0x" +
+    createHash("sha256").update(JSON.stringify(String(providerId))).digest("hex")
+  );
+}
+
+/** Parse a Graph decimal-string count into a non-negative integer. */
+function decimalCount(value) {
+  if (typeof value === "number" && Number.isInteger(value) && value >= 0) return value;
+  if (typeof value === "string" && /^[0-9]+$/.test(value)) {
+    const n = Number(value);
+    if (Number.isSafeInteger(n) && n >= 0) return n;
+  }
+  return 0;
+}
+
+/** Epoch-seconds Graph timestamp -> ISO string, or null. */
+function epochSecondsToIso(value) {
+  if (typeof value === "string" && /^[0-9]+$/.test(value)) {
+    const ms = Number(value) * 1000;
+    if (Number.isFinite(ms) && !Number.isNaN(new Date(ms).getTime()))
+      return new Date(ms).toISOString();
+  }
+  return null;
+}
 
 export const PROVIDER_STATS_TOOL = Object.freeze({
   name: "mycelium.provider_stats",
@@ -183,19 +216,28 @@ export function createProviderStats(opts = {}) {
   }
 
   async function fetchOneSubgraphStat(providerId, input) {
-    const query = `query Stats($id: String!) {
-      providerMetrics(id: $id) {
-        providerId
+    // v0.3.2 deployment: ProviderMetrics is keyed by `providerKey`
+    // ("0x"+sha256 of the JSON-encoded provider id) and counts/trust come
+    // back as decimal STRINGS; activity is an epoch-seconds timestamp.
+    const key = providerKeyOf(providerId);
+    const query = `query Stats($key: String!) {
+      providerMetrics_collection(first: 1, where: { providerKey: $key }) {
+        id
+        providerKey
         receiptCount
         assessmentCount
+        matchCount
+        mismatchCount
         trustScore
-        lastActiveAt
+        latestActivityTimestamp
+        activeReceiptDays7
+        formulaVersion
       }
     }`;
     const res = await transport(subgraphUrl, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ query, variables: { id: providerId } }),
+      body: JSON.stringify({ query, variables: { key } }),
       signal: AbortSignal.timeout(10000),
     });
     if (!res || typeof res.status !== "number") {
@@ -209,7 +251,8 @@ export function createProviderStats(opts = {}) {
     }
     const body = await res.json();
     if (!body || typeof body !== "object") throw new AccessError("SUBGRAPH_ERROR");
-    return body?.data?.providerMetrics ?? null;
+    const rows = body?.data?.providerMetrics_collection ?? [];
+    return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
   }
 
   async function readLocal(providerId, input) {
@@ -245,19 +288,13 @@ export function createProviderStats(opts = {}) {
       subErr = e;
       historyReasons.push(reason(HISTORY_REASONS.subgraphError, e?.message));
     }
-    if (raw && typeof raw === "object" && typeof raw.providerId === "string") {
+    if (raw && typeof raw === "object" && typeof raw.providerKey === "string") {
       const trustScore = clampTrustScore(Number(raw.trustScore ?? 0));
-      const lastActiveAt =
-        typeof raw.lastActiveAt === "string" &&
-        !Number.isNaN(Date.parse(raw.lastActiveAt))
-          ? raw.lastActiveAt
-          : null;
+      const lastActiveAt = epochSecondsToIso(raw.latestActivityTimestamp);
       const stat = {
-        providerId: raw.providerId,
-        receiptCount: Number.isInteger(raw.receiptCount) ? raw.receiptCount : 0,
-        assessmentCount: Number.isInteger(raw.assessmentCount)
-          ? raw.assessmentCount
-          : 0,
+        providerId,
+        receiptCount: decimalCount(raw.receiptCount),
+        assessmentCount: decimalCount(raw.assessmentCount),
         trustScore,
         lastActiveAt,
         historyReasons,

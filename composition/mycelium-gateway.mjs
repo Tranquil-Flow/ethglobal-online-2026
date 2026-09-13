@@ -209,7 +209,7 @@ export function createGatewayTransport({
     !/^[\x21-\x7e]{1,4096}$/.test(bearerToken)
   )
     fail("INVALID_GATEWAY_TOKEN");
-  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 300000)
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 600000)
     fail("INVALID_TIMEOUT");
   const headers = (session) => ({
     Authorization: `Bearer ${bearerToken}`,

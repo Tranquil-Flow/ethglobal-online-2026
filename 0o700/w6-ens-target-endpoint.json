@@ -1,0 +1,18 @@
+{
+  "service.ethonline-node-a.eth": {
+    "ethonline.endpoint": "https://mycelium.now",
+    "ethonline.profiles": "[\"sha256:f17c05c452151f99e6758908ee2849f1086b237972b9f3fe1ca6506d9714fcea\"]",
+    "ethonline.payment.network": "hedera:testnet",
+    "ethonline.payment.asset": "0.0.0",
+    "ethonline.payment.receiver": "0.0.10419316",
+    "ethonline.history": "https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.2.0-unchecked-20260911"
+  },
+  "service.ethonline-node-b.eth": {
+    "ethonline.endpoint": "https://mycelium.now",
+    "ethonline.profiles": "[\"sha256:f17c05c452151f99e6758908ee2849f1086b237972b9f3fe1ca6506d9714fcea\"]",
+    "ethonline.payment.network": "hedera:testnet",
+    "ethonline.payment.asset": "0.0.0",
+    "ethonline.payment.receiver": "0.0.10419316",
+    "ethonline.history": "https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.2.0-unchecked-20260911"
+  }
+}

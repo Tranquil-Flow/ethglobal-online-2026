@@ -1,4 +1,5 @@
 import { build } from "esbuild";
+import { fileURLToPath } from "node:url";
 import { readFile, mkdir, writeFile, copyFile } from "node:fs/promises";
 import Ajv from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
@@ -19,8 +20,8 @@ const refs = Object.fromEntries(
 );
 await writeFile(new URL("dist/validators.mjs", root), standalone(ajv, refs));
 await build({
-  entryPoints: [new URL("viewer/app.mjs", root).pathname],
-  outfile: new URL("dist/app.js", root).pathname,
+  entryPoints: [fileURLToPath(new URL("viewer/app.mjs", root))],
+  outfile: fileURLToPath(new URL("dist/app.js", root)),
   bundle: true,
   format: "esm",
   platform: "browser",
@@ -31,7 +32,7 @@ await build({
       name: "shared-contract-browser",
       setup(b) {
         b.onResolve({ filter: /^\.\/contracts\.mjs$/ }, () => ({
-          path: new URL("viewer/contracts-browser.mjs", root).pathname,
+          path: fileURLToPath(new URL("viewer/contracts-browser.mjs", root)),
         }));
       },
     },

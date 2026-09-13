@@ -610,32 +610,79 @@ export function createDemoSponsor({ env = process.env, deps = {} } = {}) {
     ipBucket.tokens -= 1;
   }
 
+  // Clause-level scope diagnostics. A bare DEMO_SCOPE_MISMATCH hides which
+  // guard failed, so a browser-side failure could not be root-caused without
+  // reading the server log. Evaluate every clause, log the failed clause
+  // names plus a public (non-private) projection of the quote, then fail with
+  // the same public code the client already handles.
+  function scopeDiagnostic(failed, { context, suppliedQuote, sessionId, jobId }) {
+    const quote = isRecord(suppliedQuote) ? suppliedQuote : {};
+    const request = isRecord(context?.request) ? context.request : {};
+    console.error(
+      JSON.stringify({
+        status: "w6-debug-clause-dump",
+        clause: failed[0],
+        clauses: failed,
+        quote_network: quote.network ?? null,
+        quote_asset: quote.asset ?? null,
+        quote_amount: quote.amountBaseUnits ?? null,
+        quote_receiver: quote.receiver ?? null,
+        quote_mode: quote.mode ?? null,
+        quote_providerId: quote.providerId ?? null,
+        quote_profileId: quote.profileId ?? null,
+        quote_requestHash: quote.requestHash ?? null,
+        quote_expiresAt: quote.expiresAt ?? null,
+        expected_receiver: config?.recipient ?? null,
+        request_providerId: request.providerId ?? null,
+        request_profileId: request.profileId ?? null,
+        idempotencyKey_match:
+          isRecord(context) && typeof jobId === "string"
+            ? context.idempotencyKey === jobId
+            : null,
+        session_id_supplied: typeof sessionId === "string",
+      }),
+    );
+  }
+
   async function validateScope(input, session) {
       const { context, suppliedQuote } = normalizeCall(input, session);
       const sessionId = session?.sessionId ?? session?.id;
       const ip = session?.ip ?? session?.ipAddress;
       const jobId = session?.jobId;
-      if (
-        !isRecord(context) ||
-        !isRecord(suppliedQuote) ||
-        !isRecord(context.quote) ||
-        !isRecord(context.request) ||
-        !safeId(sessionId) ||
-        !safeId(ip) ||
-        !safeId(jobId) ||
-        context.idempotencyKey !== jobId ||
-        !sameJson(context.quote, suppliedQuote) ||
-        suppliedQuote.receiver !== config.recipient ||
-        suppliedQuote.network !== NETWORK ||
-        suppliedQuote.asset !== ASSET ||
-        suppliedQuote.amountBaseUnits !== AMOUNT_BASE_UNITS ||
-        suppliedQuote.mode !== "live" ||
-        suppliedQuote.providerId !== context.request.providerId ||
-        suppliedQuote.profileId !== context.request.profileId ||
-        suppliedQuote.requestHash !== requestHash(context.request) ||
-        Date.parse(suppliedQuote.expiresAt) <= now()
-      )
+      const hasContext = isRecord(context);
+      const hasQuote = isRecord(suppliedQuote);
+      const request = hasContext && isRecord(context.request) ? context.request : null;
+      const failed = [];
+      if (!hasContext) failed.push("context");
+      if (!hasQuote) failed.push("suppliedQuote");
+      if (!isRecord(context?.quote)) failed.push("context.quote");
+      if (!isRecord(context?.request)) failed.push("context.request");
+      if (!safeId(sessionId)) failed.push("sessionId");
+      if (!safeId(ip)) failed.push("ip");
+      if (!safeId(jobId)) failed.push("jobId");
+      if (hasContext && context.idempotencyKey !== jobId)
+        failed.push("idempotencyKey");
+      if (hasContext && hasQuote && !sameJson(context.quote, suppliedQuote))
+        failed.push("quoteEcho");
+      if (hasQuote && suppliedQuote.receiver !== config.recipient)
+        failed.push("receiver");
+      if (hasQuote && suppliedQuote.network !== NETWORK) failed.push("network");
+      if (hasQuote && suppliedQuote.asset !== ASSET) failed.push("asset");
+      if (hasQuote && suppliedQuote.amountBaseUnits !== AMOUNT_BASE_UNITS)
+        failed.push("amountBaseUnits");
+      if (hasQuote && suppliedQuote.mode !== "live") failed.push("mode");
+      if (request && hasQuote && suppliedQuote.providerId !== request.providerId)
+        failed.push("providerId");
+      if (request && hasQuote && suppliedQuote.profileId !== request.profileId)
+        failed.push("profileId");
+      if (request && hasQuote && suppliedQuote.requestHash !== requestHash(request))
+        failed.push("requestHash");
+      if (hasQuote && Date.parse(suppliedQuote.expiresAt) <= now())
+        failed.push("expired");
+      if (failed.length) {
+        scopeDiagnostic(failed, { context, suppliedQuote, sessionId, jobId });
         fail("DEMO_SCOPE_MISMATCH", 403);
+      }
 
       let outstanding;
       try {

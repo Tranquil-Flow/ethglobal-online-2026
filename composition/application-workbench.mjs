@@ -143,7 +143,11 @@ export function validateApplicationConfig(input) {
       "maxPromptUtf8Bytes",
     ]);
     for (const [k, max] of Object.entries({
-      maxOutputTokens: 64,
+      // Raised 64 -> 128 for the W6 demo (owner decision 2026-09-13). The native
+      // request-gateway contract accepts up to MAX_NEW_TOKENS = 4096
+      // (mycelium_request_gateway/contracts.py:24), so 128 is inside the upstream
+      // bound; the practical public ceiling is Cloudflare's ~100 s proxy timeout.
+      maxOutputTokens: 128,
       maxPromptCharacters: 256,
       maxPromptUtf8Bytes: 1024,
     }))
@@ -1176,6 +1180,11 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       discovery: directDiscovery,
       history: bindings.history,
       eventSink,
+      // Optional per-request verdict source for /v2/requests (the W12 demo
+      // store). Absent in the free/dev paths, where the ledger still answers
+      // with verification: null.
+      ...(bindings.observations ? { observations: bindings.observations } : {}),
+      ...(bindings.hcsRecords ? { hcsRecords: bindings.hcsRecords } : {}),
       assessor: {
         forProvider(id) {
           return ports.get(id)?.assessor;
@@ -1204,8 +1213,8 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
           const now = Date.now();
           return {
             version: "2",
-            offers: entries.map((e) =>
-              e.binding.receiptSigner.signOffer({
+            offers: entries.map((e) => {
+              const payload = {
                 version: config.accessPolicy === "non-economic" ? "2" : "3",
                 providerId: e.config.providerId,
                 profileIds: e.config.profileIds,
@@ -1217,8 +1226,20 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
                 accessPolicy: config.accessPolicy,
                 issuedAt: new Date(now).toISOString(),
                 expiresAt: new Date(now + 60000).toISOString(),
-              }),
-            ),
+              };
+              try {
+                return e.binding.receiptSigner.signOffer(payload);
+              } catch (error) {
+                console.error(JSON.stringify({
+                  status: "offer-signing-error",
+                  providerId: e.config.providerId,
+                  hasBinding: !!e.binding,
+                  hasReceiptSigner: !!e.binding?.receiptSigner,
+                  error: error?.code || error?.message || String(error),
+                }));
+                throw error;
+              }
+            }),
           };
         },
       },

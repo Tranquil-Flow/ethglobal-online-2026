@@ -30,7 +30,10 @@
   --accent: var(--green);
   --accent-soft: var(--green-soft);
   --accent-ink: var(--green);
-  --strand-color: transparent;
+  /* C9a strand layer, cream theme: white webs (owner request 2026-09-13). */
+  --strand-color: rgba(255, 255, 255, 0.95);
+  --strand-node: rgba(255, 255, 255, 1);
+  --strand-node-bright: rgba(255, 255, 255, 1);
   --shadow: 0 22px 60px rgba(26, 43, 35, 0.12);
   --shadow-soft: 0 8px 22px rgba(26, 43, 35, 0.08);
   --status-chip-live: #9fc6ae;
@@ -102,9 +105,11 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 /* =============================================================
  * C9a — procedural mycelium strand background layer.
  * Inline SVG, fixed behind content, pointer-events: none.
- * Disabled entirely when prefers-reduced-motion: reduce.
+ * Rendered in BOTH themes: white webs on cream (owner request
+ * 2026-09-13) and mint strands on mushroom. Hidden entirely when
+ * prefers-reduced-motion: reduce.
  * ============================================================= */
-body[data-theme="mushroom"] .mycelium-strands {
+.mycelium-strands {
   position: fixed;
   inset: 0;
   z-index: 0;
@@ -112,44 +117,45 @@ body[data-theme="mushroom"] .mycelium-strands {
   overflow: hidden;
   contain: strict;
 }
-body[data-theme="mushroom"] .mycelium-strands svg {
+.mycelium-strands svg {
   width: 100%;
   height: 100%;
   opacity: 0.55;
 }
-body[data-theme="mushroom"] .mycelium-strands .strand {
+.mycelium-strands .strand {
   fill: none;
   stroke: var(--strand-color);
   stroke-width: 0.6;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
 }
-body[data-theme="mushroom"] .mycelium-strands .strand--branch {
+.mycelium-strands .strand--branch {
   stroke-width: 0.4;
   opacity: 0.55;
 }
-body[data-theme="mushroom"] .mycelium-strands .strand--node {
-  fill: var(--green);
+.mycelium-strands .strand--node {
+  fill: var(--strand-node, var(--green));
   stroke: none;
 }
-body[data-theme="mushroom"] .mycelium-strands .strand--node-pulse {
-  fill: var(--green-2);
+.mycelium-strands .strand--node-pulse {
+  fill: var(--strand-node-bright, var(--green-2));
   animation: mycelium-pulse 6s ease-in-out infinite;
   transform-origin: center;
   transform-box: fill-box;
+}
+/* Cream: a white web needs a whisper of edge contrast to read on cream. */
+body[data-theme="cream"] .mycelium-strands svg {
+  opacity: 0.85;
+  filter: drop-shadow(0 0 1.5px rgba(58, 74, 63, 0.22));
 }
 @keyframes mycelium-pulse {
   0%, 100% { opacity: 0.35; transform: scale(0.85); }
   50%      { opacity: 1;    transform: scale(1.15); }
 }
 @media (prefers-reduced-motion: reduce) {
-  body[data-theme="mushroom"] .mycelium-strands,
-  body[data-theme="mushroom"] .mycelium-strands .strand--node-pulse {
+  /* Not just paused — removed. The generator is skipped too (index.html). */
+  .mycelium-strands {
     display: none !important;
-  }
-  body[data-theme="mushroom"] .mycelium-strands {
-    /* keep a single static, non-animated strand visible — but spec says hide.
-       We honour the spec and remove the layer entirely. */
   }
 }
 
@@ -444,6 +450,154 @@ body[data-theme="mushroom"] .friendly-error.danger {
   color: var(--ink);
 }
 .check-row { display: flex !important; grid-template-columns: none !important; align-items: center; gap: 0.6rem !important; }
+
+/* Segmented Simple/Advanced switch — two clearly-labelled options. */
+.mode-switch {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  overflow: hidden;
+  margin: 0.75rem 0 0.5rem;
+  background: var(--card-raised);
+}
+.mode-switch-btn {
+  border: 0;
+  padding: 0.5rem 1.1rem;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  cursor: pointer;
+}
+.mode-switch-btn.is-active {
+  background: var(--accent);
+  color: #fff;
+}
+.mode-switch-btn:disabled, .mode-switch-btn[aria-disabled="true"] { cursor: not-allowed; opacity: 0.6; }
+
+/* Compact checkbox row inside the advanced grid. */
+.checks-row { grid-column: 1 / -1; padding: 0.15rem 0 0.35rem; }
+.checks-row .check-row { margin: 0; }
+
+.field-hint { color: var(--muted); font-size: 0.8rem; }
+
+.verifier-note { color: var(--muted); font-size: 0.8rem; margin: 0.4rem 0 0.9rem; }
+
+.details-row { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed var(--line); text-align: right; }
+
+/* Payment choices: wallet first, demo as clearly-secondary fallback. */
+.payment-choice.is-wallet { border-color: var(--accent); }
+.payment-choice.is-demo { opacity: 0.9; }
+.payment-choice.is-demo small { color: var(--muted); }
+
+/* Swarm page: ready-but-inactive join controls. */
+.swarm-invite {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+  flex-wrap: wrap;
+}
+.swarm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+.swarm-card {
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  padding: 1rem 1.1rem;
+  background: var(--card-raised);
+}
+.swarm-card h2 { margin: 0 0 0.3rem; }
+.swarm-card-intro { color: var(--muted); font-size: 0.9rem; margin: 0 0 0.8rem; }
+.swarm-field { display: grid; gap: 0.3rem; margin-bottom: 0.7rem; }
+.swarm-field span { color: var(--muted); font-size: 0.85rem; }
+.swarm-field input, .swarm-field textarea {
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  padding: 0.6rem;
+  background: var(--card);
+  color: var(--ink);
+}
+.swarm-field input:disabled, .swarm-field textarea:disabled { opacity: 0.55; }
+.swarm-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.4rem; }
+.swarm-status-list { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.35rem; color: var(--muted); }
+.swarm-invite input {
+  flex: 0 1 320px;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  padding: 0.7rem;
+  background: var(--card-raised);
+  color: var(--ink);
+}
+.swarm-invite input:disabled { opacity: 0.55; }
+.swarm-invite .swarm-badge { margin: 0; }
+
+.agent-rules { display: grid; gap: 0.7rem; }
+.agent-rules li { color: var(--ink); }
+
+/* Providers page: TheGraph panel up top, three tidy metric cards. */
+.graph-panel {
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  padding: 1rem 1.1rem;
+  margin: 1.1rem 0;
+  background: var(--card-raised);
+  max-width: 100%;
+  overflow: hidden;
+}
+.graph-panel h2 { margin: 0 0 0.35rem; }
+.graph-panel .provider-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.85rem;
+  margin-top: 0.75rem;
+}
+.graph-panel .provider-card {
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  padding: 0.8rem 0.9rem;
+  background: var(--card);
+}
+.graph-panel .provider-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.graph-panel .provider-card-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+.provider-metrics {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.25rem 0.75rem;
+  margin: 0.4rem 0;
+}
+.provider-metrics dt { color: var(--muted); font-size: 0.8rem; }
+.provider-metrics dd {
+  margin: 0;
+  font-size: 0.9rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+.trust-score { font-weight: 700; }
+.c5a-trust-of { color: var(--muted); font-size: 0.75rem; }
+.c5a-adj {
+  margin-left: 0.35rem;
+  padding: 0.08rem 0.45rem;
+  border: 1px solid var(--warn, #b8860b);
+  border-radius: 0.5rem;
+  color: var(--warn-ink, #8a6400);
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
 
 .quote-review pre,
 .code-block,
@@ -1018,3 +1172,109 @@ body[data-theme="mushroom"] .demo-state-402 { background: color-mix(in srgb, var
   .ensv2-detail-inner { grid-template-columns: 1fr; }
   .ensv2-bar { flex-direction: column; align-items: flex-start; gap: 0.4rem; }
 }
+
+/* =============================================================
+ * Requests ledger + Run a swarm (Phase 4 unified frontend)
+ * ============================================================= */
+.ledger-shell, .swarm-shell { max-width: 1080px; margin: 0 auto; padding: 2.2rem 1.2rem 4rem; }
+.ledger-intro, .swarm-intro { color: var(--muted); max-width: 62ch; }
+.ledger-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.1rem 0 1.4rem; }
+.ledger-chip {
+  border: 1px solid var(--line); border-radius: 999px; padding: 0.22rem 0.7rem;
+  font-size: 0.8rem; background: var(--pill-bg); color: var(--pill-ink);
+}
+.ledger-chip.is-fail { border-color: var(--red); color: var(--red); }
+.ledger-chip.is-demo { border-style: dashed; color: var(--muted); }
+.ledger-table { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--card); }
+.ledger-row { border-top: 1px solid var(--table-divider); }
+.ledger-row:first-child { border-top: none; }
+.ledger-row > summary { cursor: pointer; list-style: none; }
+.ledger-row > summary::-webkit-details-marker { display: none; }
+.ledger-row-head {
+  display: grid; grid-template-columns: 150px 1fr 110px 2.2fr; gap: 0.7rem;
+  padding: 0.6rem 0.9rem; font-size: 0.78rem; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--muted); background: var(--table-head-bg);
+}
+.ledger-row-cells { display: grid; grid-template-columns: 150px 1fr 110px 2.2fr; gap: 0.7rem; padding: 0.7rem 0.9rem; align-items: center; }
+.ledger-row:hover .ledger-row-cells { background: var(--table-row-hover); }
+.ledger-cell-flags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.ledger-badge { border-radius: 999px; padding: 0.14rem 0.55rem; font-size: 0.74rem; border: 1px solid var(--line); }
+.ledger-badge.is-pass { border-color: var(--status-chip-live); color: var(--green); }
+.ledger-badge.is-fail { border-color: var(--red); color: var(--red); }
+.ledger-badge.is-warn { border-color: var(--status-chip-partial); color: var(--amber); }
+.ledger-badge.is-unknown { color: var(--muted); }
+.ledger-detail {
+  display: grid; grid-template-columns: 180px 1fr; gap: 0.3rem 0.9rem;
+  padding: 0.4rem 0.9rem 1rem; font-size: 0.86rem; color: var(--muted);
+}
+.ledger-detail dt { font-weight: 600; color: var(--ink); }
+.ledger-detail dd { margin: 0; overflow-wrap: anywhere; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.ledger-empty, .loading-note { color: var(--muted); padding: 0.8rem 0; }
+.audit-section { margin-top: 2.2rem; }
+.audit-note { color: var(--muted); max-width: 62ch; }
+.audit-list { list-style: none; padding: 0; margin: 0.8rem 0 0; display: grid; gap: 0.5rem; }
+.audit-row {
+  display: grid; grid-template-columns: 70px 1.4fr 1.2fr 160px 1fr; gap: 0.6rem;
+  align-items: center; border: 1px solid var(--line); border-radius: 12px; padding: 0.5rem 0.8rem;
+  background: var(--card); font-size: 0.86rem;
+}
+.audit-badge { border: 1px solid var(--red); color: var(--red); border-radius: 999px; padding: 0.1rem 0.5rem; font-size: 0.72rem; text-align: center; }
+.audit-digest { color: var(--muted); font-size: 0.78rem; }
+.ledger-footnote, .swarm-footnote { color: var(--muted); font-size: 0.84rem; margin-top: 1.6rem; }
+.swarm-shell.is-greyed { opacity: 0.82; }
+.swarm-badge {
+  display: inline-block; border: 1px dashed var(--line); border-radius: 999px;
+  padding: 0.25rem 0.8rem; color: var(--muted); font-size: 0.82rem;
+}
+.swarm-steps { list-style: none; counter-reset: step; padding: 0; margin: 1.6rem 0 0; display: grid; gap: 1rem; }
+.swarm-steps li { counter-increment: step; border-left: 2px solid var(--line); padding-left: 1rem; }
+.swarm-steps li h3::before { content: counter(step) ". "; color: var(--muted); }
+.swarm-steps li h3 { margin: 0 0 0.25rem; font-size: 1rem; }
+.swarm-steps li p { margin: 0; color: var(--muted); max-width: 62ch; }
+@media (max-width: 760px) {
+  .ledger-row-head, .ledger-row-cells { grid-template-columns: 1fr 1fr; }
+  .audit-row { grid-template-columns: 1fr 1fr; }
+}
+
+.model-card.is-unavailable { opacity: 0.62; cursor: not-allowed; }
+.model-card.is-unavailable .model-reason { font-size: 0.72rem; color: var(--muted); display: block; }
+
+/* =============================================================
+ * W6 — ENSv2 lookup UI (Try page provenance line + advanced input)
+ * Reuses ledger-chip / muted / mono; adds only ens-line, ens-result
+ * and ens-error.
+ * ============================================================= */
+.ens-line,
+.ens-result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.ens-line { margin: 0.55rem 0 0; }
+.ens-result { margin: 0.75rem 0 0; }
+.ens-line .ledger-chip,
+.ens-result .ledger-chip { font-size: 0.72rem; padding: 0.18rem 0.6rem; }
+.ens-line .mono,
+.ens-result .mono { font-size: 0.8rem; }
+.ens-line a { color: var(--accent-ink); font-size: 0.78rem; opacity: 0.9; }
+.ens-line a:hover { opacity: 1; }
+.ens-result { border-top: 1px dashed var(--line); padding-top: 0.55rem; }
+.ens-record {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.3rem 0.9rem;
+  margin: 0.5rem 0;
+  font-size: 0.82rem;
+}
+.ens-record dt { color: var(--muted); }
+.ens-record dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+.ens-error { color: var(--red); font-weight: 600; }

@@ -28,7 +28,7 @@
 //
 // Owner disables fixture mode by unsetting W6_NATIVE_FALLBACK_FIXTURE.
 
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import { URL } from "node:url";
 
@@ -186,16 +186,22 @@ const streamJob = (req, res, requestId) => {
       sequence: 1,
       type: "token",
       publisher_generation: generation,
+      token_id: 0,
       token_index: 0,
       text: "fixture",
     },
     {
+      // No `finish_reason` here: the transport parses with
+      // nativeProposal=undefined, and parseGatewayEvents enforces an EXACT
+      // field match per event type. finish_reason is only expected when a
+      // native proposal supplies profile_id/request_hash/... — sending it
+      // anyway failed the stream with INVALID_EVENT_FIELDS after the first
+      // token (verified 2026-09-13).
       protocol: "mycelium.request_event.v2",
       request_id: requestId,
       sequence: 2,
       type: "completed",
       publisher_generation: generation,
-      finish_reason: "stop",
     },
   ];
   for (const e of events) {
@@ -232,7 +238,7 @@ const server = createServer(async (req, res) => {
     } catch {
       return send(res, 400, { error: "INVALID_JSON" });
     }
-    const requestId = "fix_" + randomBytes(8).toString("hex");
+    const requestId = randomUUID();
     const secret = randomBytes(24).toString("hex"); // printable ASCII
     sessions.set(requestId, { secret, status: "pending", prompt: parsed && parsed.prompt });
     return send(res, 202, {

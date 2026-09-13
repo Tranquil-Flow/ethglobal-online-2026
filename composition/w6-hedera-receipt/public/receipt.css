@@ -1,0 +1,179 @@
+/* Minimal styling for the Hedera mirror receipt page. */
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #0f1115;
+  color: #e5e7eb;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.hdr {
+  padding: 28px 32px 8px;
+  border-bottom: 1px solid #1f242d;
+}
+.hdr h1 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  letter-spacing: 0.2px;
+}
+.hdr .sub {
+  margin: 0;
+  color: #9aa3b2;
+  font-size: 13px;
+}
+
+.main {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 16px 24px 24px;
+  display: grid;
+  gap: 16px;
+}
+
+.card {
+  background: #161b22;
+  border: 1px solid #232a36;
+  border-radius: 8px;
+  padding: 16px 18px;
+}
+
+.card.error {
+  border-color: #b54545;
+  background: #2a1414;
+}
+
+.hidden { display: none; }
+
+form label {
+  display: block;
+  font-size: 12px;
+  color: #9aa3b2;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+input[type="text"] {
+  flex: 1 1 auto;
+  background: #0d1117;
+  border: 1px solid #2a3140;
+  border-radius: 6px;
+  color: #e5e7eb;
+  padding: 10px 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+button {
+  background: #2563eb;
+  color: white;
+  border: 0;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover { background: #1d4ed8; }
+button:disabled { background: #1f2937; color: #6b7280; cursor: not-allowed; }
+
+.hint {
+  margin: 8px 0 0;
+  color: #9aa3b2;
+  font-size: 12px;
+}
+
+h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+.badge.ok   { background: #14532d; color: #bbf7d0; }
+.badge.fail { background: #7f1d1d; color: #fecaca; }
+
+.kv {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 6px 14px;
+  margin: 0;
+}
+
+.kv dt {
+  color: #9aa3b2;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-top: 6px;
+}
+
+.kv dd {
+  margin: 0;
+  word-break: break-all;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  color: #e5e7eb;
+}
+
+.kv a {
+  color: #60a5fa;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.raw {
+  margin-top: 16px;
+}
+.raw summary {
+  cursor: pointer;
+  color: #9aa3b2;
+  font-size: 12px;
+  padding: 6px 0;
+}
+.raw pre {
+  background: #0b0e13;
+  border: 1px solid #232a36;
+  border-radius: 6px;
+  padding: 12px;
+  overflow: auto;
+  max-height: 360px;
+  font-size: 12px;
+  color: #c7d2fe;
+}
+
+.ftr {
+  padding: 20px 32px 28px;
+  color: #6b7280;
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .kv { grid-template-columns: 1fr; }
+  .row { flex-direction: column; }
+}
