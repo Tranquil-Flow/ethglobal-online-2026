@@ -1,0 +1,13 @@
+# W6-v3 gitleaks allowlist — false positives confirmed by parent
+# Format: <file>:<rule-id>:<line>   (3 colon-separated parts, NO regex)
+
+# Access-policy identifier "ordinary-paid-x402" used in 3 places
+composition/w6-live-app-paid.mjs:generic-api-key:150
+scripts/w6-paid-browser.mjs:generic-api-key:104
+composition/w6-live-app.mjs:generic-api-key:150
+
+# Variable name W6_VERIFIER_TLS_KEY (env var name, no value)
+composition/w6-verifier-serve.mjs:generic-api-key:446
+
+# Obvious placeholder 0xOWNER_SUPPLIED_PRIVATE_KEY in ENS report
+docs/handoffs/w6-ens-report.md:generic-api-key:16
