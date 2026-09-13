@@ -25,12 +25,32 @@ export function createSqliteStore({ path }) {
  CREATE TABLE IF NOT EXISTS payments (id TEXT PRIMARY KEY, quote_id TEXT NOT NULL UNIQUE REFERENCES quotes(id), principal TEXT NOT NULL, key_hash TEXT NOT NULL, request_hash TEXT NOT NULL, transaction_id TEXT NOT NULL UNIQUE, proof_hash TEXT NOT NULL UNIQUE, data TEXT NOT NULL, UNIQUE(principal,key_hash),UNIQUE(principal,request_hash));
  CREATE TABLE IF NOT EXISTS jobs (job_id TEXT PRIMARY KEY, payment_id TEXT NOT NULL UNIQUE REFERENCES payments(id),outcome TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS refunds (transaction_id TEXT PRIMARY KEY,payment_id TEXT NOT NULL UNIQUE REFERENCES payments(id));`);
+  const getMetadata = (key) =>
+    db.prepare("SELECT value FROM metadata WHERE key=?").get(key)?.value;
+  const setMetadata = (key, value) =>
+    db.prepare("INSERT INTO metadata VALUES(?,?)").run(key, value);
+  const reconcileConfigurationBinding = (binding) => {
+    if (typeof binding !== "string" || !binding) fail("INVALID_CONFIG");
+    const retainedPayments = db
+      .prepare("SELECT COUNT(*) AS count FROM payments")
+      .get().count;
+    if (retainedPayments > 0) fail("STORE_CONFIG_CONFLICT");
+    const removedQuotes = db.prepare("DELETE FROM quotes").run().changes;
+    db.prepare("INSERT OR REPLACE INTO metadata VALUES(?,?)").run(
+      "binding",
+      binding,
+    );
+    return {
+      status: "rebound-quote-only-store",
+      removedQuotes,
+      retainedPayments: 0,
+    };
+  };
   return {
     transaction: (fn) => db.transaction(fn).immediate(),
-    getMetadata: (key) =>
-      db.prepare("SELECT value FROM metadata WHERE key=?").get(key)?.value,
-    setMetadata: (key, value) =>
-      db.prepare("INSERT INTO metadata VALUES(?,?)").run(key, value),
+    getMetadata,
+    setMetadata,
+    reconcileConfigurationBinding,
     countQuotes: (principal) =>
       principal
         ? db

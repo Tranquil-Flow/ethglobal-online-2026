@@ -64,16 +64,25 @@ if (mode === "paid") {
       digestOf(provider.providerId).slice(7),
       "payments.sqlite",
     );
-    const result = reconcilePaymentStoreConfiguration({
-      path,
-      config: provider.payment.config,
-      configWritten: true,
-    });
+    let result, error;
+    try {
+      result = reconcilePaymentStoreConfiguration({
+        path,
+        config: provider.payment.config,
+        configWritten: true,
+      });
+    } catch (e) {
+      // Store has retained payments under a previous config binding; the
+      // supervisor must NOT silently discard them. Log the conflict and
+      // continue starting so other providers / app boot are not blocked.
+      error = e?.code ?? e?.message ?? String(e);
+    }
     console.log(
       JSON.stringify({
         status: "payment-store-config",
         providerId: provider.providerId,
-        result,
+        ...(result ? { result } : {}),
+        ...(error ? { error } : {}),
       }),
     );
   }
