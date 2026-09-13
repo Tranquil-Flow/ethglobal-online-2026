@@ -216,16 +216,11 @@ function configuration(input) {
     fail("LIVE_APPROVAL_REQUIRED");
   return c;
 }
-/** PaymentsPort. Configuration-only construction: no network or wallet access. */
-export function createPayments({
-  config,
-  clock = () => new Date(),
-  store,
-} = {}) {
+
+/** Stable fingerprint for the durable payment store's routing identity. */
+export function paymentConfigurationBinding(config) {
   const c = configuration(config);
-  const db = store ?? createSqliteStore({ path: c.databasePath });
-  let closed = false;
-  const binding = digestOf({
+  return digestOf({
     mode: c.mode,
     network: c.network,
     asset: c.asset,
@@ -236,6 +231,17 @@ export function createPayments({
     facilitatorUrl: c.facilitatorUrl,
     mirrorUrl: c.mirrorUrl,
   });
+}
+/** PaymentsPort. Configuration-only construction: no network or wallet access. */
+export function createPayments({
+  config,
+  clock = () => new Date(),
+  store,
+} = {}) {
+  const c = configuration(config);
+  const db = store ?? createSqliteStore({ path: c.databasePath });
+  let closed = false;
+  const binding = paymentConfigurationBinding(c);
   try {
     db.transaction(() => {
       const old = db.getMetadata("binding");
@@ -275,32 +281,69 @@ export function createPayments({
       responseHeaders: responseHeaders(r.payment, c.network, r.payer),
     };
   }
+  function reconciled(current) {
+    if (current.payment.status === "pending") return null;
+    if (current.payment.status === "failed") fail("PAYMENT_FAILED");
+    return authorized(current);
+  }
+  function retryDelay(ms, signal) {
+    checkAbort(signal);
+    return new Promise((resolve, reject) => {
+      const done = () => {
+        signal?.removeEventListener("abort", aborted);
+        resolve();
+      };
+      const aborted = () => {
+        clearTimeout(timer);
+        signal?.removeEventListener("abort", aborted);
+        reject(new PaymentError("ABORTED"));
+      };
+      const timer = setTimeout(done, ms);
+      signal?.addEventListener("abort", aborted, { once: true });
+      if (signal?.aborted) aborted();
+    });
+  }
   async function reconcile(r, signal) {
-    try {
-      if (
-        !(await confirmedTransfer({
-          config: c,
+    // Mirror nodes can lag consensus. Keep retries short enough for the caller's
+    // job deadline and re-read durable state after every backoff so a recorded
+    // worker outcome is terminal rather than an invitation to authorize again.
+    const delays = [0, 250, 750, 1500];
+    for (const delay of delays) {
+      if (delay) await retryDelay(delay, signal);
+      checkAbort(signal);
+      let current = db.getPayment(r.payment.paymentId);
+      const existing = reconciled(current);
+      if (existing) return existing;
+
+      let confirmed = false;
+      try {
+        confirmed = await confirmedTransfer({
+          config: { ...c, timeoutMs: Math.min(c.timeoutMs, 5000) },
           transactionId: r.transactionId,
           requirements: r.requirements,
           payer: r.payer,
           signal,
-        }))
-      )
-        fail("PAYMENT_PENDING", true);
-    } catch {
-      fail("PAYMENT_PENDING", true);
-    }
-    return db.transaction(() => {
-      const current = db.getPayment(r.payment.paymentId);
-      if (current.payment.status === "pending") {
-        current.payment.status = "settled";
-        current.payment.transactionRef = current.transactionId;
-        delete current.payment.failureCode;
-        current.phase = "confirmed";
-        db.savePayment(current);
+        });
+      } catch (error) {
+        if (error instanceof PaymentError && error.code === "ABORTED") throw error;
+        checkAbort(signal);
       }
-      return authorized(current);
-    });
+
+      current = db.transaction(() => {
+        const latest = db.getPayment(r.payment.paymentId);
+        if (confirmed && latest.payment.status === "pending") {
+          latest.payment.status = "settled";
+          latest.payment.transactionRef = latest.transactionId;
+          delete latest.payment.failureCode;
+          latest.phase = "confirmed";
+          db.savePayment(latest);
+        }
+        return latest;
+      });
+      const result = reconciled(current);
+      if (result) return result;
+    }
+    fail("PAYMENT_PENDING", true);
   }
   return safePort({
     headerPolicy: Object.freeze({

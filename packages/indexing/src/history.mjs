@@ -112,6 +112,75 @@ export function createGraphClient({
     },
   };
 }
+// Receipt claims are liveness corroboration and attribution evidence only.
+// They are never assessment, quality, correctness, payment or authorization
+// evidence. The indexed providerKey is sha256(providerId); the current schema
+// does not expose the SignedReceipt keyId or public key.
+export const HISTORY_UNKNOWN = "HISTORY_UNKNOWN";
+export const RECEIPT_HISTORY_FRESH = "RECEIPT_HISTORY_FRESH";
+export const RECEIPT_HISTORY_STALE = "RECEIPT_HISTORY_STALE";
+export const RECEIPT_HISTORY_NOT_OBSERVED =
+  "RECEIPT_HISTORY_NOT_OBSERVED";
+export const RECEIPT_HISTORY_INDEXED_NOT_ASSESSED =
+  "RECEIPT_HISTORY_INDEXED_NOT_ASSESSED";
+export const RECEIPT_HISTORY_REORGED = "RECEIPT_HISTORY_REORGED";
+export const RECEIPT_HISTORY_CONFLICTING = "RECEIPT_HISTORY_CONFLICTING";
+export const RECEIPT_HISTORY_PROVIDER_KEY_DISCONTINUITY =
+  "RECEIPT_HISTORY_PROVIDER_KEY_DISCONTINUITY";
+
+/**
+ * Classify a provider-scoped receipt report without manufacturing freshness.
+ * Cross-provider conflicts are supplied only after all reports are compared.
+ */
+export function receiptHistoryReasons(
+  report,
+  { reorged = false, attributionConflicts = [] } = {},
+) {
+  const freshness = report?.history?.freshness ?? report?.freshness;
+  if (reorged || report?.failureCode === "HISTORY_REORGED")
+    return [RECEIPT_HISTORY_REORGED];
+  if (!["fresh", "stale"].includes(freshness))
+    return ["HISTORY_UNAVAILABLE"];
+
+  const providerId = report?.history?.providerId ?? report?.providerId;
+  if (
+    Array.isArray(attributionConflicts) &&
+    providerId &&
+    attributionConflicts.includes(providerId)
+  )
+    return [RECEIPT_HISTORY_CONFLICTING];
+
+  const receipts = Array.isArray(report?.receiptObservations)
+    ? report.receiptObservations
+    : [];
+  const assessments = Array.isArray(report?.history?.observations)
+    ? report.history.observations
+    : Array.isArray(report?.observations)
+      ? report.observations
+      : [];
+  if (!receipts.length)
+    return [
+      assessments.length ? RECEIPT_HISTORY_NOT_OBSERVED : HISTORY_UNKNOWN,
+    ];
+
+  const expectedProviderKey =
+    typeof providerId === "string" && providerId.length ? digestOf(providerId) : null;
+  if (
+    !expectedProviderKey ||
+    receipts.some(
+      (row) =>
+        row?.providerId !== providerId || row?.providerKey !== expectedProviderKey,
+    )
+  )
+    return [RECEIPT_HISTORY_PROVIDER_KEY_DISCONTINUITY];
+
+  const codes = [
+    freshness === "stale" ? RECEIPT_HISTORY_STALE : RECEIPT_HISTORY_FRESH,
+  ];
+  if (!assessments.length) codes.push(RECEIPT_HISTORY_INDEXED_NOT_ASSESSED);
+  return codes;
+}
+
 export function historyReasons(history, { trustedVerifiers = [] } = {}) {
   if (history.freshness === "unavailable") return ["HISTORY_UNAVAILABLE"];
   if (history.freshness === "stale") return ["HISTORY_STALE"];
@@ -149,7 +218,10 @@ function historyConfig(config) {
     limit > 1000 ||
     !Number.isSafeInteger(timeoutMs) ||
     timeoutMs < 10 ||
-    timeoutMs > 30000
+    timeoutMs > 30000 ||
+    (config.subgraph !== undefined &&
+      (typeof config.subgraph !== "string" ||
+        !/^[A-Za-z0-9._/-]{1,256}$/.test(config.subgraph)))
   )
     throw failure("INVALID_HISTORY_CONFIG");
   const c = { ...config, maxAgeMs, limit, timeoutMs };
@@ -166,9 +238,52 @@ function historyConfig(config) {
   }
   return c;
 }
+
+/** Adapt a viem-style read-only RPC client to the History provider port. */
+export function createHistoryRpcProvider(client) {
+  if (
+    !client ||
+    typeof client.request !== "function" ||
+    typeof client.getBlock !== "function"
+  )
+    throw failure("INVALID_HISTORY_PROVIDER");
+  return Object.freeze({
+    send(method, params) {
+      return client.request({ method, params });
+    },
+    async getBlock(number) {
+      if (!Number.isSafeInteger(number) || number < 0)
+        throw failure("INVALID_HISTORY_PROVIDER");
+      const block = await client.getBlock({ blockNumber: BigInt(number) });
+      if (!block) return block;
+      return {
+        number:
+          typeof block.number === "bigint" ? Number(block.number) : block.number,
+        hash: block.hash,
+        timestamp:
+          typeof block.timestamp === "bigint"
+            ? Number(block.timestamp)
+            : block.timestamp,
+      };
+    },
+    destroy() {
+      if (typeof client.destroy === "function") client.destroy();
+    },
+  });
+}
+
 export function createHistory({ config, client, provider } = {}) {
   const c = historyConfig(config || { mode: "development", chainId: "31337" });
-  return {
+  return Object.freeze({
+    source: Object.freeze({
+      ...(typeof c.subgraph === "string" ? { subgraph: c.subgraph } : {}),
+      ...(typeof c.deploymentId === "string"
+        ? { deploymentId: c.deploymentId }
+        : {}),
+      chainId: String(c.chainId),
+      ...(c.deployment ? { registryAddress: c.deployment.address } : {}),
+    }),
+    maxAgeMs: c.maxAgeMs,
     getReport({ providerId, signal }) {
       return queryProviderHistory({
         config: c,
@@ -189,7 +304,7 @@ export function createHistory({ config, client, provider } = {}) {
         })
       ).history;
     },
-  };
+  });
 }
 function sameHash(a, b) {
   return (
@@ -331,11 +446,29 @@ export async function queryProviderHistory({
     };
   const report = {
     history,
+    source: {
+      ...(typeof c.subgraph === "string" ? { subgraph: c.subgraph } : {}),
+      ...(typeof c.deploymentId === "string"
+        ? { deploymentId: c.deploymentId }
+        : {}),
+      chainId: String(c.chainId),
+      ...(c.deployment ? { registryAddress: c.deployment.address } : {}),
+    },
+    indexedBlockTimestamp: null,
+    observationWindow: {
+      fromBlock: null,
+      toBlock: null,
+      indexedBlock: null,
+      queryLimit: c.limit,
+      truncated: false,
+    },
     reasons: [],
+    receiptReasons: [],
     counts: {},
     provenance: [],
     unlinkedClaims: [],
     receiptObservations: [],
+    receiptProvenance: [],
     truncated: false,
   };
   if (client && c.deployment) {
@@ -379,7 +512,7 @@ export async function queryProviderHistory({
           !sameHash(head.hash, meta.block.hash) ||
           head.timestamp !== meta.block.timestamp
         )
-          throw failure("INVALID_INDEX");
+          throw failure("HISTORY_REORGED");
       }
       if (c.deployment.confirmations > 1) {
         const number = meta.block.number - c.deployment.confirmations + 1;
@@ -406,7 +539,7 @@ export async function queryProviderHistory({
             !sameHash(stable.block.hash, block.hash) ||
             stable.block.timestamp !== block.timestamp
           )
-            throw failure("INVALID_INDEX");
+            throw failure("HISTORY_REORGED");
         } else
           stable = (
             await bounded(
@@ -447,16 +580,19 @@ export async function queryProviderHistory({
       const openRows = data.openAssessmentClaims || [];
       if (
         data._meta?.deployment !== meta.deployment ||
-        data._meta.hasIndexingErrors !== false ||
-        data._meta.block.hash !== meta.block.hash ||
-        data._meta.block.number !== meta.block.number ||
-        data._meta.block.timestamp !== meta.block.timestamp ||
+        data._meta?.hasIndexingErrors !== false ||
         !Array.isArray(legacyRows) ||
         !Array.isArray(openRows) ||
         legacyRows.length > c.limit ||
         openRows.length > c.limit
       )
         throw failure("INVALID_INDEX");
+      if (
+        data._meta?.block?.hash !== meta.block.hash ||
+        data._meta?.block?.number !== meta.block.number ||
+        data._meta?.block?.timestamp !== meta.block.timestamp
+      )
+        throw failure("HISTORY_REORGED");
       const rows = [
         ...legacyRows.map((row) => ({ type: "legacy", row })),
         ...openRows.map((row) => ({ type: "open", row })),
@@ -498,6 +634,7 @@ export async function queryProviderHistory({
       const receiptRows = data.receiptClaims ?? [];
       if (!Array.isArray(receiptRows) || receiptRows.length > c.limit)
         throw failure("INVALID_RECEIPT_OBSERVATION");
+      const receiptDigests = new Set();
       const receiptObservations = receiptRows.map((row) => {
         if (
           typeof row.chainId !== "string" ||
@@ -518,12 +655,18 @@ export async function queryProviderHistory({
           Number(row.blockNumber) > meta.block.number ||
           typeof row.logIndex !== "string" ||
           !/^\d+$/.test(row.logIndex) ||
-          !Number.isSafeInteger(Number(row.logIndex))
+          !Number.isSafeInteger(Number(row.logIndex)) ||
+          Number(row.logIndex) < 0
         )
           throw failure("INVALID_RECEIPT_OBSERVATION");
+        const receiptDigest = digest(row.objectDigest);
+        if (receiptDigests.has(receiptDigest))
+          throw failure("INVALID_RECEIPT_OBSERVATION");
+        receiptDigests.add(receiptDigest);
         return {
-          receiptDigest: digest(row.objectDigest),
+          receiptDigest,
           providerId,
+          providerKey: digest(row.providerKey),
           transactionHash: row.transactionHash,
           blockNumber: Number(row.blockNumber),
           blockHash: row.blockHash,
@@ -534,24 +677,40 @@ export async function queryProviderHistory({
           publisher: row.publisher,
         };
       });
-      if (receiptRows.length === c.limit) report.truncated = true;
+      const receiptWindowTruncated = receiptRows.length === c.limit;
+      if (receiptWindowTruncated) report.truncated = true;
       report.receiptObservations = receiptObservations;
+      report.receiptProvenance = receiptObservations.map((row) => ({ ...row }));
       history.observations = observations;
       history.indexedBlock = meta.block.number;
       history.indexedBlockHash = meta.block.hash;
       history.freshness =
         now - meta.block.timestamp * 1000 > c.maxAgeMs ? "stale" : "fresh";
+      report.indexedBlockTimestamp = meta.block.timestamp;
+      const receiptBlocks = receiptObservations.map((row) => row.blockNumber);
+      report.observationWindow = {
+        fromBlock: receiptBlocks.length ? Math.min(...receiptBlocks) : null,
+        toBlock: receiptBlocks.length ? Math.max(...receiptBlocks) : null,
+        indexedBlock: meta.block.number,
+        queryLimit: c.limit,
+        truncated: receiptWindowTruncated,
+      };
       report.provenance = provenance;
       report.unlinkedClaims = unlinkedClaims;
       report.counts = counts;
     } catch (e) {
       if (signal?.aborted) throw failure("ABORTED", true);
       report.failureCode =
-        e?.code === "ABORTED" ? "HISTORY_TIMEOUT" : "HISTORY_UNAVAILABLE";
+        e?.code === "ABORTED"
+          ? "HISTORY_TIMEOUT"
+          : e?.code === "HISTORY_REORGED"
+            ? "HISTORY_REORGED"
+            : "HISTORY_UNAVAILABLE";
     }
   }
   validate("History", history);
   report.reasons = historyReasons(history, c);
+  report.receiptReasons = receiptHistoryReasons(report);
   if (report.unlinkedClaims.length) report.reasons.push("UNLINKED_CLAIM");
   if (report.truncated) report.reasons.push("HISTORY_WINDOW_LIMIT");
   return report;

@@ -97,7 +97,8 @@ export function createEnsV2Resolver({
               fail("UNSUPPORTED_ROUTE");
             const dns = toHex(packetToBytes(name));
             // Verify each containing registry bidirectionally; namespace aliases are not identities.
-            const labels = name.split(".");
+            const labels = name.split("."),
+              canonicalRegistries = [];
             let expiresAt = now + ttlMs;
             for (let i = 0; i < labels.length; i++) {
               const parent = labels.slice(i + 1).join(".");
@@ -111,6 +112,12 @@ export function createEnsV2Resolver({
               const expiry = await read(address, registry, "getExpiry", [
                 BigInt(keccak256(stringToHex(labels[i]))),
               ]);
+              canonicalRegistries.push({
+                label: labels[i],
+                parent,
+                registry: address,
+                expiry: String(expiry),
+              });
               expiresAt = Math.min(expiresAt, Number(expiry) * 1000);
             }
             if (expiresAt <= now) fail("EXPIRED_NAME");
@@ -139,8 +146,8 @@ export function createEnsV2Resolver({
                   sepolia.resolverImplementation.toLowerCase())
             )
               fail("UNSUPPORTED_RESOLVER");
-            if ((await read(resolved, pr, "getAlias", [dns])) !== "0x")
-              fail("ALIAS_UNSUPPORTED");
+            const alias = await read(resolved, pr, "getAlias", [dns]);
+            if (alias !== "0x") fail("ALIAS_UNSUPPORTED");
             const records = {};
             for (const key of RECORD_KEYS) {
               const call = encodeFunctionData({
@@ -165,8 +172,8 @@ export function createEnsV2Resolver({
                 data: result,
               });
             }
-            if ((await c.getBlock({ blockNumber })).hash !== block.hash)
-              fail("REORG");
+            const postReadBlock = await c.getBlock({ blockNumber });
+            if (postReadBlock.hash !== block.hash) fail("REORG");
             return {
               name,
               mode,
@@ -176,6 +183,21 @@ export function createEnsV2Resolver({
               blockHash: block.hash,
               resolvedAt: new Date(now).toISOString(),
               expiresAt: new Date(expiresAt).toISOString(),
+              // These are observations from the gates above, not a second or
+              // weaker resolution path. They let guarded operators retain
+              // before/after evidence without reimplementing ENSv2 checks.
+              verification: {
+                universalResolver: universal,
+                rootRegistry: root,
+                dnsName: dns,
+                node,
+                wildcardOffset: String(offset),
+                canonicalRegistries,
+                resolver: resolved,
+                resolverImplementation: impl,
+                alias,
+                postReadBlockHash: postReadBlock.hash,
+              },
             };
           } catch (e) {
             if (e instanceof DiscoveryError) throw e;
