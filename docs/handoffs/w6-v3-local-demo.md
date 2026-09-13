@@ -103,3 +103,28 @@ report back. Worker reports and parent integration are tracked in
 - HCS topic create + canonical submit (L-HCS): owner runs the dry-run adapter for real after worker reports the broadcast-capable code is in.
 - On-chain receipt + assessment publish (L-PUBLISH): owner runs the dry-run backfill for real after worker reports the publisher wrapper is in.
 - Owner push (Wave D): the parent never pushes. Owner pulls `application/end-to-end-03` once Wave A-code merges.
+
+
+### Verified Path A output (2026-09-13, parent session on commit `787a84e`)
+
+Running `npm run demo:application` from the post-Wave-0 HEAD (`787a84e`) on the workbench
+produces this exact JSON in 1.2 seconds, exit code 0:
+
+```json
+{
+  "status": "LOCAL_DEMO_PASSED",
+  "providerCount": 2,
+  "execution": "synthetic-not-inference",
+  "receiptIntegrity": "verified",
+  "evidence": "retrieved-then-deleted",
+  "payment": "non-monetary",
+  "checking": "unavailable",
+  "financialProtection": false,
+  "publicActions": 0,
+  "cleanup": "owned-services-closed"
+}
+```
+
+If your run produces anything other than `LOCAL_DEMO_PASSED` or any other field differs,
+paste the JSON back to the parent and we'll diagnose.
+
