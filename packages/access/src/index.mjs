@@ -17,6 +17,8 @@ const enc = (v) => {
   return encodeURIComponent(v);
 };
 const jsonClone = (v) => JSON.parse(JSON.stringify(v));
+const isRecord = (v) =>
+  v !== null && typeof v === "object" && !Array.isArray(v);
 function validateRecovered(result, input, quote) {
   exact(result, ["version", "status", "job", "capability"]);
   dto("Job", result.job, true);
@@ -908,6 +910,32 @@ export function createClient({
       } finally {
         state.busy = false;
       }
+    },
+    // OT1 demo-sponsor integration. The server exposes
+    // POST /v2/demo-sponsor/authorize that takes the 402 paymentAuthorizer
+    // context and returns a real Hedera-signed payment-signature from the
+    // OT1 sponsor key. This client method wraps that call so the viewer's
+    // `setPaymentAuthorizer(async (ctx) => authorizeDemoPayment(ctx))` works.
+    async authorizeDemoPayment(context, options) {
+      const d = await request("/v2/demo-sponsor/authorize", {
+        method: "POST",
+        body: { context },
+        privateRoute: true,
+        success: 200,
+        options,
+      });
+      if (
+        !d ||
+        !isRecord(d.headers) ||
+        typeof d.headers["payment-signature"] !== "string"
+      )
+        fail("DEMO_SPONSOR_INVALID_RESULT");
+      return {
+        headers: d.headers,
+        payer: d.payer ?? null,
+        display: d.display ?? null,
+        binding: d.binding ?? null,
+      };
     },
     async getJob(jobId, options) {
       const d = dto(
