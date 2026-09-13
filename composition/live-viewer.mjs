@@ -1,5 +1,5 @@
 import { createServer, request as httpRequest } from "node:http";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 
 const debugFlag = (config, ...paths) => paths.some((path) => {
   let value = config;
@@ -67,6 +67,11 @@ export function viewerConfigForRequest({ config, viewerOrigin, headers = {} }) {
  */
 export async function startLiveViewer({ coreUrl, port = 0, config, historyComparison }) {
   const files = new Map();
+  // L-SPONSOR: tolerate missing v2 isolated-free assets by falling back to live-browser.
+  const isolatedFreeLoader = new URL("./w6-isolated-free/application-loader.mjs", import.meta.url);
+  const isolatedFreeAvailable = await stat(isolatedFreeLoader).then(() => true, () => false);
+  const effectiveAppVersion =
+    config.applicationVersion === "2" && isolatedFreeAvailable ? "2" : "1";
   for (const [path, file, type] of [
     ["/", "../packages/access/dist/index.html", "text/html"],
     ["/style.css", "../packages/access/dist/style.css", "text/css"],
@@ -79,12 +84,12 @@ export async function startLiveViewer({ coreUrl, port = 0, config, historyCompar
     ],
     [
       "/app.js",
-      config.applicationVersion === "2"
+      effectiveAppVersion === "2"
         ? "./w6-isolated-free/application-loader.mjs"
         : "./live-browser.mjs",
       "text/javascript",
     ],
-    ...(config.applicationVersion === "2"
+    ...(effectiveAppVersion === "2"
       ? [
           ["/application-browser.js", "./application-browser.mjs", "text/javascript"],
           ["/w6-isolated-free.js", "./w6-isolated-free/browser.mjs", "text/javascript"],
