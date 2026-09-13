@@ -611,60 +611,60 @@ export function createDemoSponsor({ env = process.env, deps = {} } = {}) {
   }
 
   async function validateScope(input, session) {
-    const { context, suppliedQuote } = normalizeCall(input, session);
-    const sessionId = session?.sessionId ?? session?.id;
-    const ip = session?.ip ?? session?.ipAddress;
-    const jobId = session?.jobId;
-    if (
-      !isRecord(context) ||
-      !isRecord(suppliedQuote) ||
-      !isRecord(context.quote) ||
-      !isRecord(context.request) ||
-      !safeId(sessionId) ||
-      !safeId(ip) ||
-      !safeId(jobId) ||
-      context.idempotencyKey !== jobId ||
-      !sameJson(context.quote, suppliedQuote) ||
-      suppliedQuote.receiver !== config.recipient ||
-      suppliedQuote.network !== NETWORK ||
-      suppliedQuote.asset !== ASSET ||
-      suppliedQuote.amountBaseUnits !== AMOUNT_BASE_UNITS ||
-      suppliedQuote.mode !== "live" ||
-      suppliedQuote.providerId !== context.request.providerId ||
-      suppliedQuote.profileId !== context.request.profileId ||
-      suppliedQuote.requestHash !== requestHash(context.request) ||
-      Date.parse(suppliedQuote.expiresAt) <= now()
-    )
-      fail("DEMO_SCOPE_MISMATCH", 403);
+      const { context, suppliedQuote } = normalizeCall(input, session);
+      const sessionId = session?.sessionId ?? session?.id;
+      const ip = session?.ip ?? session?.ipAddress;
+      const jobId = session?.jobId;
+      if (
+        !isRecord(context) ||
+        !isRecord(suppliedQuote) ||
+        !isRecord(context.quote) ||
+        !isRecord(context.request) ||
+        !safeId(sessionId) ||
+        !safeId(ip) ||
+        !safeId(jobId) ||
+        context.idempotencyKey !== jobId ||
+        !sameJson(context.quote, suppliedQuote) ||
+        suppliedQuote.receiver !== config.recipient ||
+        suppliedQuote.network !== NETWORK ||
+        suppliedQuote.asset !== ASSET ||
+        suppliedQuote.amountBaseUnits !== AMOUNT_BASE_UNITS ||
+        suppliedQuote.mode !== "live" ||
+        suppliedQuote.providerId !== context.request.providerId ||
+        suppliedQuote.profileId !== context.request.profileId ||
+        suppliedQuote.requestHash !== requestHash(context.request) ||
+        Date.parse(suppliedQuote.expiresAt) <= now()
+      )
+        fail("DEMO_SCOPE_MISMATCH", 403);
 
-    let outstanding;
-    try {
-      outstanding = await getOutstandingQuote({
-        quoteId: suppliedQuote.quoteId,
+      let outstanding;
+      try {
+        outstanding = await getOutstandingQuote({
+          quoteId: suppliedQuote.quoteId,
+          sessionId,
+          jobId,
+          request: structuredClone(context.request),
+        });
+      } catch {
+        fail("DEMO_UNAVAILABLE", 503);
+      }
+      if (
+        !isRecord(outstanding) ||
+        outstanding.sessionId !== sessionId ||
+        outstanding.jobId !== jobId ||
+        !sameJson(outstanding.quote, suppliedQuote) ||
+        !sameJson(outstanding.request, context.request)
+      )
+        fail("DEMO_SCOPE_MISMATCH", 403);
+
+      return {
+        context,
+        quote: suppliedQuote,
         sessionId,
+        ip,
         jobId,
-        request: structuredClone(context.request),
-      });
-    } catch {
-      fail("DEMO_UNAVAILABLE", 503);
+      };
     }
-    if (
-      !isRecord(outstanding) ||
-      outstanding.sessionId !== sessionId ||
-      outstanding.jobId !== jobId ||
-      !sameJson(outstanding.quote, suppliedQuote) ||
-      !sameJson(outstanding.request, context.request)
-    )
-      fail("DEMO_SCOPE_MISMATCH", 403);
-
-    return {
-      context,
-      quote: suppliedQuote,
-      sessionId,
-      ip,
-      jobId,
-    };
-  }
 
   return Object.freeze({
     async authorizeForQuote(input, session) {

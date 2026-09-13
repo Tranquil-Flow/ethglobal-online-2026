@@ -1022,41 +1022,24 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
               // challenge so the client can invoke its paymentAuthorizer callback.
               return basePayments.authorize(args);
             }
+            // L-SPONSOR-DEMO-OT1: when the client already obtained a real
+            // payment-signature via /v2/demo-sponsor/authorize (the SDK
+            // path), forward it to basePayments.authorize directly. The
+            // legacy wrapper path tried to re-sign with demoSponsor, but
+            // the inner createSinglePaymentGuard rejects the wrapper's
+            // proofContext (it lacks a real 402 challenge body), which
+            // produced 503 PAYMENT_UNAVAILABLE. Bypass the re-sign and
+            // trust the already-signed header.
             const retained = store.get("quotes", quoteId);
             const suppliedQuote = retained?.quote;
             if (!suppliedQuote || !request) {
               return basePayments.authorize(args);
             }
-            const proofContext = {
-              quote: structuredClone(suppliedQuote),
-              request: structuredClone(request),
-              headers: {},
-              body: structuredClone(suppliedQuote),
-              idempotencyKey,
-              budget: {
-                maxAmountBaseUnits: suppliedQuote.amountBaseUnits,
-                asset: suppliedQuote.asset,
-                network: suppliedQuote.network,
-              },
-              baseUrl: config.publicOrigin ?? "",
-              status: 402,
-            };
-            const session = {
-              sessionId: principalId,
-              jobId: idempotencyKey,
-              ip: "127.0.0.1",
-              paymentContext: proofContext,
-            };
-            const proof = await demoSponsor.authorizeForQuote(proofContext, session);
-            const mergedHeaders = { ...(paymentHeaders ?? {}) };
-            if (proof?.headers?.["payment-signature"]) {
-              mergedHeaders["payment-signature"] = proof.headers["payment-signature"];
-            }
             return basePayments.authorize({
               request,
               quoteId,
               principalId,
-              paymentHeaders: mergedHeaders,
+              paymentHeaders,
               idempotencyKey,
               signal,
             });
@@ -1095,17 +1078,12 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       payments: effectivePayments,
       ...(demoSponsor
         ? {
-            demoSponsor: {
-              status: () => demoSponsor.status(),
-              authorize({ context, principalId, idempotencyKey, ip }) {
-                return demoSponsor.authorizeForQuote(context, {
-                  sessionId: principalId,
-                  jobId: idempotencyKey,
-                  ip,
-                  paymentContext: context,
-                });
-              },
-            },
+            // Raw demoSponsor — core's /v2/demo-sponsor/authorize route uses
+            // demoSponsor.authorizeForQuote directly, so the raw binding is
+            // passed here. The legacy { status, authorize } adapter stays
+            // attached to payments.authorize via effectivePayments above and
+            // is intentionally NOT exposed to core.
+            demoSponsor,
           }
         : {}),
       discovery: directDiscovery,

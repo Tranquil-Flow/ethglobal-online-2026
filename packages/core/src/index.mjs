@@ -23,6 +23,8 @@ export {
 
 const hash = (s) => createHash("sha256").update(s).digest("hex");
 const iso = () => new Date().toISOString();
+const isRecord = (value) =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
 const terminal = (j) =>
   ["succeeded", "failed", "cancelled"].includes(j.executionStatus);
 class Failure extends Error {
@@ -76,6 +78,7 @@ export function createApp({
   signer,
   executor,
   payments,
+  demoSponsor,
   discovery,
   history,
   eventSink,
@@ -83,6 +86,8 @@ export function createApp({
   offers,
   runtimeStatus,
 } = {}) {
+  if (demoSponsor && typeof demoSponsor.authorizeForQuote !== "function")
+    throw new Error("Invalid demoSponsor binding");
   if (!store) throw new Error("Explicit durable store required");
   if (!["development", "live"].includes(config.mode))
     throw new Error("Explicit operation mode required");
@@ -1279,6 +1284,96 @@ export function createApp({
     if (method === "GET" && url.pathname === "/v2/offers") {
       if (!offers) fail(503, "OFFERS_UNAVAILABLE");
       return send(res, 200, await bounded((signal) => offers.list({ signal })));
+    }
+    if (method === "POST" && url.pathname === "/v2/demo-sponsor/authorize") {
+      if (!demoSponsor) fail(503, "DEMO_SPONSOR_UNAVAILABLE");
+      const s = session(req);
+      rate(s.principalId, c.requestRate);
+      const b = await body(req);
+      exact(b, ["context"]);
+      const ctx = b.context;
+      if (
+        !isRecord(ctx) ||
+        !isRecord(ctx.quote) ||
+        !isRecord(ctx.request) ||
+        typeof ctx.idempotencyKey !== "string" ||
+        ctx.idempotencyKey.length < 1 ||
+        ctx.idempotencyKey.length > 256
+      )
+        fail(400, "INVALID_INPUT");
+      const attempt = store.get(
+        "attempts",
+        digestOf({ principalId: s.principalId, key: ctx.idempotencyKey }),
+      );
+      if (!attempt || attempt.principalId !== s.principalId)
+        fail(409, "ATTEMPT_UNAVAILABLE");
+      if (attempt.state !== "required")
+        fail(409, "ATTEMPT_NOT_AWAITING_PAYMENT");
+      // Build the matching session that w6-demo-sponsor.validateScope expects.
+      const sponsorSession = {
+        sessionId: s.principalId,
+        jobId: ctx.idempotencyKey,
+        ip:
+          (req.headers["x-forwarded-for"] || "")
+            .toString()
+            .split(",")[0]
+            .trim() || "127.0.0.1",
+        paymentContext: ctx,
+      };
+      let result;
+      try {
+        result = await bounded((signal) =>
+          demoSponsor.authorizeForQuote(ctx, sponsorSession, { signal }),
+        );
+      } catch (error) {
+        if (error && typeof error.code === "string" && error.code.startsWith("DEMO_")) {
+          const status =
+            error.code === "DEMO_RATE_LIMITED" || error.code === "DEMO_QUEUE_FULL"
+              ? 429
+              : error.code === "DEMO_UNAVAILABLE" || error.code === "DEMO_SIGNING_FAILED" || error.code === "DEMO_JOURNAL_FULL"
+                ? 503
+                : 403;
+          fail(status, error.code);
+        }
+        fail(503, "DEMO_SPONSOR_FAILED");
+      }
+      if (
+        !result ||
+        !isRecord(result.headers) ||
+        typeof result.headers["payment-signature"] !== "string"
+      )
+        fail(503, "DEMO_SPONSOR_INVALID_RESULT");
+      // Cast the wide result shape down to the strictly-allowlisted wire surface.
+      return send(res, 200, {
+        version: result.version ?? "w6-demo-sponsor-authorization-v1",
+        headers: { "payment-signature": result.headers["payment-signature"] },
+        payer: isRecord(result.payer)
+          ? {
+              accountId: result.payer.accountId,
+              network: result.payer.network,
+              role: result.payer.role,
+            }
+          : null,
+        display: isRecord(result.display) ? { label: result.display.label } : null,
+        binding: isRecord(result.binding)
+          ? {
+              jobId: result.binding.jobId,
+              quoteId: result.binding.quoteId,
+              profileId: result.binding.profileId,
+              requestHash: result.binding.requestHash,
+              recipient: result.binding.recipient,
+              amountBaseUnits: result.binding.amountBaseUnits,
+            }
+          : null,
+        journal: isRecord(result.journal)
+          ? {
+              status: result.journal.status,
+              sponsoredAt: result.journal.sponsoredAt,
+              cumulativeSponsoredAmountBaseUnits:
+                result.journal.cumulativeSponsoredAmountBaseUnits,
+            }
+          : null,
+      });
     }
     if (method === "GET" && url.pathname === "/v1/providers") {
       const names = url.searchParams.getAll("name");
