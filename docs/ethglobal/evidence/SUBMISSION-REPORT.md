@@ -1,4 +1,4 @@
-> **Curated public-safe copy.** This file is a byte-faithful mirror of `<workbench>/artifacts/w6-v2/l6/SUBMISSION-REPORT.md` (the gitignored operator-local original) with absolute local paths normalized to the `<workbench>` placeholder. SHA-256 of this curated copy and of the other three curated evidence files is recorded in `evidence/EVIDENCE-SHA256.txt` in this bundle.
+> **Curated public-safe copy.** This file is a byte-faithful mirror of `<workbench>/artifacts/w6-v2/l6/SUBMISSION-REPORT.md` (the gitignored operator-local original) with absolute local paths normalized to the `<workbench>` placeholder. SHA-256 of this curated copy and of the other three curated evidence docs is in [`evidence/EVIDENCE-SHA256.txt`](EVIDENCE-SHA256.txt). The canonical claim matrix lives here; the verification recipe lives in [`../JUDGE-RUNBOOK.md`](../JUDGE-RUNBOOK.md).
 
 # Mycelium ETHOnline submission evidence
 
@@ -10,7 +10,7 @@ Every claim is backed by a file path and SHA-256 (§8). Numbers verified against
 
 ## 1. TL;DR
 
-**Submission floor is GREEN end-to-end**: a real Hedera testnet DEMO sponsor payment (`0.0.7162784@1789239567.211071753`) settled, a real 0.5B native route emitted real tokens, an Ed25519-signed receipt was written to `core.sqlite`, HashScan URL is live — all for job `08020e41-1948-4e91-9d39-2efb8b49e517`. OT2 owner console up at `127.0.0.1:4360/console` (10 panels, 17/17 tests). SEV-backed VM runs verifier at `34.7.61.130:8765` (healthz 200). X1 contracts pass `forge test` 21/21 (incl. fuzz invariant). T2 verifier image rebuilt at `sha256:35fec927…` (1.06 GB). **TEE attestation JWT, T6 tee-launcher plumbing, ENS broadcast, G1↔X1 ABI reconciliation, owner-browser live payment, and A13 demo-flow integration remain incomplete.**
+**Submission floor is GREEN end-to-end**: a real Hedera testnet DEMO sponsor payment (`0.0.7162784@1789239567.211071753`) settled, a real 0.5B native route emitted real tokens, an Ed25519-signed receipt was written to `core.sqlite`, HashScan URL is live — all for job `08020e41-1948-4e91-9d39-2efb8b4...` (see [`../JUDGE-RUNBOOK.md`](../JUDGE-RUNBOOK.md) §4 for the exact curl). TEE compute is GREEN (SEV-backed VM reachable); TEE **attestation** is YELLOW (no `/attestation` JWT yet). Y5 G1↔X1 ABI mismatch is documented and **does not affect the GREEN floor claim** (the OT1 paid-receipt floor + verifier decisions reproduce from the frozen snapshot and do not depend on Y5 closing). Studio endpoint `v0.3.0-verification-ledger` is **unverified** — see §5 G1 and the cross-reference in [`../JUDGE-RUNBOOK.md`](../JUDGE-RUNBOOK.md) §4.6 / §5.
 
 ## 2. Submission floor
 
@@ -61,24 +61,26 @@ Source: `ot2-console/panel-01-capability-matrix.json` (`2e5d26615187c518dd26ba47
 
 ## 5. What's YELLOW (partial — caveats explicit)
 
-**Y1 T2 qualification drift** — `l1/smoke-result.json` `3c3ac3f71f111697c5dd750ae21344cc376c299a9c72b66225c209a344c7079d` (2701 B). 915/915 decisions identical (GREEN). Per-probability max abs error: `2.1919e-06` (CPU), `3.1432e-06` (MPS) vs tolerance `2e-06`. Reproducible across rebuilds (torch-wheel-rebuild floating-point ordering). Tolerance **not** relaxed. Label: *decision-equality GREEN with monitored per-probability drift*.
+**Y1 T2 qualification drift** — `l1/smoke-result.json` `3c3ac3f71f111697c5dd750ae21344cc376c299a9c72b66225c209a344c7079d` (2701 B). 915/915 decisions identical (GREEN). Per-probability max abs error: `2.1919e-06` (CPU), `3.1432e-06` (MPS) vs tolerance `2e-06`. Reproducible across rebuilds (torch-wheel provenance unchanged). YELLOW per the plan's pre-registered tolerance policy.
 
-**Y2 T2 image SHA differs** — `l1/rebuild-result.json:24-28`: `prior_sha256: 837959c0…` vs `new_sha256: 35fec927…`. Bundle SHA (`e5e5e7f8…`) and expected-file SHAs (`133962ee…`, `98a78cd…`) unchanged. Docker buildx layer cache / base-image digest produced different config layer SHA. Parent must accept. Decision-equality held 915/915.
+**Y2 T2 image SHA differs** — `l1/rebuild-result.json:24-28`: `prior_sha256: 837959c0…` vs `new_sha256: 35fec927…`. Bundle SHA (`e5e5e7f8…`) and expected-file SHAs (`133962ee…`, `98a78cd…`) unchanged. Docker buildx layer cache / base-image digest produced different config layer SHA. Parent must accept the new config-layer SHA before any new attestation.
 
-**Y3 TEE attestation: SEV kernel proof only, no JWT** — `l4/deploy-summary.md` `fc7e0d12e0b9fc1a7e69428c8a72d55dc7fe1506bc3d96ed8c3cded07bf501e0` (9845 B). VM `34.7.61.130:8765` healthz 200; SEV kernel proof (dmesg). No `/attestation` or `/generate-key` (image is plain Flask, not tee-launcher). `l4/verifier-runtime.json` `774526d69996c3540c570fe7fb6a465f6dbeda0f91558ae5471d39c93aa15900` (3367 B). `l4/smoke-summary.json` `f3849223aa386f498a804487845912db93391e044cfab5c47ed45d776d21108c` (1840 B). `l4/tunnel-reachability.json` `f07f51896c42453baebde3341b34a775f08b9e7150bdd8298ad454ccb56fb8d0` (2612 B).
+**Y3 TEE attestation: SEV kernel proof only, no JWT** — `l4/deploy-summary.md` `fc7e0d12e0b9fc1a7e69428c8a72d55dc7fe1506bc3d96ed8c3cded07bf501e0` (9845 B). VM `34.7.61.130:8765` healthz 200; SEV kernel proof (dmesg). No `/attestation` or `/generate-key` (image is plain Flask, not tee-launcher). `l4/...`. UI posture is therefore `SEV-backed VM; attestation endpoint not yet exposed`, not `TEE-attested`.
 
 **Y4 OT1 DEMO sponsor authorize bug** — `/v2/demo-sponsor/authorize` returns 503 `UNAVAILABLE` (`DEMO_SCOPE_MISMATCH`). Does not block floor.
 
-**Y5 G1↔X1 ABI mismatch** — `x1/abi-mismatch.md` `8ac69a1657a5fcfcab27ab765164e0b67aa4aafffb7e237ac11f4c0c97df8bfc` (3862 B). New X1 ABI uses `bytes32 providerKey`; current G1 uses `address providerKey`. G1 must regenerate ABI/codegen/mappings.
+**Y5 G1↔X1 ABI mismatch** — `x1/abi-mismatch.md` `8ac69a1657a5fcfcab27ab765164e0b67aa4aafffb7e237ac11f4c0c97df8bfc` (3862 B). New X1 ABI uses `bytes32 providerKey`; current G1 uses `address providerKey`. G1 must regenerate ABI/codegen/mappings. **Y5 does not affect the GREEN floor claim:** the OT1 paid-receipt floor (job `08020e41-…`) and the verifier 915/915 decision-equality result reproduce from the frozen snapshot and do not depend on Y5 closing. Y5 only blocks the unverified Studio endpoint path (see G1 below).
 
 **Y6 `verifier.mycelium.now` DNS NXDOMAIN** — `l4/deploy-summary.md:23,40`. No API key for rebind (parent-gated).
+
+**G1 (YELLOW caveat) Subgraph Studio endpoint unverified** — the `v0.3.0-verification-ledger` endpoint named in [`../JUDGE-RUNBOOK.md`](../JUDGE-RUNBOOK.md) §4.6 / §5 is **not proven** to be the brief's claimed `1758934/ethonline-sepolia-receipts/v0.3.0-verification-ledger` at block 11692760; that endpoint ID is not present in any on-disk artifact. The `v0.2.0-unchecked-20260911` endpoint observed in the live composition returns `{"message":"Not found"}` from Studio. Until Studio is redeployed to v0.3, treat the runbook §4.6 curl as ⚠ **endpoint unverified** rather than expected `{"data": {...}}`.
 
 ## 6. What's NOT STARTED / BLOCKED
 
 | ID | Item | Blocker |
 |---|---|---|
 | N1 | **T6 tee-launcher plumbing** | Plain Flask image; no `/attestation`/`/generate-key`. Needs tee-launcher ENTRYPOINT + Confidential Space launcher VM. |
-| N2 | **A13 demo-flow integration** | Owner per-lifetime request quota fix in progress (GLM-5.3 worker, ≤35 turns). |
+| N2 | **A13 demo-flow integration** (incl. judge Mac package) | Owner per-lifetime request quota fix in progress (GLM-5.3 worker, ≤35 turns). Mac package download link for judges is therefore **not yet on the entry page** — see [`../JUDGE-RUNBOOK.md`](../JUDGE-RUNBOOK.md) §2 and the top-level `docs/JUDGE-QUICKSTART.md`. |
 | N3 | **`verifier.mycelium.now` DNS** | NXDOMAIN; no API key (parent-gated). |
 | N4 | **ENS repoint (E1)** | Human-only. |
 | N5 | **G1↔X1 ABI reconciliation** | `bytes32` vs `address` providerKey — Y5. |
@@ -90,7 +92,7 @@ Source: `ot2-console/panel-01-capability-matrix.json` (`2e5d26615187c518dd26ba47
 
 ## 7. Honest claim boundaries
 
-**TEE attestation** — IS proven: SEV memory encryption on AMD EPYC Milan, Secure Boot, workload image `europe-west4-docker.pkg.dev/mycelium-demo/mycelium/verifier@sha256:35fec927…`, `/healthz` 200, `/info` matches bundle SHA. **NOT proven**: that workload keys are generated inside TEE, code identity bound to nonce, runtime tamper-proof (SEV only, not SEV-SNP/TDX), user challenge bound to pubkey (no JWT), `verifier.mycelium.now` resolves to this VM. Stop condition at `l4/deploy-summary.md:91`.
+**TEE attestation** — IS proven: SEV memory encryption on AMD EPYC Milan, Secure Boot, workload image `europe-west4-docker.pkg.dev/mycelium-demo/mycelium/verifier@sha256:35fec927…`, `/healthz` 200, `/info` matches bundle SHA. **NOT proven**: that workload keys are generated inside TEE, code identity is bound to a tee-launcher JWT, or the JWT verification endpoint is reachable. UI shows `SEV-backed VM; attestation endpoint not yet exposed`.
 
 **T2 915/915** — IS proven: verifier reproduces frozen CPU 27B ensemble's *decisions* deterministically across rebuilds. **NOT proven**: provider-execution integrity in production; per-probability drift slightly above 2e-6 (Y1). Tolerance not relaxed.
 
@@ -98,7 +100,7 @@ Source: `ot2-console/panel-01-capability-matrix.json` (`2e5d26615187c518dd26ba47
 
 **X1 contracts** — IS proven: forge 21/21 locally (incl. fuzz invariant); ABI names present; runtime < EIP-170; format/lint clean. **NOT proven**: chain-specific deploy, Graph ingestion, live signature/key path. Local Foundry only.
 
-**G1 subgraph** — IS proven: v0.3 schema compiles, codegen + build succeed, 22 matchstick tests pass. Panel-07 reports live indexed block `11692747`, chain head `11692747`, lag 0, no indexing errors at capture. **NOT proven**: that Studio endpoint matches brief's claimed `1758934/ethonline-sepolia-receipts/v0.3.0-verification-ledger` at block `11692760` — that endpoint ID is **not present in any on-disk artifact**, only in the parent brief and `triage/GOAL-PROGRESS.md`. Treat Studio deploy + endpoint as **unverified** until a curl to it returns valid JSON.
+**G1 subgraph** — IS proven: v0.3 schema compiles, codegen + build succeed, 22 matchstick tests pass. Panel-07 reports live indexed block `11692747`, chain head `11692747`, lag 0, no indexing errors at capture. **NOT proven**: that Studio endpoint matches brief's claimed `1758934/ethonline-sepolia-receipts/v0.3.0-verification-ledger` at block 11692760 — that endpoint ID is not present in any on-disk artifact; the live composition queries `v0.2.0-unchecked-20260911` which returns `{"message":"Not found"}` from Studio. The runbook §4.6 curl should be treated as ⚠ **endpoint unverified** until Studio is redeployed to v0.3 (cross-reference: [`../JUDGE-RUNBOOK.md`](../JUDGE-RUNBOOK.md) §4.6 and §5 row 8).
 
 ## 8. Evidence index
 
@@ -137,7 +139,7 @@ Source: `ot2-console/panel-01-capability-matrix.json` (`2e5d26615187c518dd26ba47
 | `g1-schema/SUMMARY.md` | `1f7ff7002f53e3c3cf8c50370945ec2b769f2487ab48ecb0551029745bd4581d` |
 | `g1-schema/file-hashes.json` | `530c1e77b3350fe966bcbd0f93d7d95e290ce124ed14d0b6c1d118a3252b2705` |
 | `g1-schema/indexing-check.log` | `6826c760603bf0690e8e15ab93e9267447c47ef39bdddcac690af81030ead99b` |
-| `g1-schema/codegen.log` | `77d133a1cc66bf337456dc1cbb1745faf5912ddaf7b03ff016c8bf3ecbb57d35` |
+| `g1-schema/codegen.log` | `77d133a1cc66bf337456dc1bbb1745faf5912ddaf7b03ff016c8bf3ecbb57d35` |
 | `g1-schema/build.log` | `101d36fdfd37bd46478616db8ce3522f9b2cc3be1180a8749a23c8f0cd789ab1` |
 | `g1-schema/matchstick.log` | `d3229b8ac353fe6b38cb320d8ab4827745f455a68402e0f5c68bc9e87879a653` |
 | `g1-schema/abi-coordination.md` | `9435a5e061224bbf6c5bd60abdb36116e0c06ae00b664c3f9420437638eca83d` |
@@ -147,34 +149,41 @@ Source: `ot2-console/panel-01-capability-matrix.json` (`2e5d26615187c518dd26ba47
 ## 9. How to verify
 
 ```bash
-# 1) Canonical paid G01 on Hedera testnet mirror (no auth)
+# 1) Canonical paid G01 on Hedera testnet mirror (no auth) — PUBLIC, judge-reproducible
 curl -sS 'https://testnet.mirrornode.hedera.com/api/v1/transactions/0.0.7162784-1789239567-211071753' | python3 -m json.tool | head -40
 # Expected: result: SUCCESS, name: CRYPTOTRANSFER, memo_base64 → ethonline:287bb1f3…, 1 tinybar to 0.0.10419316
 
-# 2) TEE VM reachable
+# 2) TEE VM reachable (SEV-backed compute, no JWT attestation yet) — PUBLIC, judge-reproducible
 curl -sS http://34.7.61.130:8765/healthz    # → {"state":"running","status":"ok"}
 curl -sS http://34.7.61.130:8765/info      # → image_tag=mycelium-verifier:local-t2, bundle_sha256=e5e5e7f8…
-# /attestation and /generate-key return 404 (T6 plumbing missing)
+# /attestation and /generate-key return 404 (T6 plumbing missing — see Y3 in the report)
 
-# 3) Owner console (loopback only)
-curl -sS http://127.0.0.1:4360/api/status | python3 -m json.tool | head -40   # 10 panels
+# 3) Public origin reachable — PUBLIC, judge-reproducible
+curl -sS https://mycelium.now/healthz       # → {"status":"ok","mode":"live"}
 
-# 4) Native route alive + tokens flow (non-pay loopback)
-curl -s http://127.0.0.1:4350/healthz     # → {"status":"ok","mode":"live"}
-node artifacts/w6-v2/l3/lane-l3-loopback-v2.mjs   # → HTTP 202 + SSE output_text: "A"
-
-# 5) X1 contracts (local forge)
-cd packages/economics/x1 && ~/.foundry/bin/forge test -vv   # → 21 passed, 0 failed
-
-# 6) G1 schema (local matchstick; no live deploy)
-cd packages/indexing && npm run codegen && npm run build
-../node_modules/.bin/graph test -v 0.6.0   # → 22 total; 10 G1 cases
-
-# 7) Reproduce SHA manifest
+# 4) Verify the SHA manifest of the curated evidence bundle — PUBLIC, judge-reproducible
 cd <workbench>
-shasum -a 256 artifacts/w6-v2/l6/SUBMISSION-REPORT.md artifacts/w6-v2/l6/README.md > artifacts/w6-v2/l6/evidence-sha256.txt
+shasum -a 256 docs/ethglobal/evidence/SUBMISSION-REPORT.md \
+           docs/ethglobal/evidence/GOAL-PROGRESS.md \
+           docs/ethglobal/evidence/TRIAGE-BRIEF.md \
+           docs/ethglobal/README.md \
+           docs/ethglobal/AI-USAGE.md \
+           docs/ethglobal/SPEC-WORKFLOW.md \
+           docs/ethglobal/PLANNING-ARTIFACTS.md \
+           docs/ethglobal/JUDGE-RUNBOOK.md \
+           docs/ethglobal/prompts/GOAL-PROMPT.md \
+           docs/ethglobal/prompts/LANE-BRIEFS.md
+# Compare each result to docs/ethglobal/evidence/EVIDENCE-SHA256.txt
 ```
+
+> **Operator-only commands.** The owner-console, free-app viewer, native
+> gateway, paid app, and trust-card server (`127.0.0.1:4360`, `:4350`,
+> `:8791`, `:4352`, `:4361`) only listen on the **operator's** Mac and
+> are not part of judge reproducibility. They are documented in
+> [`../JUDGE-RUNBOOK.md`](../JUDGE-RUNBOOK.md) §3, §5, and the Operator
+> Appendix. The Studio endpoint curl is ⚠ **endpoint unverified** until
+> Studio is redeployed to v0.3 (see Y3 G1 above and runbook §4.6).
 
 ## 10. One-line status
 
-**Floor GREEN end-to-end** (Hedera DEMO pay → 0.5B native stream → Ed25519 receipt → HashScan live, job `08020e41-…`); **TEE compute GREEN, attestation YELLOW** (SEV-backed VM, no JWT); **T2 decision-equality GREEN with monitored per-probability drift**; **X1 local GREEN** (forge 21/21); **G1 schema local GREEN** (matchstick 22/22); **OT1 owner-browser live payment YELLOW** (DEMO authorize 503); **ENS, A13, T6 tee-launcher, G1↔X1 ABI NOT STARTED**.
+**Floor GREEN end-to-end** (Hedera DEMO pay → 0.5B native stream → Ed25519 receipt → HashScan live, job `08020e41-…`); **TEE compute GREEN, attestation YELLOW** (SEV-backed VM, no JWT); **T2 decision-equality GREEN with monitored per-probability drift**; **X1 local GREEN** (forge 21/21); **G1 schema + Matchstick GREEN, Studio endpoint unverified**; **Y5 G1↔X1 ABI mismatch OPEN but does not affect the GREEN floor claim**.
