@@ -27,6 +27,36 @@ const GUARDED_RECIPIENT = "0.0.10419316";
 const GUARDED_FEE_PAYER = "0.0.7162784";
 const AMOUNT_BASE_UNITS = "1";
 const NODE_ACCOUNT_IDS = Object.freeze(["0.0.3"]);
+const PAYMENT_MODES = Object.freeze(["demo", "wallet"]);
+const DEFAULT_PAYMENT_MODE = "demo";
+
+/**
+ * Resolve the active W6 payment mode. The mode is selected by the
+ * `W6_PAYMENT_MODE` environment variable and selects between two
+ * user-facing flows:
+ *
+ *   - `demo`   — server-side DEMO sponsor funds the user's inference
+ *                requests. No client wallet, key material, or x402
+ *                `payment-signature` header is required.
+ *   - `wallet` — the client must supply its own x402
+ *                `payment-signature` header (signed by the user's real
+ *                Hedera account / HashPack / WalletConnect).
+ *
+ * The function is deliberately side-effect free and accepts an injected
+ * `env` so it can be exercised directly from tests. Unknown values fall
+ * back to the default and emit a single, well-formed warning so an
+ * operator typo never disables the demo path.
+ */
+export function getPaymentMode({ env = process.env, warn = console.warn } = {}) {
+  const raw = env?.W6_PAYMENT_MODE;
+  if (raw === undefined || raw === "") return DEFAULT_PAYMENT_MODE;
+  const value = String(raw).trim().toLowerCase();
+  if (PAYMENT_MODES.includes(value)) return value;
+  warn(
+    `[w6-demo-sponsor] unknown W6_PAYMENT_MODE=${JSON.stringify(raw)}; falling back to ${DEFAULT_PAYMENT_MODE}`,
+  );
+  return DEFAULT_PAYMENT_MODE;
+}
 
 const paymentRequire = createRequire(
   new URL("../packages/payments/package.json", import.meta.url),

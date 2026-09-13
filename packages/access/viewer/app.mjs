@@ -990,12 +990,14 @@ function renderJob(j) {
   );
   text("receipt-state", receiptLabelFor(j));
   text("receipt-digest", j.receiptDigest ?? notSupplied);
-  text(
-    "payment-state",
-    ["sponsored-local", "non-economic"].includes(config.accessPolicy)
-      ? "Non-monetary — no settlement or refund claim"
-      : (j.payment?.status || "unknown") + " · " + j.mode,
+  const sponsorPolicy = ["sponsored-local", "non-economic"].includes(
+    config.accessPolicy,
   );
+  const paymentLabel = sponsorPolicy
+    ? "Non-monetary — no settlement or refund claim"
+    : (j.payment?.status || "unknown") + " · " + j.mode;
+  text("payment-state", paymentLabel);
+  renderPaymentModeBadge(j, sponsorPolicy);
   transaction(
     "payment-tx",
     "Transaction: ",
@@ -1005,6 +1007,71 @@ function renderJob(j) {
   $("payment-tx").append(" · Facilitator: " + notSupplied);
   updateControls();
 }
+
+// Active payment mode for the receipt card. Reads W6_PAYMENT_MODE (default
+// "demo"). "demo" shows a DEMO sponsor-funded badge; "wallet" surfaces the
+// real Hedera wallet-connect UI so users can sign with their own account.
+// Mirrors composition/w6-demo-sponsor.mjs getPaymentMode — the viewer is
+// a trusted host, so reading process.env here is acceptable. A duplicate of
+// the constant is intentionally kept here so the renderer does not have to
+// load the server-only sponsor module.
+function viewerPaymentMode() {
+  const raw = (globalThis?.process?.env?.W6_PAYMENT_MODE ?? "")
+    .toString()
+    .trim()
+    .toLowerCase();
+  return raw === "wallet" ? "wallet" : "demo";
+}
+
+function renderPaymentModeBadge(j, sponsorPolicy) {
+  const node = $("payment-mode-badge");
+  if (!node) return;
+  const mode = viewerPaymentMode();
+  node.dataset.mode = mode;
+  if (sponsorPolicy) {
+    node.hidden = true;
+    node.textContent = "";
+    return;
+  }
+  node.hidden = false;
+  if (mode === "wallet") {
+    node.className = "payment-mode-badge payment-mode-wallet";
+    node.textContent =
+      "Wallet mode — connect HashPack to sign your own payment-signature header.";
+    return;
+  }
+  node.className = "payment-mode-badge payment-mode-demo";
+  const sponsor = j.payment?.payer?.accountId ?? config?.payerAccountId;
+  node.textContent = sponsor
+    ? `DEMO mode — this request is funded by the project's DEMO sponsor (${sponsor}). No wallet required.`
+    : "DEMO mode — this request is funded by the project's DEMO sponsor. No wallet required.";
+}
+// Wallet-mode controls (only meaningful when W6_PAYMENT_MODE=wallet). The
+// HashPack / WalletConnect wiring lives in w6-hashpack-adapter.mjs; this
+// handler is a thin affordance that opens a connect dialog when the user
+// wants to switch out of DEMO mode without leaving the receipt card.
+const connectWalletButton = $("connect-wallet");
+if (connectWalletButton) {
+  connectWalletButton.onclick = () =>
+    action(async () => {
+      status("Connect your Hedera wallet (HashPack) to sign your own payment-signature header.");
+      const connect =
+        globalThis?.w6ConnectWallet ?? globalThis?.hashpackConnect;
+      if (typeof connect === "function") {
+        try {
+          await connect();
+          status("Wallet connected — payment-signature headers will be signed locally.");
+        } catch (error) {
+          status("Wallet connect failed: " + (error?.message ?? "unknown"));
+        }
+      } else {
+        status(
+          "Wallet adapter not injected by host — open the demo with the HashPack adapter enabled to use wallet mode.",
+        );
+      }
+    });
+}
+
 $("cancel").onclick = () =>
   action(async () => {
     if (recoveredReadOnly) throw new AccessError("RECOVERY_READ_ONLY");

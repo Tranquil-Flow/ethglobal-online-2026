@@ -232,6 +232,34 @@
               <p id="payment-tx">
                 Transaction: Not supplied · Facilitator: Not supplied
               </p>
+              <div
+                id="payment-mode-toggle"
+                class="payment-mode-toggle"
+                role="group"
+                aria-label="Payment mode toggle"
+              >
+                <span class="payment-mode-toggle-label">Payment mode:</span>
+                <span
+                  id="payment-mode-badge"
+                  class="payment-mode-badge payment-mode-demo"
+                  data-mode="demo"
+                  data-testid="payment-mode-badge"
+                  aria-live="polite"
+                >
+                  DEMO mode — this request is funded by the project&apos;s
+                  DEMO sponsor. No wallet required.
+                </span>
+                <button
+                  id="connect-wallet"
+                  type="button"
+                  class="connect-wallet-button"
+                  hidden
+                  data-testid="connect-wallet"
+                  aria-label="Connect Hedera wallet"
+                >
+                  Connect Hedera wallet
+                </button>
+              </div>
             </li>
             <li data-beat="streamed-output">
               <h3>Streamed output</h3>

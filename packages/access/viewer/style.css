@@ -661,3 +661,45 @@ footer {
     margin-bottom: 8px;
   }
 }
+
+/* W6 payment mode toggle — DEMO sponsor / Hedera wallet */
+.payment-mode-toggle {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+.payment-mode-toggle-label {
+  color: var(--muted, #555);
+  font-weight: 600;
+}
+.payment-mode-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 1rem;
+  border: 1px solid transparent;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.payment-mode-demo {
+  background: #ecfdf5;
+  border-color: #10b981;
+  color: #065f46;
+}
+.payment-mode-wallet {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1e3a8a;
+}
+.connect-wallet-button {
+  padding: 0.3rem 0.7rem;
+  border-radius: 0.4rem;
+  border: 1px solid #3b82f6;
+  background: #3b82f6;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.connect-wallet-button:hover { background: #2563eb; }
