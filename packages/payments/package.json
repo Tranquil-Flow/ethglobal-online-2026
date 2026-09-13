@@ -39,5 +39,8 @@
     "eslint": "10.10.0",
     "globals": "16.5.0",
     "prettier": "3.6.2"
-  }
+  },
+  "license": "AGPL-3.0-or-later",
+  "author": "Tranquil-Flow <tranquil_flow@protonmail.com>",
+  "licenseUrl": "https://www.gnu.org/licenses/agpl-3.0.txt"
 }

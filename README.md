@@ -115,3 +115,12 @@ The finite local demo uses synthetic provider identities and closes its services
 - [Current execution evidence](docs/handoffs/w6-approved-execution.md) · [Historical continuation baseline](docs/handoffs/w6-parent-readiness.md)
 
 Wave 6 operational notes and new observed evidence supersede older readiness prose where explicitly stated; they do not retroactively qualify old candidates. Final publication, license/eligibility decisions and submission remain the owner's responsibility.
+
+
+## License and provenance
+
+This workbench is licensed under **GNU Affero General Public License v3.0 or later** (AGPL-3.0-or-later). See the [LICENSE](LICENSE) file in the repository root for the full text.
+
+The workbench builds on [Mycelium](https://github.com/Tranquil-Flow/mycelium) (also AGPL-3.0-or-later) through a protocol adapter; no Mycelium source is copied into this repository. Dependency licenses (Hedera / The Graph / ENS / OpenZeppelin / others) are inventoried in [`docs/PROVENANCE.md`](docs/PROVENANCE.md) — none are AGPL-incompatible.
+
+The Wave 6 contract code in `packages/economics/x1/src/*.sol` still carries the upstream `SPDX-License-Identifier: MIT` marker and was not migrated to AGPL as part of the L-LICENSE commit; that change requires separate owner approval because the X1 contract subtree is shared with another lane. AI assistance for this commit is recorded in [`docs/handoffs/w6-license-provenance.md`](docs/handoffs/w6-license-provenance.md).

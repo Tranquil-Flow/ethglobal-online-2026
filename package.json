@@ -26,5 +26,8 @@
     "check:operations": "npm --prefix operations run check && npm --prefix operations run smoke && node --test composition/test/backup.test.mjs",
     "check:local-services": "node --test composition/test/local-services.test.mjs",
     "serve:application:https": "node composition/application-https.mjs"
-  }
+  },
+  "license": "AGPL-3.0-or-later",
+  "author": "Tranquil-Flow <tranquil_flow@protonmail.com>",
+  "licenseUrl": "https://www.gnu.org/licenses/agpl-3.0.txt"
 }
