@@ -15,7 +15,7 @@
 const BASE_URL = process.env.W6_DEMO_BASE_URL ?? "http://127.0.0.1:4352";
 const PROVIDER_ID = "service.ethonline-node-a.eth";
 const PROFILE_ID =
-  "sha256:e5f80f1c1d2d756506e151a41c41a19a4ab20de889a620b13fd8894a1a78bc0c";
+  "sha256:c4cedd8619a8f59ce4aa6f40ee42ff21c6fabe19afa19af28e6349c0819e53fc";
 
 function log(step, value) {
   console.log(`[${step}]`, JSON.stringify(value, null, 2).slice(0, 1200));
