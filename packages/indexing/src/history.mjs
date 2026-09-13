@@ -200,6 +200,51 @@ export function historyReasons(history, { trustedVerifiers = [] } = {}) {
     reasons.push("ASSESSMENT_UNAVAILABLE");
   return reasons.length ? reasons : ["HISTORY_OBSERVED"];
 }
+
+/**
+ * W6 trust reasons — additive to historyReasons. Spec: docs/handoffs/w6-trust-formula.md §9.
+ *
+ * `trust` shape (matches the suggested JSON in §9; trustScore is a BigInt/string 0..1000):
+ *   { providerKey, trustScore, trustPpm, passRatePpm, volumeConfidencePpm,
+ *     recencyConfidencePpm, receiptCount, matchCount, mismatchCount,
+ *     inconclusiveCount, unavailableCount, invalidAssessmentCount,
+ *     activeReceiptDays7, latestActivityBlock, latestActivityTimestamp,
+ *     version }
+ *
+ * Returns [] when no trust object is provided (caller treats absence as not-yet-fetched).
+ * Existing history reasons are NOT replaced; they remain authoritative for gates.
+ */
+export function providerTrustReasons(trust) {
+  if (!trust || typeof trust !== "object") return [];
+  const reasons = [];
+  const score = trust.trustScore;
+  if (typeof score === "number" || typeof score === "bigint" || typeof score === "string") {
+    reasons.push("PROVIDER_TRUST_OBSERVED");
+    // Number.isFinite(BigInt) is false; compare as BigInt when applicable.
+    let numeric = null;
+    if (typeof score === "bigint") numeric = score;
+    else if (typeof score === "string" && /^\d+$/.test(score)) numeric = BigInt(score);
+    else if (typeof score === "number" && Number.isFinite(score)) numeric = BigInt(Math.trunc(score));
+    if (numeric !== null) {
+      if (numeric >= 750n) reasons.push("PROVIDER_TRUST_HIGH");
+      else if (numeric >= 500n) reasons.push("PROVIDER_TRUST_MEDIUM");
+      else reasons.push("PROVIDER_TRUST_LOW");
+    }
+    const match = Number(trust.matchCount ?? 0);
+    const mismatch = Number(trust.mismatchCount ?? 0);
+    if (match + mismatch === 0) reasons.push("PROVIDER_TRUST_UNASSESSED");
+    if (Number(trust.inconclusiveCount ?? 0) > 0)
+      reasons.push("PROVIDER_TRUST_INCONCLUSIVE_PRESENT");
+    if (Number(trust.unavailableCount ?? 0) > 0)
+      reasons.push("PROVIDER_TRUST_UNAVAILABLE_PRESENT");
+    if (Number(trust.invalidAssessmentCount ?? 0) > 0)
+      reasons.push("PROVIDER_TRUST_INVALID_CLAIMS_PRESENT");
+  } else {
+    reasons.push("PROVIDER_TRUST_UNOBSERVED");
+  }
+  return reasons;
+}
+
 function historyConfig(config) {
   if (
     !modes.includes(config.mode) ||
@@ -463,6 +508,8 @@ export async function queryProviderHistory({
       truncated: false,
     },
     reasons: [],
+    trustReasons: [],
+    trust: null,
     receiptReasons: [],
     counts: {},
     provenance: [],
@@ -710,6 +757,8 @@ export async function queryProviderHistory({
   }
   validate("History", history);
   report.reasons = historyReasons(history, c);
+  report.trustReasons = providerTrustReasons(report.trust);
+  for (const code of report.trustReasons) report.reasons.push(code);
   report.receiptReasons = receiptHistoryReasons(report);
   if (report.unlinkedClaims.length) report.reasons.push("UNLINKED_CLAIM");
   if (report.truncated) report.reasons.push("HISTORY_WINDOW_LIMIT");
