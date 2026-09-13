@@ -994,6 +994,83 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       )
         fail("INVALID_DEMO_SPONSOR_BINDING");
     }
+    // L-SPONSOR: when the demo sponsor is wired and access policy is ordinary-paid-x402,
+    // route payments.authorize through demoSponsor.authorizeForQuote so the trusted app-state
+    // seam (getOutstandingQuote) is invoked exactly once with context.request forwarded.
+    // The wrapper:
+    //   1. builds a context with { quote, request, headers, idempotencyKey, budget } from the
+    //      core call's args,
+    //   2. calls demoSponsor.authorizeForQuote to obtain the { payment-signature } header,
+    //   3. merges those headers into paymentHeaders and forwards to the real payment port.
+    // validateScope already runs inside the sponsor and enforces every existing guard.
+    const wireDemoSponsor = !!(demoSponsor && config.accessPolicy === "ordinary-paid-x402");
+    const effectivePayments = wireDemoSponsor
+      ? (() => {
+          const basePayments = payments;
+          const headerPolicy = basePayments.headerPolicy ?? {
+            request: [],
+            response: [],
+          };
+          const wrappedAuthorize = async (args) => {
+            const { request, quoteId, principalId, paymentHeaders, idempotencyKey, signal } = args;
+            const hasProof =
+              paymentHeaders &&
+              typeof paymentHeaders["payment-signature"] === "string" &&
+              paymentHeaders["payment-signature"].length > 0;
+            if (!hasProof) {
+              // First pass: no payment-signature yet — let the payment port emit the 402
+              // challenge so the client can invoke its paymentAuthorizer callback.
+              return basePayments.authorize(args);
+            }
+            const retained = store.get("quotes", quoteId);
+            const suppliedQuote = retained?.quote;
+            if (!suppliedQuote || !request) {
+              return basePayments.authorize(args);
+            }
+            const proofContext = {
+              quote: structuredClone(suppliedQuote),
+              request: structuredClone(request),
+              headers: {},
+              body: structuredClone(suppliedQuote),
+              idempotencyKey,
+              budget: {
+                maxAmountBaseUnits: suppliedQuote.amountBaseUnits,
+                asset: suppliedQuote.asset,
+                network: suppliedQuote.network,
+              },
+              baseUrl: config.publicOrigin ?? "",
+              status: 402,
+            };
+            const session = {
+              sessionId: principalId,
+              jobId: idempotencyKey,
+              ip: "127.0.0.1",
+              paymentContext: proofContext,
+            };
+            const proof = await demoSponsor.authorizeForQuote(proofContext, session);
+            const mergedHeaders = { ...(paymentHeaders ?? {}) };
+            if (proof?.headers?.["payment-signature"]) {
+              mergedHeaders["payment-signature"] = proof.headers["payment-signature"];
+            }
+            return basePayments.authorize({
+              request,
+              quoteId,
+              principalId,
+              paymentHeaders: mergedHeaders,
+              idempotencyKey,
+              signal,
+            });
+          };
+          return Object.assign(Object.create(basePayments), {
+            headerPolicy,
+            authorize: wrappedAuthorize,
+            quote: basePayments.quote?.bind(basePayments),
+            recordExecutionOutcome: basePayments.recordExecutionOutcome?.bind(basePayments),
+            getPayment: basePayments.getPayment?.bind(basePayments),
+            close: basePayments.close?.bind(basePayments),
+          });
+        })()
+      : payments;
     app = createApp({
       config: {
         ...config.core,
@@ -1015,7 +1092,7 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       store,
       signer,
       executor,
-      payments,
+      payments: effectivePayments,
       ...(demoSponsor
         ? {
             demoSponsor: {
