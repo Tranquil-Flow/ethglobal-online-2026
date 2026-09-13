@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Placeholder only. Replace ProgramArguments after M1/M2 qualification, then remove Disabled. -->
+  <key>Label</key><string>now.mycelium.route27b</string>
+  <key>Disabled</key><true/>
+  <key>ProgramArguments</key><array><string>/usr/bin/false</string></array>
+  <key>KeepAlive</key><false/>
+  <key>RunAtLoad</key><false/>
+  <key>StandardOutPath</key><string>/Users/evinova-self/Library/Logs/mycelium-route27b.log</string>
+  <key>StandardErrorPath</key><string>/Users/evinova-self/Library/Logs/mycelium-route27b.log</string>
+</dict>
+</plist>
