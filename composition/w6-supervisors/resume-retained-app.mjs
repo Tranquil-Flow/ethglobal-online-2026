@@ -45,6 +45,59 @@ if (mode === "paid") {
   if (updated === 0) throw new Error("RETAINED_PAYMENT_CONFIG_REQUIRED");
 }
 
+// PARENT FIXTURE GATE (L-ENV-LIVE-FIX-GATE):
+//   Moved from composition/w6-live-app-paid.mjs so the fixture URL,
+//   evidence class, and bearer token are written into operator.json
+//   BEFORE the supervisor persists it. With the gate applied this
+//   early, downstream code that reads operator.json (w6-live-app-paid.mjs
+//   `for (const [i, p] of manifest.providers.entries())` loop, the
+//   qualification check, the executor runtime) sees the fixture URL +
+//   synthetic_test_fixture evidence class and never tries to dial
+//   127.0.0.1:8791 against the offline node-0.
+//
+//   When the gate is off (default), nothing here changes operator.json
+//   — runtime.baseUrl and runtime.options.expectedEvidenceClass keep
+//   their on-disk values, and bearerTokenFile still references the
+//   regenerated native-gateway-token.txt.
+//
+//   Configuration:
+//     W6_NATIVE_FALLBACK_FIXTURE  -> "1" or "true" to enable (otherwise off)
+//     W6_NATIVE_FIXTURE_URL      -> loopback origin, default
+//                                    http://127.0.0.1:8765
+//     W6_NATIVE_FIXTURE_TOKEN    -> bearer token expected by the fixture
+//                                    server, default = the current native
+//                                    gateway token content
+const fixtureGate =
+  process.env.W6_NATIVE_FALLBACK_FIXTURE === "1" ||
+  process.env.W6_NATIVE_FALLBACK_FIXTURE === "true";
+if (fixtureGate) {
+  const fixtureBaseUrl = process.env.W6_NATIVE_FIXTURE_URL || "http://127.0.0.1:8765";
+  const fixtureBearerToken =
+    process.env.W6_NATIVE_FIXTURE_TOKEN ||
+    readFileSync(join(nativeRoot, "request-gateway-token.txt"), "utf8").trim();
+  const fixtureExpectedEvidenceClass = "synthetic_test_fixture";
+  let fixtureProvidersTouched = 0;
+  for (const provider of operator.providers ?? []) {
+    if (!provider.runtime) continue;
+    provider.runtime.baseUrl = fixtureBaseUrl;
+    provider.runtime.options ??= {};
+    provider.runtime.options.expectedEvidenceClass = fixtureExpectedEvidenceClass;
+    provider.runtime.bearerToken = fixtureBearerToken;
+    fixtureProvidersTouched += 1;
+  }
+  if (fixtureProvidersTouched === 0) {
+    throw new Error("FIXTURE_GATE_NO_RUNTIME_PROVIDERS — operator.json has no provider.runtime blocks to override");
+  }
+  console.log(
+    JSON.stringify({
+      status: "fixture-gate-applied",
+      baseUrl: fixtureBaseUrl,
+      expectedEvidenceClass: fixtureExpectedEvidenceClass,
+      providersTouched: fixtureProvidersTouched,
+    }),
+  );
+}
+
 function replacePrivateJson(path, value) {
   const temporary = `${path}.${process.pid}.tmp`;
   writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600, flag: "wx" });
