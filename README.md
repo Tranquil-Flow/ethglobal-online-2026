@@ -11,7 +11,7 @@
 3. **Pay for the quote** — x402 payment authorization on Hedera testnet. Connect your own wallet (HashPack) and authorize only that quote — or use the demo's sponsored testnet credit.
 4. **Inference runs across a group of nodes** — the model is split across member machines; each node stages weights, proves load, and serves its shard. The public demo runs a real two-machine physical route (`Qwen/Qwen2.5-0.5B-Instruct`: node-0 MLX layers, node-2 NumPy tail).
 5. **Inference returns to you** — streamed tokens, bounded by the quote. The provider signs an Ed25519 receipt for what it did; the receipt is verified in your browser against the provider's pinned key.
-6. **Verified by the TEE** — the output is checked with ensemble statistical tests (target-vs-rest agreement across reference models). Three consecutive mismatches trigger an automatic audit.
+6. **Verified by the TEE** — the output is checked with ensemble statistical tests (target-vs-rest agreement across reference models). Three consecutive mismatches trigger an automatic audit. See [Verification](#verification-and-audits) for exactly what this does and does not guarantee.
 7. **Payment is released** — settlement follows verification (the public demo settles at submission time on testnet; escrow-after-verification is the protocol's intended flow).
 8. **Receipt settlement is public** — every receipt digest is committed to a Hedera consensus topic (HCS) in order, and receipt/assessment claims are published to the Sepolia registry and indexed by The Graph. Commitments are irreversible.
 
@@ -19,11 +19,34 @@
 
 - **Three providers** on the public site: `service.ethonline-node-a.eth`, `service.ethonline-node-b.eth`, and a demo **attacker** provider (`service.ethonline-attacker.eth`) whose fixed output always fails verification — use it to watch the audit system react.
 - **Real on-chain trails**: HCS topic `0.0.10523824` (HashScan: <https://hashscan.io/testnet/topic/0.0.10523824>) and the Sepolia receipts subgraph (`ethonline-sepolia-receipts` v0.3.2, queried at `https://api.studio.thegraph.com/query/1758934/ethonline-sepolia-receipts/v0.3.2`).
-- **Trust scores** (`w6-trust-v1`): Bayesian pass rate (70%) + volume confidence (20%) + recency (10%). Mismatches drag a provider's score down — the attacker is the lowest-ranked provider.
 - **Verification verdicts** (`match` / `mismatch`) on every completed request, persisted across restarts, with the 3-mismatch audit trigger plus scheduled weighted audit draws (`weighted-graph-v1`, recomputable from a published seed).
-- **Unified frontend**: Try it (request journey, ENS lookups, wallet-first payment), Providers (Graph history + trust), Requests (ledger with verdicts, publication, HCS entries), How it works, Developers (API + an "For agents" section), Run a swarm (ready-but-inactive controls).
+- **Unified frontend**: Try it (request journey, ENS lookups, wallet-first payment), Providers (Graph history + trust), Requests (ledger with verdicts, publication, HCS entries), How it works, Developers (API + a "For agents" section), Run a swarm (ready-but-inactive controls).
 
-**Honesty note on verification:** the live demo runs a deterministic classifier in the TEE's place, and every surface says so. A deployable TEE verifier worker (ensemble statistics, `composition/tee-verifier-worker/`) is implemented and tested and is deployed on the project's GCE verifier VM; switching the live site to it is a configuration step, not a code change. Assessment claims from the demo classifier **are** published on-chain, so The Graph's mismatch counts are real.
+## The Graph integration — how it works end to end
+
+The Graph is the project's **public track record**: it turns per-request on-chain claims into per-provider history that anyone can query, and it feeds the trust score and the audit draws.
+
+1. **Registry** — a Sepolia contract (`0x9fd43D7b41c82406A776b700702EEA3813ac426A`) with two events:
+   - `ReceiptPublished(bytes32 receiptDigest, bytes32 providerKey, uint8 mode)`
+   - `AssessmentPublished(bytes32 assessmentDigest, bytes32 receiptDigest, bytes32 providerKey, bytes32 verifierKey, bytes32 methodKey, uint8 outcome, uint8 mode, string publicMetadata)`
+2. **Publisher** — the app's outbox signs and broadcasts one claim per event (the publication key is the registry's configured publisher; transactions require 12 confirmations; the on-chain budget only counts in-flight transactions). Every completed request with publication consent enqueues a receipt claim, and every recorded verification verdict enqueues an assessment claim (`outcome` 1–4 per the trust formula's canonical buckets). Assessments reference their receipt's claim, so a receipt always lands on-chain first.
+3. **Subgraph** — `ethonline-sepolia-receipts` (deployment `v0.3.2`) maps those events into `ProviderMetrics`, keyed by `providerKey` (`0x` + sha256 of the JSON-encoded provider id): `receiptCount`, `assessmentCount`, `matchCount`, `mismatchCount`, `trustScore`, `latestActivityTimestamp`, `activeReceiptDays7`.
+4. **Trust score** — `w6-trust-v1` (all-integer PPM math, `packages/indexing/subgraph/src/trust-formula.ts`): `70% × Bayesian pass rate ((match+1)/(match+mismatch+2)) + 20% × volume confidence (capped at 20 receipts) + 10% × recency (capped at 7 active days)`, scaled to 0–1000. A provider that only fails verification collapses toward zero — this is exactly how the demo attacker becomes the lowest-ranked provider.
+5. **Serving** — the public edge exposes `GET /v2/providers/stats?providers=…&window=…` (bounded, cached, rate-limited), and the Providers page renders receipts, trust, and last-activity per provider with the subgraph version cited. The page also merges live verification verdicts into the displayed trust while the corresponding assessments index on-chain — always with the raw subgraph score in the tooltip.
+6. **Audit draws** — `composition/w6-graph-history-reader.mjs` reads a frozen subgraph snapshot (observation digest + block hash) and injects it into the selection seam, so `/v2/audits/selection` runs `weighted-graph-v1`: weights, seed, and drawn provider are all published and **recomputable from the published inputs** — anyone can verify the draw.
+
+## Verification and audits
+
+**What verification does.** Each completed request gets a verdict from the verifier: the answer is checked against an ensemble of reference models with an **exact binomial target-vs-rest test** (Laplace-smoothed null rate, configurable alpha and chance-floor, fail-closed on malformed input). `match`, `mismatch`, `inconclusive`, and `unavailable` are distinct, separately-surfaced states.
+
+**What it guarantees — and what it does not.** The test is a statistical consistency check: it answers "does this output agree with the ensemble's model of reference outputs", with a bounded error probability under its documented model. It is **not** a proof of factual truth, answer quality, payment, or provider trust — and no surface in this project claims otherwise. Identity, conformance, and truth are kept separate on purpose.
+
+**Audits.** Two triggers, both live:
+
+- **Rule-driven**: three consecutive mismatches from one provider fire an escalation audit (`w12-escalation-demo-audit-…`), recorded in the same store the Requests ledger reads, with the verdict broadcast to the HCS topic as a digest-only message.
+- **Scheduled**: the weighted Graph draw runs on a schedule (first draw shortly after boot, then one recording per period — default 6 h, tunable via `W6_SCHEDULED_AUDIT_PERIOD_MS`) and publishes its seed and inputs so the draw can be recomputed.
+
+**TEE posture, stated plainly.** The verifier's production home is a TEE (SEV-backed GCE instance), and the client bridge activates in `tee-attested` mode via `W6_VERIFIER_TEE_URL`. A deployable, stdlib-only verifier worker (`composition/tee-verifier-worker/`) implements the bridge contract exactly — 31 verification-math tests and 11 real-bridge-over-TLS integration tests, all green — and is deployed on the verifier VM as a second container, gated by a VPC firewall rule that is a configuration step away. **The live demo does not currently run that worker**: it runs the deterministic demo classifier (`demo-output-classifier-v1`), which every surface labels as such. Verdict mechanics, audit triggers, and on-chain assessment publication are identical either way; what the demo does not claim is TEE attestation of the live verifier.
 
 ## Repositories
 
