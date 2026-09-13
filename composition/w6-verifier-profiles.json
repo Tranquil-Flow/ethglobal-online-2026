@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "profiles": [
+    {
+      "id": "hosted-qwen2.5-0.5b",
+      "appProfileDigest": "sha256:8c44a8f9a75f009d5c02e123dcd9cdbd4b6f33fbabe6fd9f64f03a7214e84990",
+      "verifierProfileSha256": null,
+      "pinReason": "The hosted application contract is fixed; the verifier lane has not yet produced its final profile SHA-256/reference-bank pin, so audits fail closed.",
+      "contract": {
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+        "runtimeDtype": "float32",
+        "quantization": "int8-weight-only",
+        "selector": "quantized_greedy_token_id",
+        "seed": 0,
+        "maxOutputTokens": 64
+      },
+      "audits": {
+        "referenceSamples": true,
+        "ensembleScorer": false
+      }
+    },
+    {
+      "id": "hosted-qwen3.8-27b",
+      "appProfileDigest": null,
+      "verifierProfileSha256": "40ede77319ecc67833d8fac597026f3925b45cfa460c4243d090c0a6937abe5f",
+      "pinReason": "The sealed verifier profile is pinned, but the hosted application's 27B profile digest has not yet been supplied by the serving adapter, so quote admission fails closed.",
+      "contract": {
+        "model": "mlx-community/Qwen3.8-27B-4bit",
+        "revision": "3e6447f082e89cc7f0bc6e5441afd38dfce760ff",
+        "runtimeDtype": "checkpoint-native",
+        "quantization": "4-bit affine group-size 64",
+        "selector": "sha256-cdf-f64-v1",
+        "seed": 0,
+        "maxOutputTokens": 256
+      },
+      "audits": {
+        "referenceSamples": true,
+        "ensembleScorer": true
+      }
+    }
+  ]
+}
