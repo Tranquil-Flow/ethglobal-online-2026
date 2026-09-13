@@ -1,34 +1,37 @@
-# W6-v3 status — 2026-09-13 (rev 5)
+# W6-v3 status — 2026-09-13 (rev 6)
 
-Public-safe mirror of `<artifacts>/w6-v2/w6v3/STATUS.md`. The artifact copy holds
-delegation IDs and per-worker live transcript paths; this mirror is what
-L-DOCS-FINAL ingests for the submission form.
+Public-safe mirror of `<artifacts>/w6-v2/w6v3/STATUS.md`.
 
-## Wave 0 — COMPLETE (10%)
-- `.gitleaksignore`, L-COMMIT (20 per-feature commits, 120 files), L-LICENSE (AGPL-3.0-or-later), trust formula spec, ethglobal bundle tracked, runbook.
-- 41 total commits on `application/end-to-end-03` since `c24621e`. No push.
+## Wave 0 ✅ COMPLETE (10%)
+.gitleaksignore + L-COMMIT (20 per-feature commits, 120 files) + L-LICENSE (AGPL-3.0-or-later) + research deliverables + ethglobal bundle + runbooks.
 
-## Wave A-research — DONE (10%)
-All 5 reports landed (trust formula, ENS dry-run diff, sponsor-diag analysis, 27B feasibility, docs audit).
+## Wave A-research ✅ DONE (10%)
+All 5 reports landed.
 
-## Wave A-code — 5/5 MERGED (25%)
+## Wave A-code ✅ DONE (25%)
+5/5 lanes merged with parent-verified test re-runs + gitleaks clean.
+
+## Wave B ✅ DONE (15%)
 
 | Lane | Lane commit | Merge commit | Verification |
 |------|-------------|--------------|--------------|
-| L-HCS | `135bd0d` | `dc4054c` | 4 files / 636 lines; 6/6 tests pass; gitleaks clean |
-| L-DOCS-STATIC | `decebbd` | `0f0eb70` | 4 docs updated; 9/13 stale claims fixed; gitleaks clean |
-| L-PUBLISH | `492ae2b` | `9f06797` | 3 files / 889 lines; 10/10 tests pass; gitleaks clean |
-| L-GRAPH-FIX | `5d399a7` | `1a8d2f4` | 2 files / +139/-11; matchstick 15/15 pass; gitleaks clean |
-| L-SPONSOR | `e3da651` | `8fff34b` | 3 files / +354/-4; new seam test 2/2 pass; regression 12/12 pass; gitleaks clean |
+| L-TRUST-IMPL | `a84bfe2` | `8f51c20` | graph test 35/35 pass; w6-trust-v1 formula + ProviderMetrics entity + history reason |
+| L-FANOUT | `43e3ab5` | `cab66ef` | 10/10 tests pass; wires L-HCS + L-PUBLISH into receipt completion; dry-run-safe |
 
-## Wave B — READY TO START
-- L-TRUST-IMPL needs L-GRAPH-FIX merged ✅ + R-TRUST-SPEC ✅. Inputs ready.
-- L-FANOUT needs L-PUBLISH merged ✅ + L-HCS merged ✅. Inputs ready.
+## Wave C — READY (parent-led, owner-gated broadcasts)
+- L-DEPLOY-LIVE: owner runbook ready (docs/handoffs/w6-v3-deploy-runbook.md).
+- L-ENS-REPOINT: dry-run diff + hosted-vs-planned comparison = allMatch. Owner runbook ready (docs/handoffs/w6-v3-ens-repoint-runbook.md).
+- L-POPULATE: parent runs ≤25 DEMO-paid requests across enabled profiles; HCS topic create + canonical submit; populate subgraph.
+- L-E2E: one clean fresh-browser journey (DEMO pay → 0.5B stream → receipt → subgraph → trust card).
 
 ## Owner gates hit
-- Per-group commit permission ✅; MiniMax credits ✅.
-- ⏳ Owner push, ENS/HCS/Sepolia broadcasts, submission form — owner gates.
+- ✅ Per-group commit permission (confirmed).
+- ✅ MiniMax credits topped up.
+- ⏳ Owner push, ENS/HCS/Sepolia broadcasts, submission form, Mycelium LICENSE push, X1 SPDX migration — owner gates.
 
-## Next concrete step
-Launch L-TRUST-IMPL (provider trust score from indexed on-chain events) and
-L-FANOUT (wire HCS + on-chain publish into the receipt path) as Wave B workers.
+## Owner runbooks (Wave C prep)
+- docs/handoffs/w6-v3-ens-repoint-runbook.md — exact owner steps to re-point ENSv2 Sepolia records to https://mycelium.now. Pre-flight checks + dry-run + execute + readback.
+- docs/handoffs/w6-v3-deploy-runbook.md — sync procedure for shipping merged workbench to live copy (~/Library/Application Support/Mycelium/w6-workbench/).
+- docs/handoffs/w6-v3-local-demo.md — synthetic CLI demo (works now without owner keys; npm run demo:application → LOCAL_DEMO_PASSED in 1.2s).
+
+## 47 total commits on `application/end-to-end-03`.
