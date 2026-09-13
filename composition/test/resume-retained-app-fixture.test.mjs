@@ -31,6 +31,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 
+import { digestOf } from "../../packages/contracts/index.mjs";
 const WORKBENCH = process.env.WORKBENCH
   ?? "/Users/evinova-self/Documents/playground/mycelium-parallel-prompts-3zwvxhg7/foundation/continuations/hackathon-app-03/workbench";
 const SUPERVISOR = join(WORKBENCH, "composition", "w6-supervisors", "resume-retained-app.mjs");
@@ -279,6 +280,90 @@ test("operator.json written by a prior launch with stale bearerToken is sanitize
       // Other schema keys still present.
       assert.equal(typeof p.runtime.bearerTokenFile, "string");
       assert.equal(p.runtime.kind, "mycelium");
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+
+test("gate ON: application.json providers[*].runtimeDigest matches operator.json providers[*].runtime bindingDigest", () => {
+  // L-FIX-BOOT-MISMATCH: when the fixture gate rewrites
+  // operator.providers[i].runtime, the binding's bindingDigest (computed
+  // from the new runtime in composition/application-workbench.mjs:260)
+  // changes, but application.json.providers[i].runtimeDigest was computed
+  // against the original live runtime. That caused the supervisor to
+  // crash with RUNTIME_BINDING_MISMATCH and /healthz to return 502.
+  //
+  // The fix recomputes application.json.providers[i].runtimeDigest right
+  // after the gate mutates operator.providers[i].runtime. This test
+  // re-creates a representative retained paid application.json with a
+  // STALE runtimeDigest, runs the supervisor with the gate ON, then
+  // asserts every provider's runtimeDigest on disk equals the digest of
+  // the matching provider.runtime on disk — i.e. the validator's check
+  // `runtime.bindingDigest !== p.runtimeDigest` will succeed once the
+  // supervisor performs it during boot.
+  const { tmp, appRoot } = setupTmpRetained();
+  try {
+    // Seed application.json with a non-matching runtimeDigest for every
+    // provider — must be overwritten by the supervisor under the gate.
+    const stale = "sha256:0000000000000000000000000000000000000000000000000000000000000000";
+    const applicationSeed = JSON.parse(readFileSync(join(appRoot, "application.json"), "utf8"));
+    applicationSeed.providers = [
+      { providerId: "service.ethonline-node-a.eth", runtimeDigest: stale },
+      { providerId: "service.ethonline-node-b.eth", runtimeDigest: stale },
+    ];
+    writeFileSync(join(appRoot, "application.json"), JSON.stringify(applicationSeed, null, 2), { mode: 0o600 });
+
+    const result = runSupervisor({
+      runtimeRoot: tmp,
+      extraEnv: { W6_NATIVE_FALLBACK_FIXTURE: "1" },
+    });
+    // The supervisor may exit non-zero on missing downstream deps; that
+    // is fine because by the time it fails, both files have already
+    // been persisted via replacePrivateJson() above the gate. (We can
+    // also keep going if the supervisor reached beyond the gate on the
+    // happy path.)
+    void result;
+
+    const operator = JSON.parse(readFileSync(join(appRoot, "operator.json"), "utf8"));
+    const application = JSON.parse(readFileSync(join(appRoot, "application.json"), "utf8"));
+    assert.equal(operator.providers.length, application.providers.length);
+    for (const [i, op] of operator.providers.entries()) {
+      const cp = application.providers[i];
+      assert.equal(typeof cp.runtimeDigest, "string", `providers[${i}].runtimeDigest must be a string`);
+      assert.match(cp.runtimeDigest, /^sha256:[0-9a-f]{64}$/);
+      // The runtimeDigest must be the digest of the post-gate runtime,
+      // NOT the seed value.
+      assert.notEqual(cp.runtimeDigest, stale, `providers[${i}].runtimeDigest must be refreshed`);
+      assert.equal(cp.runtimeDigest, digestOf(op.runtime),
+        `application.providers[${i}].runtimeDigest must equal digestOf(operator.providers[${i}].runtime)`);
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("gate OFF: application.json providers[*].runtimeDigest is NOT recomputed", () => {
+  // Symmetric to the gate-ON test. When W6_NATIVE_FALLBACK_FIXTURE is
+  // unset, the supervisor must leave application.json.providers[*]
+  // alone — no runtimeDigest refresh — because the live runtime was not
+  // rewritten and the bindingDigest will still match the stored digest.
+  const { tmp, appRoot } = setupTmpRetained();
+  try {
+    const original = "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+    const applicationSeed = JSON.parse(readFileSync(join(appRoot, "application.json"), "utf8"));
+    applicationSeed.providers = [
+      { providerId: "service.ethonline-node-a.eth", runtimeDigest: original },
+      { providerId: "service.ethonline-node-b.eth", runtimeDigest: original },
+    ];
+    writeFileSync(join(appRoot, "application.json"), JSON.stringify(applicationSeed, null, 2), { mode: 0o600 });
+
+    runSupervisor({ runtimeRoot: tmp, extraEnv: {} });
+
+    const application = JSON.parse(readFileSync(join(appRoot, "application.json"), "utf8"));
+    for (const cp of application.providers) {
+      assert.equal(cp.runtimeDigest, original, "gate OFF must not touch runtimeDigest");
     }
   } finally {
     rmSync(tmp, { recursive: true, force: true });

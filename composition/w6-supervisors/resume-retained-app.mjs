@@ -89,15 +89,55 @@ if (fixtureGate) {
     readFileSync(join(nativeRoot, "request-gateway-token.txt"), "utf8").trim();
   const fixtureExpectedEvidenceClass = "synthetic_test_fixture";
   let fixtureProvidersTouched = 0;
-  for (const provider of operator.providers ?? []) {
+  const fixtureProvidersTouchedIndices = [];
+  for (const [i, provider] of (operator.providers ?? []).entries()) {
     if (!provider.runtime) continue;
     provider.runtime.baseUrl = fixtureBaseUrl;
     provider.runtime.options ??= {};
     provider.runtime.options.expectedEvidenceClass = fixtureExpectedEvidenceClass;
     fixtureProvidersTouched += 1;
+    fixtureProvidersTouchedIndices.push(i);
   }
   if (fixtureProvidersTouched === 0) {
     throw new Error("FIXTURE_GATE_NO_RUNTIME_PROVIDERS — operator.json has no provider.runtime blocks to override");
+  }
+  // L-FIX-BOOT-MISMATCH: when the fixture gate rewrites provider.runtime,
+  // the bindingDigest (computed from the new runtime in
+  // composition/application-workbench.mjs) no longer matches the stored
+  // runtimeDigest in application.json (computed from the original live
+  // runtime). Recompute and persist runtimeDigest for each touched
+  // provider so the validator at composition/application-workbench.mjs:260
+  // passes. digestOf is sha256: + sha256 of RFC 8785 canonicalBytes(value).
+  //
+  // The real retained application.json always has the same number of
+  // providers as operator.json (parallel arrays). The supervisor's own
+  // load step has already parsed application.json. We tolerate an
+  // empty/absent config.providers[] only because older fixtures seed
+  // application.json with `providers: []` and throwing would block
+  // unrelated worktrees for no extra safety. Skipping keeps the gate
+  // robust on real retained state and on test fixtures alike.
+  if (!Array.isArray(config.providers) || config.providers.length === 0) {
+    console.log(
+      JSON.stringify({
+        status: "fixture-gate-runtimeDigest-skipped",
+        reason: "application.json providers[] missing or empty",
+      }),
+    );
+  } else {
+    let runtimeDigestRefreshed = 0;
+    for (const i of fixtureProvidersTouchedIndices) {
+      const op = operator.providers[i];
+      const cp = config.providers[i];
+      if (!cp) continue;
+      cp.runtimeDigest = digestOf(op.runtime);
+      runtimeDigestRefreshed += 1;
+    }
+    console.log(
+      JSON.stringify({
+        status: "fixture-gate-runtimeDigest-refreshed",
+        providersRefreshed: runtimeDigestRefreshed,
+      }),
+    );
   }
   console.log(
     JSON.stringify({
