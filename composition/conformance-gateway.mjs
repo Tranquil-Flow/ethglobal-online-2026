@@ -1,11 +1,17 @@
 import http from "node:http";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { once } from "node:events";
 import { digestOf } from "../packages/contracts/index.mjs";
 import { GATEWAY_PROPOSAL } from "./mycelium-gateway.mjs";
 
+// Synthetic fixture IDs stay in the Qwen2.5 vocabulary range and are derived
+// only from the exact emitted token text, so repeated fixture runs are stable.
+const syntheticTokenId = (text) =>
+  createHash("sha256").update(text, "utf8").digest().readUInt32BE(0) % 151936;
+
 // Test/development-only server. It implements the explicitly UNACCEPTED workbench
 // proposal beside the observed gateway lifecycle; never a model or Mycelium node.
+// Real v1/v2 wire-contract fixture is startNativeConformanceGateway below.
 export async function startConformanceGateway({
   profileId,
   legacy = false,
@@ -194,5 +200,81 @@ export async function startConformanceGateway({
       await new Promise((resolve) => server.close(resolve));
       sessions.clear();
     },
+  };
+}
+
+// Explicit loopback test fixture of the SHIPPED native v1/v2 HTTP surface.
+// No model execution, no fake physical evidence, no proposal extension.
+export async function startNativeConformanceGateway({ fault = "none", qualificationAgeMs = 0 } = {}) {
+  const bearerToken = randomBytes(24).toString("hex");
+  const binding = {
+    qualification_id: "test-qualification", qualification_digest: digestOf("test-qualification"),
+    deployment_id: "test-deployment", deployment_epoch: 1, topology_version: 1,
+    model_id: "fixture-not-inference", resolved_commit: "fixture-model-revision",
+    manifest_digest: digestOf("fixture-model-manifest"), path_manifest_digest: digestOf("fixture-path"),
+    stage_load_proof_digests: [digestOf("fixture-stage")],
+  };
+  const sessions = new Map();
+  const stats = { submissions: 0, cancellations: 0, qualifications: 0, bodies: [] };
+  const reply = (res, status, body) => {
+    res.writeHead(status, { "content-type": "application/json", "cache-control": "no-store" });
+    res.end(JSON.stringify(body));
+  };
+  const server = http.createServer(async (req, res) => {
+    try {
+      if (req.headers.authorization !== "Bearer " + bearerToken) return reply(res, 401, { error: "unauthorized" });
+      if (req.url === "/v1/qualification/current" && req.method === "GET") {
+        stats.qualifications++;
+        return reply(res, 200, {
+          protocol: "mycelium.request_gateway.v1", issued_at_unix_ms: fault === "stale" ? 0 : Date.now()-qualificationAgeMs,
+          evidence_class: "synthetic_test_fixture", route_ready: fault !== "unavailable", reason_codes: [],
+          binding: { ...binding, ...(fault === "drift" && stats.submissions ? { qualification_digest: digestOf("drift") } : {}) },
+        });
+      }
+      if (req.url === "/v1/inference" && req.method === "POST") {
+        let text = ""; for await (const c of req) { text += c; if (text.length > 262144) return reply(res, 413, {}); }
+        const body = JSON.parse(text);
+        const fields = ["protocol", "prompt", "max_new_tokens", "qualification", "workload_profile_id", "qos_class"].sort().join();
+        if (Object.keys(body).sort().join() !== fields || body.protocol !== "mycelium.request_gateway.v2" ||
+            digestOf(body.qualification) !== digestOf(binding) || body.qos_class !== "interactive" ||
+            body.workload_profile_id !== "interactive_chat_v1") return reply(res, 400, { error: "invalid_submission" });
+        stats.submissions++; stats.bodies.push(body);
+        const id = "fixture-" + stats.submissions;
+        const s = { owner: randomBytes(24).toString("hex"), cancelled: false, terminal: false }; sessions.set(id, s);
+        return reply(res, 202, { request_id: id, stream_path: `/v1/inference/${id}/events`, cancel_path: `/v1/inference/${id}`, session_token: s.owner });
+      }
+      const m = /^\/v1\/inference\/(fixture-\d+)(\/events)?$/.exec(req.url);
+      const s = m && sessions.get(m[1]);
+      if (!s || req.headers["x-mycelium-session"] !== s.owner) return reply(res, 404, {});
+      if (req.method === "DELETE" && !m[2]) {
+        stats.cancellations++; s.cancelled = true;
+        return reply(res, 202, { request_id: m[1], status: s.terminal ? "terminal" : "cancelling" });
+      }
+      res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-store" });
+      let seq = 0;
+      const emit = (type, extra = {}) => {
+        const generation = fault === "generation" && seq > 0 ? 2 : 1;
+        const e = { protocol: "mycelium.request_event.v2", request_id: m[1], sequence: seq++, publisher_generation: generation, type, ...extra };
+        if (fault === "order" && type === "token") e.sequence++;
+        res.write(`id: ${generation}:${e.sequence}\nevent: ${type}\ndata: ${JSON.stringify(e)}\n\n`);
+      };
+      emit("accepted"); emit("lifecycle", { phase: "prefill" });
+      const chunks = ["Hello", " from the fixture."];
+      for (const [i, text] of chunks.entries()) {
+        if (res.destroyed) return;
+        if (s.cancelled) { emit("cancelled"); s.terminal = true; res.end(); return; }
+        emit("token", { token_index: i, token_id: syntheticTokenId(text), text });
+        await new Promise((r) => setTimeout(r, fault === "slow" ? 1000 : 5));
+      }
+      if (s.cancelled) emit("cancelled");
+      else if (fault !== "eof") emit("completed");
+      if (fault === "after-terminal") emit("token", { token_index: 2, token_id: syntheticTokenId("invalid"), text: "invalid" });
+      s.terminal = true; res.end();
+    } catch { if (!res.headersSent) reply(res, 400, { error: "fixture_error" }); else res.destroy(); }
+  });
+  await new Promise((r) => server.listen(0, "127.0.0.1", r));
+  return { url: `http://127.0.0.1:${server.address().port}`, bearerToken, binding,
+    stats: () => structuredClone(stats), setFault: (value) => { fault = value; },
+    close: async () => { server.closeAllConnections(); await new Promise((r) => server.close(r)); },
   };
 }

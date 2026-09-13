@@ -102,6 +102,14 @@ export async function* parseGatewayEvents(
       if (nativeProposal) {
         keys.push("token_id");
         if (!integer(e.token_id)) fail("MISSING_NATIVE_TOKEN_ID");
+      } else if (
+        e.protocol === "mycelium.request_event.v2" &&
+        Object.hasOwn(e, "token_id")
+      ) {
+        // The native contract keeps token_id optional for compatibility, but
+        // validates it strictly whenever a v2 producer supplies it.
+        keys.push("token_id");
+        if (!integer(e.token_id)) fail("MISSING_NATIVE_TOKEN_ID");
       }
       if (
         !integer(e.token_index) ||
