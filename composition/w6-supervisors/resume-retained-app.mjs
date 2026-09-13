@@ -82,7 +82,6 @@ if (fixtureGate) {
     provider.runtime.baseUrl = fixtureBaseUrl;
     provider.runtime.options ??= {};
     provider.runtime.options.expectedEvidenceClass = fixtureExpectedEvidenceClass;
-    provider.runtime.bearerToken = fixtureBearerToken;
     fixtureProvidersTouched += 1;
   }
   if (fixtureProvidersTouched === 0) {

@@ -68,6 +68,8 @@ function setupTmpRetained() {
       baseUrl: "http://127.0.0.1:8791",
       bearerTokenFile: "native-gateway-token.txt",
       qualificationPath: "/v1/qualification/current",
+      profile: "default",
+      resolvedCommit: "0000000000000000000000000000000000000000",
       options: {
         timeoutMs: 60000,
         expectedEvidenceClass: "physical_qualification",
@@ -159,7 +161,14 @@ test("gate ON (W6_NATIVE_FALLBACK_FIXTURE=1): all providers rewritten to 127.0.0
   }
 });
 
-test("gate + W6_NATIVE_FIXTURE_TOKEN overrides bearerToken on each provider", () => {
+test("gate + W6_NATIVE_FIXTURE_TOKEN must NOT be written into operator.json (L-FIX-BOOT)", () => {
+  // The fixture gate (composition/w6-supervisors/resume-retained-app.mjs)
+  // must NOT add `bearerToken` to provider.runtime, because
+  // composition/application-mycelium-http.mjs:8 enforces a strict schema
+  // over runtime keys and rejects any extra field as INVALID_NATIVE_BINDING,
+  // which crashes the live supervisor with HTTP 502 on /healthz. The actual
+  // bearer is loaded by inspectMyceliumHttpRuntime.create() from
+  // runtime.bearerTokenFile, which the gate must leave untouched.
   const { tmp, appRoot } = setupTmpRetained();
   try {
     runSupervisor({
@@ -171,8 +180,47 @@ test("gate + W6_NATIVE_FIXTURE_TOKEN overrides bearerToken on each provider", ()
     });
     const operator = JSON.parse(readFileSync(join(appRoot, "operator.json"), "utf8"));
     for (const p of operator.providers) {
-      assert.equal(p.runtime.bearerToken, "fixture-token-please-change-me");
+      assert.equal("bearerToken" in p.runtime, false,
+        "runtime.bearerToken must NOT be written by the gate");
       assert.equal(p.runtime.baseUrl, "http://127.0.0.1:8765");
+      assert.equal(p.runtime.options.expectedEvidenceClass, "synthetic_test_fixture");
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("gate ON: operator.json provider.runtime has exactly the schema-allowed keys", () => {
+  // composition/application-mycelium-http.mjs:8 uses
+  //   Object.keys(input).sort().join() !== fields.sort().join()
+  // to reject any extra/missing field as INVALID_NATIVE_BINDING. After the
+  // fixture gate runs, each provider.runtime must carry EXACTLY the keys
+  // the validator permits — nothing more, nothing less.
+  const { tmp, appRoot } = setupTmpRetained();
+  try {
+    runSupervisor({
+      runtimeRoot: tmp,
+      extraEnv: {
+        W6_NATIVE_FALLBACK_FIXTURE: "true",
+        W6_NATIVE_FIXTURE_TOKEN: "fixture-token-please-change-me",
+      },
+    });
+    const operator = JSON.parse(readFileSync(join(appRoot, "operator.json"), "utf8"));
+    const allowed = [
+      "kind",
+      "protocol",
+      "baseUrl",
+      "bearerTokenFile",
+      "qualificationPath",
+      "profile",
+      "resolvedCommit",
+      "options",
+    ];
+    assert.equal(operator.providers.length, 2);
+    for (const p of operator.providers) {
+      const keys = Object.keys(p.runtime).sort().join(",");
+      assert.equal(keys, allowed.slice().sort().join(","),
+        `provider ${p.providerId} runtime keys drift from validator schema`);
     }
   } finally {
     rmSync(tmp, { recursive: true, force: true });
