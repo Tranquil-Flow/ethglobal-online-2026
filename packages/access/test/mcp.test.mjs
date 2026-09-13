@@ -49,6 +49,7 @@ test("MCP stdio tools use SDK; reads decide on compatibility, budget and fresh h
       "access_select",
       "access_submit",
       "access_watch",
+      "mycelium.provider_stats",
     ].sort(),
   );
   await client.callTool({ name: "access_connect", arguments: {} });
