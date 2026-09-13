@@ -41,7 +41,7 @@ requiredStake = max(
 ```
 
 The `share` parameter is **removed** from the formula because the reward
-splitter (`composition/w6-reward-splitter.mjs`, provider=0.80 / ensemble=0.15
+splitter (`composition/w6-reward-splitter.mjs`, provider=0.95 / ensemble=0.0
 / treasury=0.05) already handles the provider's effective revenue share. The
 formula now uses the gross price directly: `honest_profit = price − cost`.
 
@@ -409,7 +409,7 @@ combined `max(theory, earnings, floor)` result with HBAR formatting via
 
 - `composition/w6-economics.mjs` — formula implementation
 - `composition/w6-stake-gate.mjs` — gate factory + profile resolver
-- `composition/w6-reward-splitter.mjs` — 80/15/5 split (handles provider share)
+- `composition/w6-reward-splitter.mjs` — 95/0/5 split (handles provider share; L-REWARD-95-5: TEE/ensemble operated by protocol/treasury)
 - `composition/w6-fanout-wiring.mjs` — receipt publisher (payment store)
 - `composition/w6-receipt-publisher.mjs` — durable payment storage
 - `composition/w6-verifier-profiles.json` — per-profile policy blocks

@@ -25,7 +25,7 @@
 //   * Currency: Hedera tinybar (1 HBAR = 1e8 tinybar). The `share` parameter
 //     is removed because the provider-set price already captures the revenue
 //     that flows back to the provider via the existing
-//     `composition/w6-reward-splitter.mjs` split (provider=0.80, ensemble=0.15,
+//     `composition/w6-reward-splitter.mjs` split (provider=0.95, ensemble=0.0,
 //     treasury=0.05) — providers don't need to declare a separate share.
 //   * Dynamic: `requiredStake` now takes the MAX of two floors:
 //         (a) requiredStakeTheory(...)   — game-theoretic floor (~2 HBAR)
@@ -227,7 +227,7 @@ export function requiredStakeTheory({
   // ----- honest profit -----
   // In v3 we drop the `share` parameter: the provider's effective revenue
   // is the gross price minus the inference cost. The reward-splitter
-  // (w6-reward-splitter.mjs) handles the 80/15/5 split downstream.
+  // (w6-reward-splitter.mjs) handles the 95/0/5 split downstream.
   const honestProfit = priceBaseUnits - inferenceCostBaseUnits;
   if (honestProfit <= 0n) return 0n;
 

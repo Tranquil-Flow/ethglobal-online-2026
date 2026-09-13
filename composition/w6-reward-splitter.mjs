@@ -23,8 +23,8 @@ export const DEFAULT_POLICY_PATH = resolve(__dirname, 'w6-reward-policy.json');
 
 export const DEFAULT_POLICY = Object.freeze({
   split: Object.freeze({
-    inferenceProviderShare: 0.80,
-    verifierEnsembleShare: 0.15,
+    inferenceProviderShare: 0.95,
+    verifierEnsembleShare: 0.0,
     treasuryShare: 0.05,
   }),
   escrow: Object.freeze({ escrowHoldPeriodSeconds: 300 }),

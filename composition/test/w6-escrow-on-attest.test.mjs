@@ -16,7 +16,7 @@ import path from 'node:path';
 import { createAttestEscrow } from '../w6-escrow-on-attest.mjs';
 
 const POLICY = {
-  split: { inferenceProviderShare: 0.80, verifierEnsembleShare: 0.15, treasuryShare: 0.05 },
+  split: { inferenceProviderShare: 0.95, verifierEnsembleShare: 0.0, treasuryShare: 0.05 },
   escrow: { escrowHoldPeriodSeconds: 300 },
 };
 
@@ -53,8 +53,8 @@ test('happy path: hold → attest OK → settled with split', async () => {
   });
   assert.equal(settled.state, 'settled');
   assert.equal(settled.payout.amountBaseUnits, 1000n);
-  assert.equal(settled.payout.inferenceProviderShare, 800n);
-  assert.equal(settled.payout.verifierEnsembleShare, 150n);
+  assert.equal(settled.payout.inferenceProviderShare, 950n);
+  assert.equal(settled.payout.verifierEnsembleShare, 0n);
   assert.equal(settled.payout.treasuryShare, 50n);
 
   const rec = await escrow.getRecord('job-1');

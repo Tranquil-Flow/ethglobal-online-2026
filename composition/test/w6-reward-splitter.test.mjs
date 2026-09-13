@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // L-REWARD-SLASH: tests for composition/w6-reward-splitter.mjs
 //
-// 6 tests: 80/15/5 split, BigInt remainder handling, zero amount,
+// 6 tests: 95/0/5 split, BigInt remainder handling, zero amount,
 // max amount, custom policy override, and policy normalization guards.
 
 import { test } from 'node:test';
@@ -14,13 +14,13 @@ import {
   DEFAULT_POLICY,
 } from '../w6-reward-splitter.mjs';
 
-const SHARES = { inferenceProviderShare: 0.80, verifierEnsembleShare: 0.15, treasuryShare: 0.05 };
+const SHARES = { inferenceProviderShare: 0.95, verifierEnsembleShare: 0.0, treasuryShare: 0.05 };
 
-test('splits 100 base units into 80 / 15 / 5', () => {
+test('splits 100 base units into 95 / 0 / 5', () => {
   const out = computePayout({ amountBaseUnits: 100n, policy: { split: SHARES } });
   assert.equal(out.amountBaseUnits, 100n);
-  assert.equal(out.inferenceProviderShare, 80n);
-  assert.equal(out.verifierEnsembleShare, 15n);
+  assert.equal(out.inferenceProviderShare, 95n);
+  assert.equal(out.verifierEnsembleShare, 0n);
   assert.equal(out.treasuryShare, 5n);
   assert.equal(
     out.inferenceProviderShare + out.verifierEnsembleShare + out.treasuryShare,
@@ -29,7 +29,7 @@ test('splits 100 base units into 80 / 15 / 5', () => {
 });
 
 test('remainder from integer division goes to treasury', () => {
-  // 1 wei: 0.80 → 0, 0.15 → 0, treasury → 1. Sum MUST equal amount.
+  // 1 wei: 0.95 → 0, 0.0 → 0, treasury → 1. Sum MUST equal amount.
   const out = computePayout({ amountBaseUnits: 1n, policy: { split: SHARES } });
   assert.equal(out.amountBaseUnits, 1n);
   assert.equal(out.inferenceProviderShare, 0n);
@@ -40,7 +40,7 @@ test('remainder from integer division goes to treasury', () => {
     1n,
   );
 
-  // 7 wei: 0.80 → 5, 0.15 → 1, treasury → 1. Sum = 7.
+  // 7 wei: 0.95 → 6, 0.0 → 0, treasury → 1. Sum = 7.
   const out2 = computePayout({ amountBaseUnits: 7n, policy: { split: SHARES } });
   assert.equal(out2.inferenceProviderShare + out2.verifierEnsembleShare + out2.treasuryShare, 7n);
 });
@@ -53,15 +53,15 @@ test('zero amount returns three zero rails', () => {
   assert.equal(out.treasuryShare, 0n);
 });
 
-test('large BigInt amount preserves exact 80/15/5 share', () => {
+test('large BigInt amount preserves exact 95/0/5 share', () => {
   // 1e24 base units is well within safe-integer * 1e9 range; verifies no
   // precision loss when amount is far beyond 2^53.
   const amount = 1_000_000_000_000_000_000_000_000n; // 1e24
   const out = computePayout({ amountBaseUnits: amount, policy: { split: SHARES } });
-  // 80% of 1e24 = 8e23
-  assert.equal(out.inferenceProviderShare, 800_000_000_000_000_000_000_000n);
-  // 15% of 1e24 = 1.5e23
-  assert.equal(out.verifierEnsembleShare, 150_000_000_000_000_000_000_000n);
+  // 95% of 1e24 = 9.5e23
+  assert.equal(out.inferenceProviderShare, 950_000_000_000_000_000_000_000n);
+  // 0% of 1e24 = 0
+  assert.equal(out.verifierEnsembleShare, 0n);
   // 5% of 1e24 = 5e22
   assert.equal(out.treasuryShare, 50_000_000_000_000_000_000_000n);
   assert.equal(
@@ -82,7 +82,7 @@ test('accepts number and integer-string inputs and normalizes', () => {
   }
 });
 
-test('custom policy override replaces default 80/15/5', () => {
+test('custom policy override replaces default 95/0/5', () => {
   const custom = {
     split: { inferenceProviderShare: 0.5, verifierEnsembleShare: 0.3, treasuryShare: 0.2 },
     escrow: { escrowHoldPeriodSeconds: 60 },

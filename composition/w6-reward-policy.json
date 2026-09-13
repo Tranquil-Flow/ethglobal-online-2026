@@ -4,11 +4,11 @@
   "description": "L-REWARD-SLASH: Provider reward split + escrow-on-attest policy for inference payments. Holds payment until TEE/verifier ensemble attests; on 3-negative escalation slashes the dishonest provider via MyceliumStakeEscrow.",
   "version": "1.0.0",
   "split": {
-    "inferenceProviderShare": 0.80,
-    "verifierEnsembleShare": 0.15,
+    "inferenceProviderShare": 0.95,
+    "verifierEnsembleShare": 0.0,
     "treasuryShare": 0.05
   },
-  "splitNotes": "Shares MUST sum to 1.0. Integer-division remainder is allocated to treasury to make totals balance in base units.",
+  "splitNotes": "Shares MUST sum to 1.0. Integer-division remainder is allocated to treasury to make totals balance in base units. L-REWARD-95-5 (v3): TEE/verifier ensemble is operated by the protocol/treasury itself, so the 15% verifier-ensemble share is folded into the 5% treasury - net effect is 95% to providers, 5% to treasury.",
   "escrow": {
     "escrowHoldPeriodSeconds": 300,
     "escrowHoldNotes": "Payment held in 'pending-attest' state for this many seconds awaiting ensemble attestation. Settled (split released) on OK attestation within window; refunded on FAIL or timeout. Composable with parent L-FANOUT (publishReceipt) and L-TEE-ENSEMBLE (attestation) flows."
