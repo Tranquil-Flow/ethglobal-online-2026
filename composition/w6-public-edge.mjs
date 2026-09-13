@@ -77,7 +77,7 @@ const server = createServer(async (req, res) => {
     const target = new URL(TRUST_CARDS_UPSTREAM);
     const headers = { ...req.headers, host: target.host };
     const up = request(target.origin + req.url, { method: req.method, headers }, (r) => { res.writeHead(r.statusCode, r.headers); r.pipe(res); });
-    up.on("error", () => { if (!res.headersSent) res.writeHead(502); res.end(); });
+    up.on("error", () => { if (!res.headersSent) res.writeHead(502, { "content-type": "application/json" }); res.end('{"error":{"code":"UPSTREAM_UNAVAILABLE","message":"trust cards upstream unavailable","retryable":true}}'); });
     req.on("aborted", () => up.destroy()); res.on("close", () => up.destroy()); req.pipe(up);
     return;
   }
@@ -92,7 +92,7 @@ const server = createServer(async (req, res) => {
   const target = new URL(base);
   const headers = { ...req.headers, host: target.host };
   const up = request(target.origin + req.url, { method: req.method, headers }, (r) => { res.writeHead(r.statusCode, r.headers); r.pipe(res); });
-  up.on("error", () => { if (!res.headersSent) res.writeHead(502); res.end(); });
+  up.on("error", () => { if (!res.headersSent) res.writeHead(502, { "content-type": "application/json" }); res.end('{"error":{"code":"UPSTREAM_UNAVAILABLE","message":"app upstream unavailable","retryable":true}}'); });
   req.on("aborted", () => up.destroy()); res.on("close", () => up.destroy()); req.pipe(up);
 });
 server.headersTimeout = 5000; server.requestTimeout = 120000; server.maxConnections = 128;
