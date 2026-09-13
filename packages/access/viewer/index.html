@@ -3,214 +3,420 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Access · Private request viewer</title>
+    <title>Mycelium · Judge demo</title>
     <link rel="stylesheet" href="/style.css" />
     <script type="module" src="/app.js"></script>
   </head>
   <body>
     <header>
-      <span class="eyebrow">ETHONLINE / ACCESS LANE</span>
-      <h1>A clear view of your request.</h1>
-      <p>
-        Discover one provider. Inspect the price. Keep the evidence private.
-      </p>
+      <span class="eyebrow">MYCELIUM / LIVE REQUEST JOURNEY</span>
+      <div class="hero-copy">
+        <h1>One request. Nine inspectable steps.</h1>
+        <p>
+          Resolve a named provider, authorize one bounded quote, stream its
+          answer, then inspect the receipt and public observation separately.
+        </p>
+      </div>
       <strong id="mode">Connection not qualified — no inference claim</strong>
+      <div id="claim-badges" class="claim-badges" aria-label="Independent claims">
+        <span id="execution-claim" data-claim="execution" class="claim neutral"
+          >Execution — pending</span
+        >
+        <span id="output-claim" data-claim="output" class="claim neutral"
+          >Output — unavailable</span
+        >
+        <span id="receipt-claim" data-claim="receipt" class="claim neutral"
+          >Receipt integrity — not checked</span
+        >
+        <span id="assessment-claim" data-claim="assessment" class="claim neutral"
+          >Assessment — not requested</span
+        >
+      </div>
+      <section class="entry-panel" aria-labelledby="entry-title">
+        <h2 id="entry-title">Choose how to start</h2>
+        <nav class="entry-grid" aria-label="Mycelium paths">
+          <a id="entry-hosted" class="entry-card" href="#hosted-inference">
+            <strong>Try hosted inference</strong>
+            <span>Choose a model, inspect a bounded quote, then authorize one request.</span>
+          </a>
+          <a id="entry-swarm" class="entry-card" href="#swarm-explainer">
+            <strong>Run your own swarm (Mac)</strong>
+            <span id="swarm-explainer">Mac package coming soon; hosted inference remains available.</span>
+          </a>
+          <a id="entry-verification" class="entry-card" href="#audit-status-panel">
+            <strong>How verification works</strong>
+            <span>Audits sample a provider independently and stay separate from this answer.</span>
+          </a>
+        </nav>
+        <p id="identity-explainer" class="identity-explainer">
+          A <strong>session</strong> is this browser's private API access. A
+          <strong>wallet</strong> authorizes only the quote you approve. A
+          <strong>swarm</strong> is the Mac compute group that serves a model;
+          connecting one does not connect or control the other two.
+        </p>
+      </section>
     </header>
+
     <main>
-      <section aria-labelledby="session-title">
-        <h2 id="session-title">1 · Connect explicitly</h2>
-        <button id="connect">Connect</button>
-        <button id="revoke">Revoke session</button>
-        <p role="status" aria-live="polite">Not connected</p>
-        <p role="alert" id="error"></p>
-      </section>
-      <section aria-labelledby="provider-title">
-        <h2 id="provider-title">2 · Choose provider & profile</h2>
-        <div id="configured-choice" hidden>
-          <label
-            >Configured provider<select id="provider-choice"></select
-          ></label>
-          <label
-            >Supported model/profile<select id="profile-choice"></select
-          ></label>
+      <div id="hosted-inference" class="demo-shell">
+        <div class="control-column">
+          <section aria-labelledby="session-title" class="control-card">
+            <div class="section-heading">
+              <span>Start</span>
+              <h2 id="session-title">Connect & resolve</h2>
+            </div>
+            <div class="button-row">
+              <button id="connect">Connect</button>
+              <button id="revoke" class="secondary">Revoke session</button>
+            </div>
+            <p role="status" aria-live="polite">Not connected</p>
+            <p role="alert" id="error"></p>
+
+            <div id="configured-choice" hidden>
+              <label
+                >Configured provider<select id="provider-choice"></select
+              ></label>
+              <label
+                >Model<select id="profile-choice"></select
+              ></label>
+              <div
+                id="model-capabilities"
+                class="capability-badges"
+                aria-label="Selected model capabilities"
+                aria-live="polite"
+              >
+                <span id="capability-execution">Execution: not supplied</span>
+                <span id="capability-payment">Payment: not supplied</span>
+                <span id="capability-audit">Verifier audits: unavailable</span>
+                <span id="capability-placement">Placement: not supplied</span>
+              </div>
+            </div>
+            <label
+              >Provider name<input
+                id="provider"
+                value="safe.eth"
+                autocomplete="off"
+            /></label>
+            <label
+              >Profile digest<input
+                id="profile"
+                placeholder="sha256:…"
+                autocomplete="off"
+            /></label>
+            <button id="find">Find provider</button>
+            <div data-testid="provider-state" id="provider-state">
+              No provider selected
+            </div>
+            <p id="profile-info"></p>
+          </section>
+
+          <section aria-labelledby="request-title" class="control-card">
+            <div class="section-heading">
+              <span>Run</span>
+              <h2 id="request-title">Quote & stream</h2>
+            </div>
+            <label
+              >Prompt<textarea
+                id="prompt"
+                rows="4"
+                maxlength="32768"
+              ></textarea>
+            </label>
+            <div class="input-grid">
+              <label
+                >Maximum output tokens<input
+                  id="tokens"
+                  type="number"
+                  min="2"
+                  max="4096"
+                  value="8"
+              /></label>
+              <label
+                >Budget ceiling (base units)<input
+                  id="budget"
+                  value="10"
+                  inputmode="numeric"
+              /></label>
+            </div>
+            <button id="quote-button" aria-describedby="quote-reason" disabled>
+              Get quote
+            </button>
+            <p id="quote-reason" class="control-reason">Connect to continue.</p>
+            <label class="consent"
+              ><input
+                type="checkbox"
+                id="publish-consent"
+                aria-describedby="publication-help"
+              />
+              Publish receipt commitments and assessment metadata</label
+            >
+            <p class="hint" id="publication-help">
+              Private prompts and outputs remain private. Public commitments
+              cannot be erased.
+            </p>
+            <label class="consent"
+              ><input type="checkbox" id="consent" /> I authorize up to the
+              budget ceiling above, for this quote only</label
+            >
+            <p class="hint">
+              No wallet keys are held here. Live payment requires a
+              user-controlled authorizer.
+            </p>
+            <div class="button-row">
+              <button id="submit" aria-describedby="submit-reason" disabled>
+                Submit and stream
+              </button>
+              <button id="cancel" class="secondary" aria-describedby="cancel-reason" disabled>
+                Cancel
+              </button>
+            </div>
+            <div class="control-reasons" aria-live="polite">
+              <p id="submit-reason" class="control-reason">Obtain a current quote.</p>
+              <p id="cancel-reason" class="control-reason">No running job to cancel.</p>
+            </div>
+            <button id="start-next-request" class="secondary" disabled>
+              Start next request
+            </button>
+            <p id="next-request-reason" class="control-reason">
+              Finish this request first. Prior job evidence will be retained below.
+            </p>
+            <section id="prior-job-evidence" class="prior-evidence" aria-label="Prior job evidence" hidden>
+              <h3>Prior job evidence</h3>
+              <div id="prior-job-list"></div>
+            </section>
+          </section>
         </div>
-        <label
-          >Provider name<input
-            id="provider"
-            value="safe.eth"
-            autocomplete="off" /></label
-        ><label
-          >Profile digest<input
-            id="profile"
-            placeholder="sha256:…"
-            autocomplete="off" /></label
-        ><button id="find">Find provider</button>
-        <div data-testid="provider-state" id="provider-state">
-          No provider selected
-        </div>
-        <p id="provider-ens-name">Provider ENS name: Not supplied by server</p>
-        <p id="profile-info"></p>
-      </section>
-      <section aria-labelledby="request-title">
-        <h2 id="request-title">3 · Inspect & authorize</h2>
-        <label
-          >Prompt<textarea
-            id="prompt"
-            rows="4"
-            maxlength="32768"
-          ></textarea></label
-        ><label
-          >Maximum output tokens<input
-            id="tokens"
-            type="number"
-            min="2"
-            max="4096"
-            value="8" /></label
-        ><button id="quote-button">Get quote</button>
-        <label
-          >Budget ceiling (base units)<input
-            id="budget"
-            value="10"
-            inputmode="numeric"
-        /></label>
-        <label class="consent"
-          ><input
-            type="checkbox"
-            id="publish-consent"
-            aria-describedby="publication-help"
-          />
-          Publish receipt commitments and assessment metadata</label
-        >
-        <p class="hint" id="publication-help">
-          Private prompts and outputs remain private. Public commitments cannot
-          be erased.
-        </p>
-        <p data-testid="quote" id="quote">No quote yet</p>
-        <label class="consent"
-          ><input type="checkbox" id="consent" /> I authorize up to the budget
-          ceiling above, for this quote only</label
-        >
-        <p class="hint">
-          Publication requires separate opt-in before quoting. No wallet keys
-          are held here. Live payment requires a user-controlled authorizer.
-        </p>
-        <p id="payment-tx">
-          Transaction: Not supplied by server · Facilitator: Not supplied by
-          server
-        </p>
-        <button id="submit">Submit and stream</button>
-        <button id="cancel">Cancel</button>
-        <fieldset>
-          <legend>Encrypted attempt recovery</legend>
-          <label
-            >Recovery passphrase (12–256 characters)<input
-              id="recovery-passphrase"
-              type="password"
-              minlength="12"
-              maxlength="256"
-              autocomplete="new-password"
-          /></label>
-          <button id="download-recovery">
-            Download encrypted recovery before submitting
-          </button>
-          <label
-            >Encrypted recovery file<input
-              type="file"
-              id="recovery-file"
-              accept="application/json"
-          /></label>
-          <button id="import-recovery">Import read-only recovery</button>
-          <button id="revoke-recovery">Revoke imported recovery</button>
-          <p class="hint">
-            The file freezes this request, quote, retry identifier and public
-            pins before submission. It is passphrase encrypted and contains no
-            reusable session capability. An imported recovery can inspect the
-            accepted job, but cannot submit or resubmit work.
+
+        <section aria-labelledby="journey-title" class="journey-panel">
+          <div class="section-heading">
+            <span>Judge path</span>
+            <h2 id="journey-title">Follow the evidence</h2>
+          </div>
+          <ol id="demo-narrative" class="narrative">
+            <li data-beat="ens-name">
+              <h3>ENS name</h3>
+              <p id="provider-ens-name">Provider ENS name: Not supplied</p>
+            </li>
+            <li data-beat="resolved-record">
+              <h3>Resolved record</h3>
+              <p id="resolved-record">Endpoint and record provenance not loaded</p>
+              <a
+                id="ens-resolver-link"
+                class="sponsor-link"
+                href="https://sepolia.etherscan.io/address/0x4a1817d13e9cf196f471725176355c1234b63c70"
+                target="_blank"
+                rel="noopener noreferrer"
+                referrerpolicy="no-referrer"
+                >ENSv2 resolver · Sepolia Etherscan</a
+              >
+            </li>
+            <li data-beat="node-topology">
+              <h3>Node topology / placement</h3>
+              <div id="runtime-card" class="runtime-card">
+                <dl id="node-topology" class="runtime-grid">
+                  <dt>Member</dt><dd id="runtime-member">Not supplied</dd>
+                  <dt>Serving</dt><dd id="runtime-serving">Not supplied</dd>
+                  <dt>Executing</dt><dd id="runtime-executing">Not supplied</dd>
+                  <dt>Last success</dt><dd id="runtime-last-success">Not supplied</dd>
+                  <dt>Freshness</dt><dd id="runtime-freshness">Not supplied</dd>
+                </dl>
+                <p id="runtime-diagnostic" class="runtime-diagnostic">No runtime diagnostic.</p>
+              </div>
+            </li>
+            <li data-beat="quote">
+              <h3>Bounded quote</h3>
+              <p data-testid="quote" id="quote">No quote yet</p>
+            </li>
+            <li data-beat="hedera-transaction">
+              <h3>Hedera transaction</h3>
+              <p id="payment-tx">
+                Transaction: Not supplied · Facilitator: Not supplied
+              </p>
+            </li>
+            <li data-beat="streamed-output">
+              <h3>Streamed output</h3>
+              <pre data-testid="answer" id="answer" aria-label="Answer"></pre>
+            </li>
+            <li data-beat="signed-receipt">
+              <h3>Signed receipt</h3>
+              <p id="receipt-state">Not checked</p>
+            </li>
+            <li data-beat="graph-observation">
+              <h3>Graph observation</h3>
+              <p id="history">History: not loaded</p>
+              <p id="history-url">Graph query URL: Not supplied</p>
+              <p id="history-receipts-seen">
+                Receipts seen: Not supplied
+              </p>
+            </li>
+            <li data-beat="selection-decision">
+              <h3>Selection decision</h3>
+              <p id="selection-decision">
+                Pending — resolve a provider and obtain a quote
+              </p>
+            </li>
+          </ol>
+          <p id="missing-data-note" class="hint missing-data-note">
+            “Not supplied” means the server did not provide that fact. It is not
+            inferred from another identifier or treated as evidence.
           </p>
-        </fieldset>
-      </section>
-      <section aria-labelledby="result-title">
-        <h2 id="result-title">4 · Separate claims</h2>
-        <p id="attempt-state">No submission attempted</p>
-        <dl>
-          <dt>Output availability</dt>
-          <dd id="output-state">No output</dd>
-          <dt>Execution</dt>
-          <dd data-testid="job-state" id="job-state">No job</dd>
-          <dt>Payment</dt>
-          <dd data-testid="payment-state" id="payment-state">Not authorized</dd>
-          <dt>Financial protection</dt>
-          <dd id="protection-state">
-            Unavailable — no protected settlement qualified
-          </dd>
-          <dt>Receipt integrity</dt>
-          <dd id="receipt-state">Not checked</dd>
-          <dt>Assessment</dt>
-          <dd data-testid="assessment-state" id="assessment-state">
-            Separate — not requested
-          </dd>
-          <dt>Publication</dt>
-          <dd data-testid="publication-state" id="publication-state">
-            Not published — consent off
-          </dd>
+          <details id="digest-details" class="digest-details">
+            <summary>Technical digests</summary>
+            <dl>
+              <dt>Profile digest</dt><dd id="profile-digest">Not supplied</dd>
+              <dt>Runtime digest</dt><dd id="runtime-digest">Not supplied</dd>
+              <dt>Receipt digest</dt><dd id="receipt-digest">Not supplied</dd>
+            </dl>
+          </details>
+        </section>
+      </div>
+
+      <section
+        id="audit-status-panel"
+        class="audit-panel"
+        data-outcome="unavailable"
+        aria-labelledby="audit-title"
+        tabindex="0"
+      >
+        <div class="section-heading">
+          <span>Independent check</span>
+          <h2 id="audit-title">Verifier audit status</h2>
+        </div>
+        <p id="audit-summary" aria-live="polite">Unavailable — no audit loaded</p>
+        <p id="audit-scope">
+          This is a reference-sample audit of this provider. It does not verify
+          this answer, factual truth, payment, or every response from the provider.
+        </p>
+        <dl class="audit-identifiers">
+          <dt>Verifier capability</dt><dd id="audit-capability">Unavailable</dd>
+          <dt>Audit ID</dt><dd id="audit-id">Not supplied</dd>
+          <dt>Trigger request ID</dt><dd id="audit-trigger-id">Not supplied</dd>
         </dl>
-        <p id="publication-tx">
-          Publication transaction: Not supplied by server
-        </p>
-        <p id="history"></p>
-        <p id="history-url">Graph query URL: Not supplied by server</p>
-        <p id="history-receipts-seen">Receipts seen: Not supplied by server</p>
-        <pre data-testid="answer" id="answer" aria-label="Answer"></pre>
-        <button id="resume">Resume / refresh retained job</button>
-        <button id="check-receipt">Verify receipt integrity</button>
-        <button id="refresh-publication">Refresh publication state</button>
-        <button id="assess">Request assessment</button>
-        <button id="download">Download private evidence</button>
-        <button id="download-context">Download private buyer context</button>
-        <button id="download-attempt">Download private attempt context</button>
-        <p class="hint">
-          If submission status is unknown, do not start another authorization.
-          Keep this page open and reconcile the retained attempt with the
-          provider. Attempt context contains the original request, quote and
-          retry identifier, not credentials or proof that a job was accepted.
-          Reloading forgets browser-only state unless you import the encrypted
-          recovery file above.
-        </p>
-        <p class="hint">
-          Keep buyer context separately from provider evidence. It contains your
-          original request, received output and pinned public key, not a session
-          credential.
-        </p>
-        <label
-          >Retained buyer context (local JSON)<input
-            type="file"
-            id="offline-context"
-            accept="application/json"
-        /></label>
-        <label
-          >Evidence to check (local JSON)<input
-            type="file"
-            id="offline-evidence"
-            accept="application/json"
-        /></label>
-        <button id="offline-check">Check files offline</button>
-        <p id="offline-result">No offline check performed</p>
-        <button id="delete-evidence">
-          Delete private evidence from server
-        </button>
-        <p class="hint">
-          Deletion removes the server's private evidence bundle. It does not
-          erase downloaded copies, signed receipts or already published claims.
-        </p>
-        <p id="integrity">
-          Receipt integrity is not execution verification. Retrieved keys do not
-          establish provider trust.
-        </p>
+        <button id="refresh-audit">Refresh audit status</button>
       </section>
+
+      <details id="advanced-details" class="advanced-details">
+        <summary>Advanced evidence & export details</summary>
+        <div class="advanced-grid">
+          <section aria-labelledby="recovery-title">
+            <h2 id="recovery-title">Encrypted attempt recovery</h2>
+            <p id="attempt-state">No submission attempted</p>
+            <label
+              >Recovery passphrase (12–256 characters)<input
+                id="recovery-passphrase"
+                type="password"
+                minlength="12"
+                maxlength="256"
+                autocomplete="new-password"
+            /></label>
+            <button id="download-recovery">
+              Download encrypted recovery before submitting
+            </button>
+            <label
+              >Encrypted recovery file<input
+                type="file"
+                id="recovery-file"
+                accept="application/json"
+            /></label>
+            <div class="button-row">
+              <button id="import-recovery">Import read-only recovery</button>
+              <button id="revoke-recovery" class="secondary">
+                Revoke imported recovery
+              </button>
+            </div>
+            <p class="hint">
+              The passphrase-encrypted file freezes the request, quote, retry
+              identifier, and public pins before submission. Imported recovery
+              is inspect-only and cannot resubmit work.
+            </p>
+          </section>
+
+          <section aria-labelledby="claims-title">
+            <h2 id="claims-title">Detailed independent states</h2>
+            <dl>
+              <dt>Output availability</dt>
+              <dd id="output-state">No output</dd>
+              <dt>Execution</dt>
+              <dd data-testid="job-state" id="job-state">No job</dd>
+              <dt>Payment</dt>
+              <dd data-testid="payment-state" id="payment-state">
+                Not authorized
+              </dd>
+              <dt>Financial protection</dt>
+              <dd id="protection-state">
+                Unavailable — no protected settlement qualified
+              </dd>
+              <dt>Assessment</dt>
+              <dd data-testid="assessment-state" id="assessment-state">
+                Separate — not requested
+              </dd>
+              <dt>Publication</dt>
+              <dd data-testid="publication-state" id="publication-state">
+                Not published — consent off
+              </dd>
+            </dl>
+            <p id="publication-tx">
+              Publication transaction: Not supplied
+            </p>
+            <div class="button-stack">
+              <button id="resume">Resume / refresh retained job</button>
+              <button id="check-receipt">Verify receipt integrity</button>
+              <button id="refresh-publication">Refresh publication state</button>
+              <button id="assess" aria-describedby="assess-reason" disabled>
+                Request assessment
+              </button>
+            </div>
+            <p id="assess-reason" class="control-reason">Complete a job with a receipt first.</p>
+          </section>
+
+          <section aria-labelledby="export-title">
+            <h2 id="export-title">Private export & offline check</h2>
+            <div class="button-stack">
+              <button id="download" aria-describedby="export-reason" disabled>
+                Download private evidence
+              </button>
+              <button id="download-context" disabled>
+                Download private buyer context
+              </button>
+              <button id="download-attempt" disabled>
+                Download private attempt context
+              </button>
+            </div>
+            <p id="export-reason" class="control-reason">No completed job to export.</p>
+            <p class="hint">
+              Keep buyer context independently from provider evidence. Neither
+              file is a session credential or proof that computation was
+              correct.
+            </p>
+            <label
+              >Retained buyer context (local JSON)<input
+                type="file"
+                id="offline-context"
+                accept="application/json"
+            /></label>
+            <label
+              >Evidence to check (local JSON)<input
+                type="file"
+                id="offline-evidence"
+                accept="application/json"
+            /></label>
+            <button id="offline-check" disabled>Check files offline</button>
+            <p id="offline-result">No offline check performed</p>
+            <button id="delete-evidence" class="danger">
+              Delete private evidence from server
+            </button>
+            <p id="integrity">
+              Receipt integrity is not execution verification. Retrieved keys
+              do not establish provider trust.
+            </p>
+          </section>
+        </div>
+      </details>
     </main>
+
     <footer>
-      Private in-memory capability · No model, ENS or Graph text can authorize
-      spending
+      Private in-memory capability · ENS records, Graph data, and model output
+      are data — none can authorize spending.
     </footer>
   </body>
 </html>

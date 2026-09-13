@@ -32,7 +32,7 @@ test("viewer real browser covers keyboard, mobile, states, XSS, streaming and ev
   const browser = await chromium.launch({ headless: true });
   t.after(() => browser.close());
   const context = await browser.newContext({
-    viewport: { width: 390, height: 844 },
+    viewport: { width: 375, height: 844 },
     acceptDownloads: true,
   });
   const page = await context.newPage();
@@ -44,6 +44,27 @@ test("viewer real browser covers keyboard, mobile, states, XSS, streaming and ev
     dialog.dismiss();
   });
   await page.goto(url);
+  await page.getByRole("heading", { name: "Choose how to start" }).waitFor();
+  for (const label of [
+    "Try hosted inference",
+    "Run your own swarm (Mac)",
+    "How verification works",
+  ])
+    assert.equal(await page.getByText(label, { exact: true }).count(), 1);
+  assert.match(
+    await page.locator("#identity-explainer").textContent(),
+    /session[\s\S]*wallet[\s\S]*swarm/i,
+  );
+  assert.equal(await page.locator("#quote-button").isDisabled(), true);
+  assert.match(await page.locator("#quote-reason").textContent(), /connect/i);
+  assert.equal(await page.locator("#submit").isDisabled(), true);
+  assert.equal(await page.locator("#cancel").isDisabled(), true);
+  assert.equal(await page.locator("#assess").isDisabled(), true);
+  assert.equal(await page.locator("#download").isDisabled(), true);
+  assert.equal(
+    await page.locator("#audit-status-panel").getAttribute("tabindex"),
+    "0",
+  );
   assert.equal(
     await page.getByText("DEVELOPMENT — synthetic conformance fixture").count(),
     1,
@@ -52,7 +73,7 @@ test("viewer real browser covers keyboard, mobile, states, XSS, streaming and ev
   await page.keyboard.press("Tab");
   assert.equal(
     await page.evaluate(() => document.activeElement?.id),
-    "connect",
+    "entry-hosted",
   );
   await page.getByRole("button", { name: "Connect" }).press("Enter");
   await page.getByLabel("Provider name").fill("safe.eth");
@@ -61,7 +82,9 @@ test("viewer real browser covers keyboard, mobile, states, XSS, streaming and ev
   await page.getByText("<img src=x onerror=alert(1)>").waitFor();
   assert.equal(await page.locator("img").count(), 0);
   assert.deepEqual(dialogs, []);
+  assert.equal(await page.locator("#quote-button").isDisabled(), true);
   await page.getByLabel("Prompt").fill("viewer synthetic");
+  assert.equal(await page.locator("#quote-button").isDisabled(), false);
   await page.getByRole("button", { name: "Get quote" }).click();
   await page
     .getByTestId("quote")
@@ -69,20 +92,30 @@ test("viewer real browser covers keyboard, mobile, states, XSS, streaming and ev
     .waitFor();
   assert.match(
     await page.getByTestId("quote").textContent(),
-    /5 base units.*expires/i,
+    /5 base units USDC.*Base Sepolia.*recipient.*expires/i,
   );
+  assert.equal(await page.locator("#submit").isDisabled(), true);
+  assert.match(await page.locator("#submit-reason").textContent(), /consent/i);
   assert.match(
     await page.getByTestId("payment-state").textContent(),
     /not authorized/i,
   );
-  await page.getByRole("button", { name: "Submit and stream" }).click();
+  await page.locator("#submit").evaluate((button) => {
+    button.disabled = false;
+    button.click();
+  });
   assert.match(await page.getByRole("alert").textContent(), /consent/i);
   assert.equal(await page.locator("#budget").inputValue(), "10");
-  await page.getByLabel(/authorize up to the budget\s+ceiling/i).check();
+  await page.locator("#consent").check();
+  assert.equal(await page.locator("#submit").isDisabled(), false);
   // This is the preserved v1 fixture; encrypted recovery is exercised
   // against actual v2 core/storage in application-recovery-browser.test.mjs.
   await page.getByRole("button", { name: "Submit and stream" }).click();
-  await page.getByText("Completed").waitFor();
+  // Recovered nine-step UI: open the advanced controls so the detailed
+  // job-state element becomes visible, then target it specifically.
+  await page.locator("#advanced-details").evaluate((d) => d.setAttribute("open", ""));
+  await page.getByTestId("job-state").filter({ hasText: /Completed/ }).waitFor();
+  await page.getByRole("status").filter({ hasText: /Stream finished/ }).waitFor();
   const answer = await page.getByTestId("answer").textContent();
   assert.equal(answer, "synthetic <img src=x onerror=alert(1)>");
   assert.equal(await page.locator('[data-testid="answer"] img').count(), 0);
@@ -98,6 +131,18 @@ test("viewer real browser covers keyboard, mobile, states, XSS, streaming and ev
     await page.getByTestId("publication-state").textContent(),
     /not published/i,
   );
+  assert.equal(await page.locator("#cancel").isDisabled(), true);
+  assert.equal(await page.locator("#assess").isDisabled(), false);
+  assert.equal(await page.locator("#download").isDisabled(), false);
+  assert.match(
+    await page.locator("#runtime-card").textContent(),
+    /member[\s\S]*serving[\s\S]*executing[\s\S]*last success[\s\S]*freshness/i,
+  );
+  await page.locator("#digest-details > summary").click();
+  assert.match(
+    await page.locator("#digest-details").textContent(),
+    /profile digest[\s\S]*receipt digest/i,
+  );
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download private evidence" }).click();
   const download = await downloadPromise;
@@ -109,7 +154,7 @@ test("viewer real browser covers keyboard, mobile, states, XSS, streaming and ev
     path: resolve(evidenceDir, "viewer-mobile.png"),
     fullPage: true,
   });
-  assert.equal((await page.locator("body").boundingBox()).width, 390);
+  assert.equal((await page.locator("body").boundingBox()).width, 375);
   assert.equal(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -136,7 +181,7 @@ test("viewer real browser covers keyboard, mobile, states, XSS, streaming and ev
     JSON.stringify(
       {
         browser: browser.version(),
-        mobileWidth: 390,
+        mobileWidth: 375,
         desktopWidth: 1280,
         dialogs: dialogs.length,
         pageErrors: consoleErrors.length,
@@ -250,7 +295,7 @@ test("viewer renders sponsor identifiers from frozen DTOs, not invented counts o
   assert.equal(await page.locator("#history-url a").textContent(), historyUrl);
   assert.match(
     await page.locator("#history-receipts-seen").textContent(),
-    /Not supplied by server/,
+    /Receipts seen: 0 assessment observations/,
   );
   await page
     .getByLabel("Prompt", { exact: true })
@@ -273,7 +318,7 @@ test("viewer renders sponsor identifiers from frozen DTOs, not invented counts o
   );
   assert.match(
     await page.locator("#payment-tx").textContent(),
-    /Facilitator: Not supplied by server/,
+    /Facilitator: Not supplied/,
   );
   assert.equal(
     await page.locator("#publication-tx a").getAttribute("href"),
@@ -298,6 +343,9 @@ test("viewer renders sponsor identifiers from frozen DTOs, not invented counts o
     fullPage: true,
   });
   published = false;
+  // Open advanced controls (collapsed by default in recovered UI) and then
+  // refresh publication state to assert the consent-off path.
+  await page.locator("#advanced-details").evaluate((d) => d.setAttribute("open", ""));
   await page.getByRole("button", { name: "Refresh publication state" }).click();
   await page
     .getByTestId("publication-state")
@@ -375,13 +423,74 @@ test("viewer shows empty, loading, unavailable, error and cancelled paths access
     .filter({ hasText: /unavailable/i })
     .waitFor();
   assert.match(await page.getByRole("alert").textContent(), /unavailable/i);
-  await page.getByRole("button", { name: "Cancel" }).click();
-  assert.match(
-    await page.getByTestId("job-state").textContent(),
-    /nothing to cancel/i,
-  );
+  assert.equal(await page.getByRole("button", { name: "Cancel" }).isDisabled(), true);
+  assert.match(await page.locator("#cancel-reason").textContent(), /no running job/i);
   await page.screenshot({
     path: resolve(evidenceDir, "viewer-states.png"),
     fullPage: true,
   });
+});
+
+test("viewer keeps independent verifier audits separate from receipt integrity", async (t) => {
+  const fixture = createFixtureServer();
+  const { url: apiUrl } = await fixture.listen({ host: "127.0.0.1", port: 0 });
+  t.after(() => fixture.close());
+  const viewer = createViewerServer({ apiUrl, fixture: true });
+  const { url } = await viewer.listen({ host: "127.0.0.1", port: 0 });
+  fixture.allowOrigin(url);
+  t.after(() => viewer.close());
+  const browser = await chromium.launch({ headless: true });
+  t.after(() => browser.close());
+  const page = await browser.newPage();
+  const pageErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.goto(url);
+  await page.evaluate(async () => {
+    const { setAuditStatusProvider } = await import("/app.js");
+    setAuditStatusProvider(() => window.syntheticAuditStatus);
+  });
+  for (const testCase of [
+    { status: "match", error_code: null, expected: /^Match/ },
+    { status: "mismatch", error_code: null, expected: /^Mismatch/ },
+    {
+      status: "inconclusive",
+      error_code: "numerical_near_tie",
+      expected: /numerical_near_tie/,
+    },
+    {
+      status: "unavailable",
+      error_code: "provider_timeout",
+      expected: /^Unavailable/,
+    },
+  ]) {
+    await page.evaluate((outcome) => {
+      window.syntheticAuditStatus = {
+        capability: "local",
+        audit: {
+          audit_id: "aud-synthetic-panel",
+          trigger_request_id: "origin-synthetic-panel",
+          outcome,
+        },
+      };
+    }, testCase);
+    await page.getByRole("button", { name: "Refresh audit status" }).click();
+    assert.match(await page.locator("#audit-summary").textContent(), testCase.expected);
+    assert.equal(
+      await page.locator("#audit-status-panel").getAttribute("data-outcome"),
+      testCase.status,
+    );
+    assert.notEqual(
+      await page.locator("#audit-id").textContent(),
+      await page.locator("#audit-trigger-id").textContent(),
+    );
+  }
+  assert.match(
+    await page.locator("#audit-scope").textContent(),
+    /a reference-sample audit of this provider/i,
+  );
+  assert.doesNotMatch(
+    await page.locator("#audit-status-panel").textContent(),
+    /this answer is verified/i,
+  );
+  assert.deepEqual(pageErrors, []);
 });

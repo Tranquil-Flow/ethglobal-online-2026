@@ -42,10 +42,11 @@ test("real browser cancellation preserves separate paid failure, expiry never re
     .getByTestId("quote")
     .filter({ hasText: /expires/ })
     .waitFor();
-  await page.getByLabel(/authorize up to/).check();
+  await page.locator("#consent").check();
   // This is the preserved v1 fixture; encrypted recovery is exercised
   // against actual v2 core/storage in application-recovery-browser.test.mjs.
   await page.getByRole("button", { name: "Submit and stream" }).click();
+  await page.locator("#advanced-details").evaluate((d) => d.setAttribute("open", ""));
   await page
     .getByTestId("job-state")
     .filter({ hasText: /running/ })
@@ -70,11 +71,11 @@ test("real browser cancellation preserves separate paid failure, expiry never re
   );
   assert.match(
     await page.locator("#payment-tx").textContent(),
-    /Facilitator: Not supplied by server/,
+    /Facilitator: Not supplied/,
   );
   assert.match(
     await page.locator("#history-receipts-seen").textContent(),
-    /Not supplied by server/,
+    /Receipts seen: 0 assessment observations/,
   );
   await page.screenshot({
     path: resolve("../../artifacts/access/viewer-cancelled.png"),

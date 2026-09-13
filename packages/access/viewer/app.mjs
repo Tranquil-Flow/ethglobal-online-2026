@@ -30,20 +30,183 @@ function guardNewWork() {
 let client,
   config,
   provider,
+  providerProfileId,
   request,
   quote,
   job,
   streamController,
   busy = false,
   submissionAttempted = false;
-let userPaymentAuthorizer;
+let userPaymentAuthorizer,
+  auditStatusProvider,
+  lastArchivedJobId;
 // Trusted host code may inject a wallet UI callback; no DOM/data-controlled module loading.
 export function setPaymentAuthorizer(callback) {
   if (typeof callback !== "function") throw new TypeError("Expected callback");
   userPaymentAuthorizer = callback;
 }
+export function setAuditStatusProvider(callback) {
+  if (typeof callback !== "function") throw new TypeError("Expected callback");
+  auditStatusProvider = callback;
+}
+export async function authorizeDemoPayment(context) {
+  if (!client?.capability) throw new AccessError("Connect explicitly first");
+  const result = await client.authorizeDemoPayment(context);
+  text("payment-state", result.display?.label ?? "DEMO sponsored payment authorized");
+  return result.headers;
+}
 const status = (v) => (document.querySelector("[role=status]").textContent = v);
-function invalidate() {
+function selectedProviderConfig() {
+  return config?.providers?.find((row) => row.providerId === $("provider").value);
+}
+function selectedCapabilities() {
+  const profileId = $("profile").value;
+  const row = selectedProviderConfig();
+  return (
+    config?.profileCapabilities?.[profileId] ??
+    row?.profileCapabilities?.[profileId] ??
+    row?.capabilities ??
+    {}
+  );
+}
+function updateModelCapabilities() {
+  const capability = selectedCapabilities();
+  const profileId = $("profile").value;
+  const row = selectedProviderConfig();
+  const fact = (value, fallback = "not supplied") =>
+    typeof value === "string" && value.trim() ? value.trim() : fallback;
+  text("capability-execution", "Execution: " + fact(capability.execution));
+  text(
+    "capability-payment",
+    "Payment: " +
+      fact(
+        capability.payment,
+        config?.accessPolicy === "non-economic"
+          ? "non-economic"
+          : config?.payment === "ordinary-x402-not-financial-protection"
+            ? "x402"
+            : "not supplied",
+      ),
+  );
+  text(
+    "capability-audit",
+    "Verifier audits: " +
+      fact(capability.verifierAudits ?? capability.audit, "unavailable"),
+  );
+  text("capability-placement", "Placement: " + fact(capability.placement));
+  text("profile-digest", profileId || notSupplied);
+  text("runtime-digest", row?.runtimeDigest ?? notSupplied);
+}
+function control(id, enabled, reasonId, reason) {
+  $(id).disabled = !enabled;
+  if (reasonId) text(reasonId, enabled ? "Ready." : reason);
+}
+function updateControls() {
+  const connected = Boolean(client?.capability);
+  const selected = Boolean(
+    provider &&
+      provider.providerId === $("provider").value &&
+      providerProfileId === $("profile").value,
+  );
+  const promptReady = $("prompt").value.trim().length > 0;
+  const quoteReady = Boolean(
+    quote &&
+      request &&
+      request.profileId === $("profile").value &&
+      request.providerId === $("provider").value,
+  );
+  const canQuote =
+    connected &&
+    selected &&
+    promptReady &&
+    !busy &&
+    !pendingSubmission &&
+    !recoveredReadOnly &&
+    !preparingRecovery &&
+    !recoveryArchive;
+  control(
+    "quote-button",
+    canQuote,
+    "quote-reason",
+    !connected
+      ? "Connect to continue."
+      : !selected
+        ? "Select and find this model's provider first."
+        : !promptReady
+          ? "Enter a prompt to request a quote."
+          : busy
+            ? "A job is in progress."
+            : pendingSubmission
+              ? "Submission outcome unknown — inspect the existing attempt before new work."
+              : recoveryArchive
+                ? "This recovery attempt is frozen."
+                : "New work is unavailable in read-only recovery.",
+  );
+  if ($("compare-providers")) $("compare-providers").disabled = !canQuote;
+  const canSubmit =
+    quoteReady &&
+    $("consent").checked &&
+    !busy &&
+    !submissionAttempted &&
+    !pendingSubmission &&
+    !recoveredReadOnly;
+  control(
+    "submit",
+    canSubmit,
+    "submit-reason",
+    !quoteReady
+      ? "Obtain a current quote."
+      : !$("consent").checked
+        ? "Explicit payment consent is required for this quote."
+        : busy || submissionAttempted || pendingSubmission
+          ? "Inspect the existing attempt before another authorization."
+          : "Read-only recovery cannot submit work.",
+  );
+  const canCancel = Boolean(
+    job && !terminalJob(job) && !recoveredReadOnly && !pendingSubmission,
+  );
+  control(
+    "cancel",
+    canCancel,
+    "cancel-reason",
+    recoveredReadOnly
+      ? "Read-only recovery cannot cancel a job."
+      : "No running job to cancel.",
+  );
+  const completedWithReceipt = Boolean(
+    job?.executionStatus === "succeeded" && job.receiptDigest,
+  );
+  control(
+    "assess",
+    completedWithReceipt && !recoveredReadOnly && !busy,
+    "assess-reason",
+    recoveredReadOnly
+      ? "Read-only recovery cannot request an assessment."
+      : "Complete a job with a receipt first.",
+  );
+  control(
+    "download",
+    completedWithReceipt,
+    "export-reason",
+    "No completed job with a receipt to export.",
+  );
+  $("download-context").disabled = !job;
+  $("download-attempt").disabled = !attemptContext;
+  $("offline-check").disabled = !(
+    $("offline-context").files?.[0] && $("offline-evidence").files?.[0]
+  );
+  const canStartNext = Boolean(
+    job && terminalJob(job) && job.jobId !== lastArchivedJobId && !busy,
+  );
+  $("start-next-request").disabled = !canStartNext;
+  text(
+    "next-request-reason",
+    canStartNext
+      ? "Ready — the current job will be copied to prior evidence."
+      : "Finish this request first. Prior job evidence will be retained below.",
+  );
+}
+function invalidateQuote(message = "Quote invalidated — obtain a fresh quote") {
   formRevision++;
   quote = undefined;
   request = undefined;
@@ -51,22 +214,41 @@ function invalidate() {
   recoveryArchive = undefined;
   recoveryRoot = undefined;
   $("consent").checked = false;
-  text("quote", "Quote invalidated — obtain a fresh quote");
+  text("quote", message);
+  updateControls();
 }
-for (const id of [
-  "provider",
-  "profile",
-  "prompt",
-  "tokens",
-  "publish-consent",
-  "budget",
-])
-  $(id).addEventListener("input", invalidate);
+function invalidateSelection() {
+  invalidateQuote();
+  provider = undefined;
+  providerProfileId = undefined;
+  text("provider-state", "No provider selected");
+  text("profile-info", "");
+  text("history", "History invalidated — find the provider for the selected model");
+  text("history-receipts-seen", "Receipts seen: not loaded");
+  const comparison = $("history-comparison");
+  comparison?.replaceChildren();
+  updateModelCapabilities();
+  renderAuditUnavailable("Unavailable — model changed; no audit loaded");
+}
+const invalidate = invalidateQuote;
+for (const id of ["prompt", "tokens", "publish-consent", "budget"])
+  $(id).addEventListener("input", () => invalidateQuote());
+for (const id of ["provider", "profile"])
+  $(id).addEventListener("input", invalidateSelection);
+$("consent").addEventListener("change", updateControls);
+for (const id of ["offline-context", "offline-evidence"])
+  $(id).addEventListener("change", updateControls);
+$("provider-choice").addEventListener("change", () => queueMicrotask(updateModelCapabilities));
+$("profile-choice").addEventListener("change", () => queueMicrotask(updateModelCapabilities));
+new MutationObserver(updateModelCapabilities).observe($("profile-choice"), {
+  childList: true,
+});
 async function action(fn) {
   text("error", "");
   try {
     await fn();
   } catch (e) {
+    showRuntimeDiagnostic(e);
     text(
       "error",
       e instanceof AccessError
@@ -74,6 +256,8 @@ async function action(fn) {
         : "Operation unavailable; no automatic repayment",
     );
     status("Error — explicit retry required");
+  } finally {
+    updateControls();
   }
 }
 const pinFor = (id) =>
@@ -95,7 +279,31 @@ function clientFor(id, capability) {
 }
 // These links expose only server-supplied public identifiers on an explicit click.
 // No prefetch, HTML interpretation, credential-bearing URL or inferred receipt count.
-const notSupplied = "Not supplied by server";
+const notSupplied = "Not supplied";
+const runtimeDiagnostics = Object.freeze({
+  NATIVE_TIMEOUT:
+    "Native runtime timed out. The request was not retried or repaid automatically.",
+  NATIVE_BUSY: "Native runtime is busy. Wait before explicitly retrying.",
+  RUNTIME_BUSY: "Runtime is busy. Wait before explicitly retrying.",
+  PROVIDER_BUSY: "Provider is busy. Wait before explicitly retrying.",
+  JOB_IN_PROGRESS: "Runtime is busy with the current job.",
+});
+function showRuntimeDiagnostic(error) {
+  const message = runtimeDiagnostics[error?.code];
+  if (!message) return;
+  text("runtime-diagnostic", message);
+  $("runtime-diagnostic").dataset.level = "warning";
+}
+function clearRuntimeDiagnostic() {
+  text("runtime-diagnostic", "No runtime diagnostic.");
+  delete $("runtime-diagnostic").dataset.level;
+}
+function displayFact(value) {
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (Number.isSafeInteger(value)) return String(value);
+  return notSupplied;
+}
 function sponsorLink(parent, label, href) {
   const link = document.createElement("a");
   link.className = "sponsor-link";
@@ -130,6 +338,82 @@ function transaction(id, prefix, value, kind) {
         : undefined;
   if (href) sponsorLink(parent, value, href);
   else parent.append(document.createTextNode(value));
+}
+const claimClass = {
+  pending: "neutral",
+  running: "unchecked",
+  completed: "complete",
+  unchecked: "unchecked",
+  valid: "valid",
+  unavailable: "unavailable",
+  failed: "failed",
+  cancelled: "unavailable",
+};
+function setClaim(id, state, label) {
+  const element = $(id);
+  if (!element) return;
+  element.dataset.state = state;
+  element.className = "claim " + (claimClass[state] ?? "neutral");
+  element.textContent = label;
+}
+function receiptLabelFor(j) {
+  return j?.receiptDigest
+    ? "Receipt available — integrity unchecked · " + j.receiptDigest
+    : "Receipt integrity — unavailable";
+}
+function friendlyNetwork(value) {
+  const names = {
+    "hedera:testnet": "Hedera testnet",
+    "hedera-testnet": "Hedera testnet",
+    testnet: "Hedera testnet",
+    "eip155:84532": "Base Sepolia (eip155:84532)",
+  };
+  return names[value] ?? value;
+}
+function tinybarToHbar(value) {
+  const digits = String(value);
+  const whole = digits.length > 8 ? digits.slice(0, -8) : "0";
+  const fraction = digits.padStart(9, "0").slice(-8).replace(/0+$/, "");
+  return fraction ? whole + "." + fraction : whole;
+}
+function quoteLabel(value) {
+  const hbar = String(value.asset).toUpperCase() === "HBAR";
+  const amount = hbar
+    ? `${value.amountBaseUnits} tinybar (${tinybarToHbar(value.amountBaseUnits)} HBAR)`
+    : `${value.amountBaseUnits} base units ${value.asset}`;
+  const expiry = new Date(value.expiresAt);
+  return (
+    `${amount} · ${friendlyNetwork(value.network)} · recipient ${value.receiver} · expires ` +
+    (Number.isFinite(expiry.valueOf()) ? expiry.toLocaleString() : value.expiresAt)
+  );
+}
+function setRuntimeFacts(report, row) {
+  clearRuntimeDiagnostic();
+  const observedAt = row?.observedAt ?? report?.observedAt;
+  const age = Number.isFinite(Date.parse(observedAt))
+    ? Math.max(0, Date.now() - Date.parse(observedAt))
+    : undefined;
+  text("runtime-member", displayFact(row?.member ?? row?.memberState));
+  text("runtime-serving", displayFact(row?.serving ?? row?.state));
+  text("runtime-executing", displayFact(row?.executing));
+  text("runtime-last-success", displayFact(row?.lastSuccessAt ?? row?.last_success));
+  text(
+    "runtime-freshness",
+    age === undefined
+      ? notSupplied
+      : `${age <= 30_000 ? "fresh" : "stale"} · ${Math.round(age / 1000)} s old`,
+  );
+}
+async function refreshRuntimeStatus(providerId) {
+  setRuntimeFacts(undefined, undefined);
+  try {
+    const response = await fetch(config.apiUrl + "/v2/runtime-status");
+    if (!response.ok) return;
+    const report = await response.json();
+    const row = report.providers?.find((p) => p.providerId === providerId);
+    if (!row) return;
+    setRuntimeFacts(report, row);
+  } catch {}
 }
 async function publication() {
   if (!job || config.fixture) return;
@@ -218,6 +502,7 @@ $("find").onclick = () =>
     if (busy) throw new AccessError("JOB_IN_PROGRESS");
     status("Finding provider…");
     provider = undefined;
+    providerProfileId = undefined;
     text("provider-ens-name", "Provider ENS name: " + notSupplied);
     text("provider-state", "No provider selected");
     text("history", "History: not loaded");
@@ -249,11 +534,20 @@ $("find").onclick = () =>
     const profile = await selectedClient.getProfile(profileId);
     if (formRevision !== revision) throw new AccessError("FORM_CHANGED_RETRY");
     provider = p;
+    providerProfileId = profileId;
     client = selectedClient;
     text("provider-state", p.name);
     text("provider-ens-name", "Provider ENS name: " + p.providerId);
+    const source = p.source
+      ? `Resolved on ${p.source.chainId} at block ${p.source.blockNumber}; record expires ${p.source.expiresAt}.`
+      : "Resolution provenance: " + notSupplied + ".";
+    text("resolved-record", `Endpoint: ${p.endpoint ?? notSupplied}. ${source}`);
     graphLink(p.historyEndpoint);
     text("profile-info", profile.model + " · " + p.mode);
+    text("profile-digest", profileId);
+    text("runtime-digest", selectedProviderConfig()?.runtimeDigest ?? notSupplied);
+    updateModelCapabilities();
+    await refreshRuntimeStatus(p.providerId);
     const h = await client.getHistory(p.providerId);
     text(
       "history",
@@ -264,6 +558,10 @@ $("find").onclick = () =>
           ? "observations are claims"
           : "no samples — unknown"),
     );
+    text(
+      "history-receipts-seen",
+      `Receipts seen: ${h.observations.length} assessment observations · indexed block ${h.indexedBlock ?? "unknown"}`,
+    );
     status("Provider selected — no prompt fan-out");
   });
 $("quote-button").onclick = () =>
@@ -271,7 +569,11 @@ $("quote-button").onclick = () =>
     guardNewWork();
     need();
     if (recoveryArchive) throw new AccessError("RECOVERY_ATTEMPT_FROZEN");
-    if (!provider || provider.providerId !== $("provider").value)
+    if (
+      !provider ||
+      provider.providerId !== $("provider").value ||
+      providerProfileId !== $("profile").value
+    )
       throw new AccessError("Find provider first");
     if (busy) throw new AccessError("JOB_IN_PROGRESS");
     status("Loading quote…");
@@ -299,18 +601,71 @@ $("quote-button").onclick = () =>
     recoveryRoot = undefined;
     submissionAttempted = false;
     $("consent").checked = false;
+    text("quote", quoteLabel(quote));
     text(
-      "quote",
-      quote.amountBaseUnits +
-        " base units " +
-        quote.asset +
-        " on " +
-        quote.network +
-        " · expires " +
-        quote.expiresAt,
+      "selection-decision",
+      "Quote frozen for " + quote.providerId + " — compare providers to make Graph-attributed selection visible",
     );
     status("Quote ready — payment requires consent");
   });
+// Explicit user action: only this comparison button requests quotes for the
+// compatible configured providers. It never submits, signs, or pays a job.
+const compareButton = document.createElement("button");
+compareButton.id = "compare-providers";
+compareButton.textContent = "Compare providers using this prompt (quotes only)";
+compareButton.setAttribute("aria-describedby", "quote-reason");
+$("quote-button").after(compareButton);
+const historyComparisonList = document.createElement("div");
+historyComparisonList.id = "history-comparison";
+historyComparisonList.setAttribute("aria-live", "polite");
+$("history").after(historyComparisonList);
+async function refreshComparison() {
+  historyComparisonList.replaceChildren();
+  const response = await fetch(config.apiUrl + "/v2/history-comparison");
+  if (!response.ok) throw new AccessError("HISTORY_UNAVAILABLE");
+  const comparison = await response.json();
+  if (comparison.version !== "2" || !Array.isArray(comparison.providers)) throw new AccessError("INVALID_HISTORY_COMPARISON");
+  for (const row of comparison.providers) {
+    const article = document.createElement("article");
+    article.dataset.provider = row.providerId;
+    const title = document.createElement("h3"); title.textContent = row.providerId; article.append(title);
+    for (const m of row.measures ?? []) {
+      const summary = document.createElement("p");
+      summary.textContent = `${m.source?.subgraph ?? "Graph source"} · ${m.source?.deploymentId ?? "unknown deployment"} · ${m.freshness} · indexed-head age ${m.freshnessAgeMs ?? "unknown"} ms · sample ${m.sampleDenominator} · receipt blocks ${m.observationWindow?.fromBlock ?? "none"}–${m.observationWindow?.toBlock ?? "none"}`;
+      const reasons = document.createElement("p"); reasons.textContent = (m.reasonCodes ?? []).join(" · ");
+      const limit = document.createElement("p"); limit.textContent = m.doesNotProve;
+      article.append(summary, reasons, limit);
+    }
+    historyComparisonList.append(article);
+  }
+}
+compareButton.onclick = () => action(async () => {
+  guardNewWork(); need();
+  if (busy || recoveryArchive || submissionAttempted) throw new AccessError("EXISTING_ATTEMPT_INSPECT_FIRST");
+  const revision = formRevision, profileId = $("profile").value;
+  const names = config.providers.filter(p => p.profileIds.includes(profileId)).map(p => p.providerId);
+  const listed = await client.listProviders(names);
+  const quoted = [];
+  for (const p of listed.providers) {
+    const candidate = clientFor(p.providerId, client.capability);
+    const r = await createRequest({providerId:p.providerId,profileId,prompt:$("prompt").value,maxOutputTokens:Number($("tokens").value),seed:0,publishConsent:$("publish-consent")?.checked===true});
+    quoted.push({provider:p,client:candidate,request:r,quote:await candidate.createQuote(r)});
+  }
+  if (!quoted.length) throw new AccessError("NO_ELIGIBLE_PROVIDERS");
+  const decision = await client.selectProviders({providers:quoted.map(x=>x.provider),quotes:quoted.map(x=>x.quote),profileId,maxAmountBaseUnits:$("budget").value,network:quoted[0].quote.network,asset:quoted[0].quote.asset});
+  if (revision !== formRevision) throw new AccessError("FORM_CHANGED_RETRY");
+  const chosen = quoted.find(x=>x.provider.providerId===decision.selected?.providerId);
+  if (!chosen) throw new AccessError("NO_ELIGIBLE_PROVIDERS");
+  client=chosen.client;provider=chosen.provider;providerProfileId=profileId;request=chosen.request;quote=chosen.quote;
+  $("provider").value=provider.providerId;$("provider-choice").value=provider.providerId;
+  $("consent").checked=false;attemptContext=undefined;recoveryRoot=undefined;
+  text("provider-state",provider.name);text("provider-ens-name","Provider ENS name: "+provider.name);
+  text("quote",quoteLabel(quote));
+  text("selection-decision",`Selected ${provider.providerId} from ${quoted.length} candidates · `+decision.reasons.map(r=>`${r.providerId}: ${r.codes.join(", ")}`).join("; "));
+  await refreshComparison();
+  status("Quote ready — selected using Graph receipt history; no payment yet");
+});
+
 function recoveryPassphrase() {
   const value = $("recovery-passphrase").value;
   if (value.length < 12 || value.length > 256)
@@ -428,7 +783,7 @@ $("submit").onclick = () =>
     busy = true;
     submissionAttempted = true;
     pendingSubmission = true;
-    $("submit").disabled = true;
+    updateControls();
     text(
       "attempt-state",
       "Submitting the retained request — no new authorization on retry",
@@ -578,6 +933,46 @@ async function streamRetainedJob() {
   }
 }
 function renderJob(j) {
+  const terminal = terminalJob(j);
+  const executionState =
+    j.executionStatus === "succeeded"
+      ? "completed"
+      : j.executionStatus === "failed"
+        ? "failed"
+        : j.executionStatus === "cancelled"
+          ? "cancelled"
+          : "running";
+  setClaim(
+    "execution-claim",
+    executionState,
+    executionState === "completed"
+      ? "Execution — completed"
+      : executionState === "running"
+        ? "Execution — running"
+        : "Execution — " + j.executionStatus,
+  );
+  setClaim(
+    "output-claim",
+    j.executionStatus === "succeeded"
+      ? j.output
+        ? "unchecked"
+        : "unavailable"
+      : terminal
+        ? "unavailable"
+        : "unchecked",
+    j.executionStatus === "succeeded" && j.output
+      ? "Output — available, unchecked"
+      : terminal
+        ? "Output — unavailable, unchecked"
+        : "Output — provisional, unchecked",
+  );
+  setClaim(
+    "receipt-claim",
+    j.receiptDigest ? "unchecked" : "unavailable",
+    j.receiptDigest
+      ? "Receipt integrity — unchecked"
+      : "Receipt integrity — unavailable",
+  );
   text(
     "output-state",
     j.executionStatus === "succeeded"
@@ -593,6 +988,8 @@ function renderJob(j) {
     "job-state",
     j.executionStatus === "succeeded" ? "Completed" : j.executionStatus,
   );
+  text("receipt-state", receiptLabelFor(j));
+  text("receipt-digest", j.receiptDigest ?? notSupplied);
   text(
     "payment-state",
     ["sponsored-local", "non-economic"].includes(config.accessPolicy)
@@ -606,6 +1003,7 @@ function renderJob(j) {
     "hedera",
   );
   $("payment-tx").append(" · Facilitator: " + notSupplied);
+  updateControls();
 }
 $("cancel").onclick = () =>
   action(async () => {
@@ -630,8 +1028,19 @@ $("assess").onclick = () =>
       crypto.randomUUID(),
     );
     text("assessment-state", "Separate — " + a.outcome + " (" + a.method + ")");
-    await publication();
-  });
+      if (a.outcome === "unavailable") {
+        setClaim("assessment-claim", "unavailable", "Assessment — unavailable");
+      } else if (a.outcome === "mismatch") {
+        setClaim("assessment-claim", "failed", "Assessment — mismatch");
+      } else {
+        setClaim(
+          "assessment-claim",
+          "unchecked",
+          "Assessment — " + a.outcome + " (separate)",
+        );
+      }
+      await publication();
+    });
 $("download").onclick = () =>
   action(async () => {
     need();
@@ -642,7 +1051,13 @@ $("download").onclick = () =>
     });
     text(
       "receipt-state",
-      "Integrity verified against configured pin — not inference verification",
+      "Integrity verified against configured pin — not inference verification" +
+        (job?.receiptDigest ? " · " + job.receiptDigest : ""),
+    );
+    setClaim(
+      "receipt-claim",
+      "valid",
+      "Receipt integrity — valid",
     );
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(evidence, null, 2)], {
@@ -733,7 +1148,13 @@ $("check-receipt").onclick = () =>
     if (!result.integrity) throw new AccessError("INVALID_SIGNATURE");
     text(
       "receipt-state",
-      "Integrity verified against configured pin — not inference verification",
+      "Integrity verified against configured pin — not inference verification" +
+        (job?.receiptDigest ? " · " + job.receiptDigest : ""),
+    );
+    setClaim(
+      "receipt-claim",
+      "valid",
+      "Receipt integrity — valid",
     );
   });
 $("resume").onclick = () =>
@@ -771,10 +1192,129 @@ $("download-attempt").onclick = () =>
       "Private attempt context downloaded — not a session credential or proof of acceptance",
     );
   });
+
+const auditCapabilities = Object.freeze({
+  "tee-attested": "TEE-attested verifier",
+  local: "Local verifier (not TEE)",
+  unavailable: "Unavailable",
+  "not-applicable": "Not applicable",
+});
+function renderAuditUnavailable(summary = "Unavailable — no audit loaded") {
+  $("audit-status-panel").dataset.outcome = "unavailable";
+  text("audit-summary", summary);
+  const capability = selectedCapabilities().verifierAudits ?? selectedCapabilities().audit;
+  text("audit-capability", auditCapabilities[capability] ?? "Unavailable");
+  text("audit-id", notSupplied);
+  text("audit-trigger-id", notSupplied);
+}
+function safeAuditIdentifier(value) {
+  return typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,255}$/.test(value)
+    ? value
+    : undefined;
+}
+function renderAuditStatus(result) {
+  const audit = result?.audit;
+  const auditId = safeAuditIdentifier(audit?.audit_id);
+  const triggerId = safeAuditIdentifier(audit?.trigger_request_id);
+  const outcome = audit?.outcome;
+  const state = typeof outcome === "string" ? outcome : outcome?.status;
+  const errorCode =
+    typeof outcome?.error_code === "string" &&
+    /^[a-z0-9][a-z0-9_-]{0,127}$/.test(outcome.error_code)
+      ? outcome.error_code
+      : undefined;
+  if (
+    !["match", "mismatch", "inconclusive", "unavailable"].includes(state) ||
+    !auditId ||
+    !triggerId ||
+    auditId === triggerId
+  ) {
+    renderAuditUnavailable("Unavailable — invalid or missing audit identity");
+    return;
+  }
+  const labels = {
+    match: "Match — reference sample matched",
+    mismatch: "Mismatch — reference sample differed",
+    inconclusive: "Inconclusive — reference sample could not decide",
+    unavailable: "Unavailable — reference-sample audit did not complete",
+  };
+  $("audit-status-panel").dataset.outcome = state;
+  text("audit-summary", labels[state] + (errorCode ? ` (${errorCode})` : ""));
+  text(
+    "audit-capability",
+    auditCapabilities[result.capability] ?? "Unavailable",
+  );
+  text("audit-id", auditId);
+  text("audit-trigger-id", triggerId);
+}
+async function refreshAuditStatus() {
+  const button = $("refresh-audit");
+  button.disabled = true;
+  text("audit-summary", "Loading independent audit status…");
+  try {
+    const capability = selectedCapabilities().verifierAudits ?? selectedCapabilities().audit;
+    const result = auditStatusProvider
+      ? await auditStatusProvider({
+          job: job ? structuredClone(job) : undefined,
+          request: request ? structuredClone(request) : undefined,
+          quote: quote ? structuredClone(quote) : undefined,
+          capability,
+        })
+      : { capability: capability ?? "unavailable", audit: null };
+    renderAuditStatus(result);
+  } catch {
+    renderAuditUnavailable("Unavailable — audit status could not be loaded");
+  } finally {
+    button.disabled = false;
+  }
+}
+$("refresh-audit").onclick = refreshAuditStatus;
+
+function archiveCurrentJob() {
+  const article = document.createElement("article");
+  const title = document.createElement("h4");
+  title.textContent = `Job ${job.jobId}`;
+  const summary = document.createElement("p");
+  summary.textContent = [
+    `Execution: ${job.executionStatus}`,
+    `Payment: ${$("payment-state").textContent}`,
+    `Receipt: ${job.receiptDigest ?? notSupplied}`,
+    `Assessment: ${$("assessment-state").textContent}`,
+  ].join(" · ");
+  const output = document.createElement("pre");
+  output.setAttribute("aria-label", "Prior job output");
+  output.textContent = job.output?.text ?? $("answer").textContent;
+  article.append(title, summary, output);
+  $("prior-job-list").append(article);
+  $("prior-job-evidence").hidden = false;
+  lastArchivedJobId = job.jobId;
+}
+$("start-next-request").onclick = () =>
+  action(async () => {
+    if (!job || !terminalJob(job) || busy)
+      throw new AccessError("NO_COMPLETED_JOB_TO_ARCHIVE");
+    archiveCurrentJob();
+    submissionAttempted = false;
+    pendingSubmission = false;
+    invalidateQuote("No quote yet — previous job evidence retained below");
+    $("prompt").value = "";
+    text(
+      "selection-decision",
+      "Previous job retained — enter the next prompt and obtain a fresh quote",
+    );
+    status("Ready for next request — prior job evidence retained");
+  });
+
+setRuntimeFacts(undefined, undefined);
+renderAuditUnavailable();
+updateControls();
 fetch("/config.json")
   .then((r) => r.json())
   .then((c) => {
     config = c;
     if (c.fixture) text("mode", "DEVELOPMENT — synthetic conformance fixture");
+    updateModelCapabilities();
+    renderAuditUnavailable();
+    updateControls();
   })
   .catch(() => text("error", "Viewer configuration unavailable"));
