@@ -94,6 +94,18 @@ if (fixtureGate) {
   const fixtureProvidersTouchedIndices = [];
   for (const [i, provider] of (operator.providers ?? []).entries()) {
     if (!provider.runtime) continue;
+    // W12: skip the fixture-gate override for the [demo-only] malicious
+    // provider. The standalone sidecar at
+    // composition/w12-mock-malicious-provider.mjs (127.0.0.1:8767)
+    // returns a hardcoded wrong string; overriding its baseUrl would
+    // silently re-point it at the fixture (8765) and erase the
+    // demo-only behaviour. The supervisor keeps a hard-coded skip
+    // list keyed by providerId because the operator.json spec
+    // (composition/application-operator.mjs:216-222) uses
+    // `exact(spec, [...])` which rejects any `tags` field. The
+    // providerId is the only authoritative signal the supervisor has
+    // to keep a provider's runtime untouched.
+    if (provider.providerId === "service.ethonline-attacker.eth") continue;
     provider.runtime.baseUrl = fixtureBaseUrl;
     provider.runtime.options ??= {};
     provider.runtime.options.expectedEvidenceClass = fixtureExpectedEvidenceClass;
