@@ -34,6 +34,18 @@ if (mode === "paid" && config.accessPolicy !== "ordinary-paid-x402") throw new E
 if (mode === "free" && config.accessPolicy !== "non-economic") throw new Error("RETAINED_FREE_POLICY_MISMATCH");
 config.publicOrigin = origin;
 
+// Strip any stale `bearerToken` field from provider.runtime.
+// The validator in composition/application-mycelium-http.mjs:8 enforces a
+// strict schema over runtime keys and rejects extras as INVALID_NATIVE_BINDING.
+// The actual bearer is loaded from bearerTokenFile by the binding's create()
+// path, so removing the field here is safe and unblocks stale operator.json
+// files written before the fixture gate stopped writing bearerToken.
+for (const provider of operator.providers ?? []) {
+  if (provider.runtime && "bearerToken" in provider.runtime) {
+    delete provider.runtime.bearerToken;
+  }
+}
+
 if (mode === "paid") {
   let updated = 0;
   for (const provider of operator.providers ?? []) {

@@ -246,3 +246,41 @@ test("gate + custom W6_NATIVE_FIXTURE_URL overrides the loopback origin", () => 
     rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+test("operator.json written by a prior launch with stale bearerToken is sanitized on resume", () => {
+  // L-FIX-BOOT-FOLLOWUP: even with the fixture gate's write of bearerToken
+  // removed (L-FIX-BOOT, f3ee477), operator.json files written BEFORE that
+  // fix still carry `runtime.bearerToken`. The supervisor must sanitize the
+  // stale field on every resume so the strict validator in
+  // composition/application-mycelium-http.mjs:8 does not crash with
+  // INVALID_NATIVE_BINDING and the live origin boots cleanly.
+  const { tmp, appRoot } = setupTmpRetained();
+  try {
+    // Seed both providers with a stale bearerToken in runtime — this is
+    // what the prior bug left behind on disk.
+    const seed = JSON.parse(readFileSync(join(appRoot, "operator.json"), "utf8"));
+    for (const p of seed.providers) {
+      p.runtime.bearerToken = "stale-from-prior-launch";
+    }
+    writeFileSync(join(appRoot, "operator.json"), JSON.stringify(seed, null, 2), { mode: 0o600 });
+
+    // Run the supervisor with the gate OFF so the sanitization is the
+    // *only* code that touches runtime keys.
+    runSupervisor({ runtimeRoot: tmp, extraEnv: {} });
+
+    const operator = JSON.parse(readFileSync(join(appRoot, "operator.json"), "utf8"));
+    assert.equal(operator.providers.length, 2);
+    for (const p of operator.providers) {
+      assert.equal("bearerToken" in p.runtime, false,
+        `runtime.bearerToken must be stripped on resume, but provider ${p.providerId} still has it`);
+      // Sanity-check the live values are preserved (gate OFF).
+      assert.equal(p.runtime.baseUrl, "http://127.0.0.1:8791");
+      assert.equal(p.runtime.options.expectedEvidenceClass, "physical_qualification");
+      // Other schema keys still present.
+      assert.equal(typeof p.runtime.bearerTokenFile, "string");
+      assert.equal(p.runtime.kind, "mycelium");
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
