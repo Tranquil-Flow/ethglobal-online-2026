@@ -1,19 +1,26 @@
 {
-  "version": 2,
-  "currency": {
-    "name": "tinybar",
-    "unitPerHbar": "100000000",
-    "comment": "All `stakeRequirementPolicy.*BaseUnits` fields are Hedera tinybar (1 HBAR = 1e8 tinybar). The legacy `stakeRequirement` / `stakeDefaults` fields remain in wei (1e18) for ABI compatibility with composition/w6-stake-gate.mjs — those are flat legacy minimums, NOT the formula output."
-  },
+  "version": 3,
   "stakeDefaults": {
-    "minStakeWei": "1000000000000000000",
-    "devMinStakeWei": "100000000000000000",
-    "comment": "Default production minimum: 1 ETH (10^18 wei). Dev override: 0.1 ETH. See composition/w6-stake-gate.mjs. (Legacy wei field — not used by the L-ECONOMICS-FORMULA.)"
+    "minStakeTinybar": "200000000",
+    "comment": "Default production minimum: 2 HBAR (2 * 1e8 = 2e8 tinybar). Dev override: 0.1 HBAR (1e7 tinybar). See composition/w6-stake-gate.mjs. v3: currency is Hedera tinybar, not ETH/wei."
   },
   "stakeFormulaReference": {
     "module": "composition/w6-economics.mjs",
-    "exports": ["requiredStake", "expectedSlashLoss", "honestProfitPerInference", "isEconomicallyInfeasible", "pBeatForEnsemble", "cumulativeSlashCap", "tinybarFromHbar", "hbarFromTinybar", "formatBaseUnits"],
-    "notes": "L-ECONOMICS-FORMULA (L-ECONOMICS-FIX-TINYBAR): each profile's `stakeRequirementPolicy` is consumed by resolveGateForProfile via buildStakeGateFromPolicy(). All base-unit fields are tinybar (1e8 per HBAR), NOT wei. The formula returns stake > (share*price - inferenceCost) / (auditProb * slashPerStrike * pBeat) * 1.10 (10% safety margin). cumulativeSlashCap() caps total drain across many strikes at stakeBaseUnits * maxTotalSlashRatio (default 1.0 = full drain). See docs/handoffs/w6-v3-economics-formula.md."
+    "exports": [
+      "requiredStake",
+      "requiredStakeTheory",
+      "requiredStakeEarningsFloor",
+      "expectedSlashLoss",
+      "honestProfitPerInference",
+      "isEconomicallyInfeasible",
+      "pBeatForEnsemble",
+      "cumulativeSlashCap",
+      "resolveRollingEarnings",
+      "tinybarFromHbar",
+      "hbarFromTinybar",
+      "TINYBAR_PER_HBAR"
+    ],
+    "notes": "L-ECONOMICS-FORMULA v3 (L-ECONOMICS-DYNAMIC-STAKE): currency is Hedera tinybar (1 HBAR = 1e8 tinybar). Each profile's stakeRequirementPolicy is consumed by resolveGateForProfile via buildStakeGateFromPolicy(). The combined formula is requiredStake = max(theoreticalFloor, rollingEarnings * slashingRatePerDay, requiredStakeTheory(price, cost, audit, slash, pBeat)). Providers set their own inferencePriceBaseUnits; the gate scales with both the price and recent rolling earnings. New providers (no earnings) get the theoretical floor (~2 HBAR) only. See docs/handoffs/w6-v3-economics-formula.md."
   },
   "profiles": [
     {
@@ -21,17 +28,20 @@
       "appProfileDigest": "sha256:8c44a8f9a75f009d5c02e123dcd9cdbd4b6f33fbabe6fd9f64f03a7214e84990",
       "verifierProfileSha256": null,
       "pinReason": "The hosted application contract is fixed; the verifier lane has not yet produced its final profile SHA-256/reference-bank pin, so audits fail closed.",
-      "stakeRequirement": "100000000000000000",
+      "stakeRequirement": "10000000",
       "stakeEnvironment": "development",
       "stakeRequirementPolicy": {
-        "share": 0.80,
         "inferencePriceBaseUnits": "1",
         "inferenceCostBaseUnits": "0",
         "auditProbability": 0.15,
+        "slashRatio": 0.10,
+        "pBeat": 0.001,
         "slashPerStrike": 0.10,
         "maxTotalSlashRatio": 1.0,
-        "pBeat": 0.001,
-        "notes": "DEMO: 1 tinybar inference price with sponsor-covered cost. Gross margin truncates to 0 so the formula returns stake=0n; the flat 0.1 ETH dev minimum still applies via legacy stakeRequirement. Economic deterrence is provided by the sponsor + dev profile, not the stake. auditProbability 0.15 = 0.10 random + 0.05 escalated. cumulativeSlashCap defaults to 1.0 (full drain across many strikes)."
+        "lookbackDays": 30,
+        "slashingRatePerDay": 0.10,
+        "theoreticalFloorBaseUnits": "200000000",
+        "notes": "DEMO v3: 1-tinybar inference price with sponsor-covered cost. grossMargin = 1 - 0 = 1 tinybar (positive, but tiny). Theoretical floor of 2 HBAR (2e8 tinybar) dominates because the floor is the minimum. New provider → 0 earnings → theoretical floor only. Stake = max(2 HBAR, 0, ~tiny) = 2 HBAR. The legacy flat 0.1 HBAR dev minimum (stakeRequirement=1e7) is the env-var override path used during DEMO."
       },
       "contract": {
         "model": "Qwen/Qwen2.5-0.5B-Instruct",
@@ -52,17 +62,20 @@
       "appProfileDigest": null,
       "verifierProfileSha256": "40ede77319ecc67833d8fac597026f3925b45cfa460c4243d090c0a6937abe5f",
       "pinReason": "The sealed verifier profile is pinned, but the hosted application's 27B profile digest has not yet been supplied by the serving adapter, so quote admission fails closed.",
-      "stakeRequirement": "1000000000000000000",
+      "stakeRequirement": "100000000",
       "stakeEnvironment": "production",
       "stakeRequirementPolicy": {
-        "share": 0.80,
         "inferencePriceBaseUnits": "100000000",
         "inferenceCostBaseUnits": "50000000",
         "auditProbability": 0.15,
+        "slashRatio": 0.10,
+        "pBeat": 0.001,
         "slashPerStrike": 0.10,
         "maxTotalSlashRatio": 1.0,
-        "pBeat": 0.001,
-        "notes": "PRODUCTION (L-ECONOMICS-FIX-TINYBAR): price=1e8 tinybar = 1 HBAR per inference, cost=5e7 tinybar = 0.5 HBAR -> gross margin 0.3 HBAR = 3e7 tinybar. Formula yields required stake ~2 HBAR = 2e8 tinybar (REASONABLE — not 6600 ETH). auditProbability 0.15 = 0.10 random + 0.05 escalated; slashPerStrike 0.10; cumulativeSlashCap defaults to 1.0 so dishonest providers can have their ENTIRE stake drained across ~10 strikes. isEconomicallyInfeasible=TRUE under these parameters."
+        "lookbackDays": 30,
+        "slashingRatePerDay": 0.10,
+        "theoreticalFloorBaseUnits": "200000000",
+        "notes": "PRODUCTION v3: 1 HBAR (1e8 tinybar) per inference, 0.5 HBAR (5e7 tinybar) cost → gross margin 5e7 tinybar = 0.5 HBAR. Theoretical floor ~2 HBAR dominates for new provider. With 100 HBAR/day rolling earnings, the earnings floor (10 HBAR = 1e9 tinybar) dominates for busy providers. Stake = max(2 HBAR, rollingEarnings * 0.10, theoreticalFloor)."
       },
       "contract": {
         "model": "mlx-community/Qwen3.8-27B-4bit",
