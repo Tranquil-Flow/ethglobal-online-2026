@@ -1,0 +1,11 @@
+{
+  "version": "ethonline.wave6.ens-target.v1",
+  "chainId": 11155111,
+  "owner": "0xb4f0b42fbB0fCAf62703475039A7E26EF6dD5EaE",
+  "providerNames": [
+    "service.ethonline-node-a.eth",
+    "service.ethonline-node-b.eth"
+  ],
+  "endpoint": "https://mycelium.now",
+  "ownerConfirmed": true
+}
