@@ -719,3 +719,102 @@ test("gate ON: throws FIXTURE_GATE_PROFILE_SHAPE_INVALID when profile.artifacts 
     rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+
+test("P1-ENS-CENTRAL: W6_USE_ENS_DISCOVERY=1 with W6_ENS_DISCOVERY_RPC_URL writes a discovery block on operator.json", () => {
+  // When the owner opts the supervisor into the ENSv2 discovery path,
+  // operator.json must carry a `discovery` block with mode + rpcUrl +
+  // names + ttlMs + timeoutMs so application-operator.mjs can
+  // construct packages/discovery createEnsV2Discovery at boot. The
+  // gate is additive: existing fixture-gate behavior is unchanged.
+  const { tmp, appRoot } = setupTmpRetained();
+  try {
+    runSupervisor({
+      runtimeRoot: tmp,
+      extraEnv: {
+        W6_NATIVE_FALLBACK_FIXTURE: "1",
+        W6_USE_ENS_DISCOVERY: "1",
+        W6_ENS_DISCOVERY_RPC_URL: "https://eth-sepolia.g.alchemy.com/v2/test-key",
+        W6_ENS_DISCOVERY_TTL_MS: "15000",
+        W6_ENS_DISCOVERY_TIMEOUT_MS: "3000",
+      },
+    });
+    const operator = JSON.parse(readFileSync(join(appRoot, "operator.json"), "utf8"));
+    assert.ok(operator.discovery, "operator.json must carry a discovery block");
+    assert.equal(operator.discovery.mode, "live");
+    assert.equal(operator.discovery.rpcUrl, "https://eth-sepolia.g.alchemy.com/v2/test-key");
+    assert.equal(operator.discovery.ttlMs, 15000);
+    assert.equal(operator.discovery.timeoutMs, 3000);
+    assert.ok(Array.isArray(operator.discovery.names));
+    assert.equal(operator.discovery.names.length, 2);
+    assert.ok(operator.discovery.names.includes("service.ethonline-node-a.eth"));
+    assert.ok(operator.discovery.names.includes("service.ethonline-node-b.eth"));
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("P1-ENS-CENTRAL: W6_USE_ENS_DISCOVERY=1 without W6_ENS_DISCOVERY_RPC_URL fails the supervisor", () => {
+  // The contract is fail-closed at boot: an operator who flips the
+  // switch without providing an RPC must see the supervisor refuse to
+  // start, not silently degrade. The thrown error is logged to stdout.
+  const { tmp, appRoot } = setupTmpRetained();
+  try {
+    const result = runSupervisor({
+      runtimeRoot: tmp,
+      extraEnv: {
+        W6_NATIVE_FALLBACK_FIXTURE: "1",
+        W6_USE_ENS_DISCOVERY: "1",
+        // W6_ENS_DISCOVERY_RPC_URL intentionally unset.
+      },
+    });
+    const combined = (result.stdout ?? "") + (result.stderr ?? "");
+    assert.match(combined, /W6_USE_ENS_DISCOVERY=1 requires W6_ENS_DISCOVERY_RPC_URL/);
+    // operator.json should NOT have a discovery block when the gate fails.
+    const operator = JSON.parse(readFileSync(join(appRoot, "operator.json"), "utf8"));
+    assert.equal(operator.discovery, undefined);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("P1-ENS-CENTRAL: W6_USE_ENS_DISCOVERY unset (default) does NOT write a discovery block", () => {
+  // The default path remains direct-stable-offers. The supervisor must
+  // not introduce a discovery block when the owner hasn't opted in.
+  const { tmp, appRoot } = setupTmpRetained();
+  try {
+    runSupervisor({
+      runtimeRoot: tmp,
+      extraEnv: {
+        W6_NATIVE_FALLBACK_FIXTURE: "1",
+        // W6_USE_ENS_DISCOVERY intentionally unset.
+      },
+    });
+    const operator = JSON.parse(readFileSync(join(appRoot, "operator.json"), "utf8"));
+    assert.equal(operator.discovery, undefined);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("P1-ENS-CENTRAL: W6_ENS_DISCOVERY_NAMES overrides the default provider list", () => {
+  // The owner can scope the ENS lookups to a subset of provider names
+  // — useful for staged rollouts. The wrapper honors the explicit list
+  // rather than the operator.json default.
+  const { tmp, appRoot } = setupTmpRetained();
+  try {
+    runSupervisor({
+      runtimeRoot: tmp,
+      extraEnv: {
+        W6_NATIVE_FALLBACK_FIXTURE: "1",
+        W6_USE_ENS_DISCOVERY: "1",
+        W6_ENS_DISCOVERY_RPC_URL: "https://eth-sepolia.g.alchemy.com/v2/test-key",
+        W6_ENS_DISCOVERY_NAMES: "alpha.eth,beta.eth",
+      },
+    });
+    const operator = JSON.parse(readFileSync(join(appRoot, "operator.json"), "utf8"));
+    assert.deepEqual(operator.discovery.names, ["alpha.eth", "beta.eth"]);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});

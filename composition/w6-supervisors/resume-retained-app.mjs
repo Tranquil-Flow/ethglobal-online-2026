@@ -308,6 +308,55 @@ function replacePrivateJson(path, value) {
   writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600, flag: "wx" });
   renameSync(temporary, path);
 }
+// P1-ENS-CENTRAL — when W6_USE_ENS_DISCOVERY=1, persist a discovery block
+// on operator.json so the supervisor-launched app resolves providers via
+// ENSv2 records on Sepolia instead of direct-stable-offers. The block
+// follows the schema packages/discovery/src/sponsor.mjs expects via
+// collectEnsV2Config (mode + rpcUrl + universal + root + names +
+// ttlMs + timeoutMs). Names default to the live providers we ship if
+// W6_ENS_DISCOVERY_NAMES is unset.
+const useEnsDiscovery = process.env.W6_USE_ENS_DISCOVERY === "1";
+if (useEnsDiscovery) {
+  const ensRpc = process.env.W6_ENS_DISCOVERY_RPC_URL;
+  if (typeof ensRpc !== "string" || ensRpc.length === 0) {
+    throw new Error(
+      "W6_USE_ENS_DISCOVERY=1 requires W6_ENS_DISCOVERY_RPC_URL — set to a Sepolia JSON-RPC endpoint (e.g. https://eth-sepolia.g.alchemy.com/v2/<key>)",
+    );
+  }
+  const namesEnv = process.env.W6_ENS_DISCOVERY_NAMES;
+  const names =
+    typeof namesEnv === "string" && namesEnv.length > 0
+      ? namesEnv.split(",").map((s) => s.trim()).filter((s) => s.length > 0)
+      : operator.providers.map((p) => p.providerId);
+  const ttlMs = Number(process.env.W6_ENS_DISCOVERY_TTL_MS ?? 30000);
+  const timeoutMs = Number(process.env.W6_ENS_DISCOVERY_TIMEOUT_MS ?? 5000);
+  operator.discovery = {
+    mode: "live",
+    rpcUrl: ensRpc,
+    names,
+    ttlMs,
+    timeoutMs,
+    universal: process.env.W6_ENS_DISCOVERY_UNIVERSAL,
+    root: process.env.W6_ENS_DISCOVERY_ROOT,
+    trustedVerifiers: ["eip155:11155111:***"],
+    trustedMethods: ["application-receipt-publish-v1"],
+  };
+  console.log(
+    JSON.stringify({
+      status: "ens-discovery-enabled",
+      providerCount: names.length,
+      ttlMs,
+      timeoutMs,
+      rpcHost: (() => {
+        try {
+          return new URL(ensRpc).host;
+        } catch {
+          return "unknown";
+        }
+      })(),
+    }),
+  );
+}
 replacePrivateJson(configFile, config);
 replacePrivateJson(operatorFile, operator);
 const paidStateDir = process.env.W6_APP_STATE_DIR ?? join(appRoot, "w6-paid-state");

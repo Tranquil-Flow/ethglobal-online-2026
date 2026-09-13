@@ -28,6 +28,20 @@ Local file:
 - `W6_REUSE_PAID_ROOT` — wrapper-owned; do not put it in the file.
 - `W6_RESET_PAID_ROOT` — forbidden. Every wrapper refuses to start if this variable is present before or after sourcing its environment.
 
+### P1-ENS-CENTRAL variables (optional)
+
+These are read by `composition/w6-supervisors/resume-retained-app.mjs` and persist an ENSv2 discovery block on the supervisor's `operator.json` so the live app resolves providers via ENS text records instead of direct-stable-offers. When `W6_USE_ENS_DISCOVERY` is unset or not `"1"`, no `discovery` block is written and the supervisor continues to use the existing direct-stable-offers path. The cache + fallback wrapper itself lives in `composition/w6-ens-discovery-loader.mjs`; the env vars only turn it on.
+
+- `W6_USE_ENS_DISCOVERY` — `"1"` to enable the ENSv2 discovery path. Off by default.
+- `W6_ENS_DISCOVERY_RPC_URL` — required when enabled. Sepolia JSON-RPC endpoint (e.g. `https://eth-sepolia.g.alchemy.com/v2/<key>`). Throws `W6_USE_ENS_DISCOVERY=1 requires W6_ENS_DISCOVERY_RPC_URL` at supervisor boot if unset.
+- `W6_ENS_DISCOVERY_NAMES` — optional comma-separated ENS names to resolve. Defaults to every provider listed in `operator.providers[*].providerId`.
+- `W6_ENS_DISCOVERY_TTL_MS` — cache TTL in milliseconds. Default `30000` (30s).
+- `W6_ENS_DISCOVERY_TIMEOUT_MS` — per-RPC timeout. Default `5000` (5s).
+- `W6_ENS_DISCOVERY_UNIVERSAL` — optional ENSv2 universal resolver address override.
+- `W6_ENS_DISCOVERY_ROOT` — optional ENSv2 root-node override.
+
+When the gate is on, the supervisor prints `{"status":"ens-discovery-enabled","providerCount":N,"ttlMs":N,"timeoutMs":N,"rpcHost":"..."}` before launching the app. If a request triggers an ENS RPC timeout, the wrapper returns an empty `providers` array plus a structured error (see `composition/test/w6-ens-discovery-loader.test.mjs`); the operator falls back to direct-stable-offers transparently.
+
 Laptop file (`/Users/evinova/mycelium-w6-n2/supervisor/node-2.env`):
 
 - `W6_NODE2_EXECUTABLE` — required absolute executable path.
