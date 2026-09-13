@@ -1,0 +1,12 @@
+# ETHOnline public evidence bundle — curated SHA-256 manifest
+# Captured 2026-09-13 by MiniMax-M3 (Lane Public-Evidence-Curation)
+# Each line: <sha256>  <relative-path-inside-docs/ethglobal/>
+# Regenerate with: cd <workbench> && shasum -a 256 docs/ethglobal/README.md \
+#                                            docs/ethglobal/evidence/SUBMISSION-REPORT.md \
+#                                            docs/ethglobal/evidence/GOAL-PROGRESS.md \
+#                                            docs/ethglobal/evidence/TRIAGE-BRIEF.md
+
+ef3e4864304b0ee2ddf7ebc0642cbac4c855bb1a31f697880e0d9740685b0d9e  docs/ethglobal/README.md
+c28496ab74b43119f2594a12cef3903290d2e0a83b61883ce785fbbf7ac79de8  docs/ethglobal/evidence/SUBMISSION-REPORT.md
+7727030475f49d3866ed23d5ac1aca722836a9391c0e9de0b163a3b107ada849  docs/ethglobal/evidence/GOAL-PROGRESS.md
+4db9625314bff9e4f53a5e267add9d4e5fe75d4ea4bea96f4641142810a6ed7e  docs/ethglobal/evidence/TRIAGE-BRIEF.md
