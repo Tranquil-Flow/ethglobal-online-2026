@@ -33,12 +33,46 @@ if (process.env.W6_RESET_PAID_ROOT === "1") {
 }
 
 const token = readFileSync(native + "/request-gateway-token.txt", "utf8");
+
+// PARENT FIXTURE GATE (L-DEPLOY-LIVE):
+//   When W6_NATIVE_FALLBACK_FIXTURE=1 is set, the live copy routes its
+//   native qualification through the loopback fixture server instead of
+//   the upstream Mycelium node-0 at 127.0.0.1:8791. This is the parent-only
+//   path used while node-0 is offline during the L-DEPLOY-LIVE verification
+//   run. The owner disables fixture mode by unsetting the env var; nothing
+//   here changes default behaviour, and no fixture URL or token is read
+//   unless the gate is explicitly opened.
+//
+//   Configuration:
+//     W6_NATIVE_FALLBACK_FIXTURE  -> "1" or "true" to enable (otherwise off)
+//     W6_NATIVE_FIXTURE_URL      -> loopback origin, default
+//                                    http://127.0.0.1:8765
+//     W6_NATIVE_FIXTURE_TOKEN    -> bearer token expected by the fixture
+//                                    server, default = native token
+const fixtureGate =
+  process.env.W6_NATIVE_FALLBACK_FIXTURE === "1" ||
+  process.env.W6_NATIVE_FALLBACK_FIXTURE === "true";
+const fixtureBaseUrl = process.env.W6_NATIVE_FIXTURE_URL || "http://127.0.0.1:8765";
+const fixtureBearerToken =
+  process.env.W6_NATIVE_FIXTURE_TOKEN || token;
+const fixtureExpectedEvidenceClass = "synthetic_test_fixture";
+
 const q = await createGatewayTransport({
-  baseUrl: "http://127.0.0.1:8791",
-  bearerToken: token,
+  baseUrl: fixtureGate ? fixtureBaseUrl : "http://127.0.0.1:8791",
+  bearerToken: fixtureGate ? fixtureBearerToken : token,
 }).qualification();
-if (q.route_ready !== true || q.evidence_class !== "physical_qualification")
+if (q.route_ready !== true)
   throw Error("NATIVE_NOT_READY");
+if (
+  fixtureGate
+    ? q.evidence_class !== fixtureExpectedEvidenceClass
+    : q.evidence_class !== "physical_qualification"
+)
+  throw Error(
+    fixtureGate
+      ? "FIXTURE_EVIDENCE_MISMATCH"
+      : "NATIVE_NOT_READY",
+  );
 
 const deployment = native + "/transfer-bundle/deployment";
 const sha = (path) => "sha256:" + createHash("sha256").update(readFileSync(path)).digest("hex");
@@ -87,7 +121,11 @@ await initializeApplication({
 const config = JSON.parse(readFileSync(appRoot + "/application.json", "utf8"));
 const manifest = JSON.parse(readFileSync(appRoot + "/operator.json", "utf8"));
 
-writeFileSync(appRoot + "/native-gateway-token.txt", token, { mode: 0o600, flag: "wx" });
+writeFileSync(
+  appRoot + "/native-gateway-token.txt",
+  fixtureGate ? fixtureBearerToken : token,
+  { mode: 0o600, flag: "wx" },
+);
 
 for (const p of config.providers) {
   p.profileIds = [digestOf(profile)];
@@ -98,7 +136,7 @@ for (const [i, p] of manifest.providers.entries()) {
   p.runtime = {
     kind: "mycelium",
     protocol: "mycelium.request_gateway.v2",
-    baseUrl: "http://127.0.0.1:8791",
+    baseUrl: fixtureGate ? fixtureBaseUrl : "http://127.0.0.1:8791",
     bearerTokenFile: "native-gateway-token.txt",
     qualificationPath: "/v1/qualification/current",
     profile,
@@ -107,7 +145,13 @@ for (const [i, p] of manifest.providers.entries()) {
       timeoutMs: 60000,
       maxQualificationAgeMs: 3600000,
       maxOutputBytes: 65536,
-      expectedEvidenceClass: q.evidence_class,
+      // PARENT FIXTURE GATE: when fixture mode is on, pin the executor to the
+      // synthetic_test_fixture evidence class so the executor allows the
+      // loopback fixture transport. When the gate is off, this stays as the
+      // physical_qualification value that the live Mycelium node-0 returns.
+      expectedEvidenceClass: fixtureGate
+        ? fixtureExpectedEvidenceClass
+        : q.evidence_class,
     },
   };
   config.providers[i].runtimeDigest = digestOf(p.runtime);

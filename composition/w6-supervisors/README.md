@@ -143,3 +143,36 @@ Failures trigger a macOS notification in the logged-in owner session and optiona
 - `W6_MONITOR_INTERVAL_MS` (manual `--loop` only)
 - `W6_MONITOR_STATE_FILE` (test/operations override)
 - `W6_CLOUDFLARED_CONFIG`
+
+## W6_NATIVE_FALLBACK_FIXTURE gate (parent-only, L-DEPLOY-LIVE)
+
+The paid-app supervisor (`composition/w6-live-app-paid.mjs`) accepts an
+optional env-var gate that routes its native qualification through a
+loopback fixture server instead of the upstream Mycelium node-0 at
+`127.0.0.1:8791`. This is a **parent-only** path used while node-0 is
+offline during the parent's L-DEPLOY-LIVE verification run; it is not a
+production configuration.
+
+- `W6_NATIVE_FALLBACK_FIXTURE` — set to `1` (or `true`) to enable
+  fixture mode; otherwise the supervisor behaves exactly as before.
+- `W6_NATIVE_FIXTURE_URL` — loopback origin of the fixture server;
+  default `http://127.0.0.1:8765`. Required to be loopback because
+  `composition/mycelium-livhttp.mjs` enforces the
+  `synthetic_test_fixture` evidence class only on loopback hosts.
+- `W6_NATIVE_FIXTURE_TOKEN` — bearer token the fixture server expects;
+  defaults to the native gateway token if not set.
+
+When the gate is on, the supervisor also pins the executor's
+`expectedEvidenceClass` to `synthetic_test_fixture` so any later job
+submission that reaches the executor is allowed under fixture evidence.
+The owner disables the gate by unsetting `W6_NATIVE_FALLBACK_FIXTURE`;
+nothing here changes the default behaviour, and no fixture URL or
+token is read unless the gate is explicitly opened.
+
+The fixture server (`composition/w6-native-fixture-server.mjs`)
+implements the minimal Mycelium v2 wire: `/v1/qualification/current`
+with the `checkedQualification` shape, plus best-effort
+`/v1/inference`, `/v1/inference/:id/events`, and
+`/v1/inference/:id` (cancel) so any later job traffic still parses.
+It is **not** an inference engine; SSE frames are deterministic
+placeholders.
