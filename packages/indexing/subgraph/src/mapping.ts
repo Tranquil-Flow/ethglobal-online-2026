@@ -2,6 +2,7 @@ import {Bytes,BigInt,dataSource,ethereum} from '@graphprotocol/graph-ts';
 import {Registry,ReceiptPublished,AssessmentPublished} from '../generated/Registry/Registry';
 import {ReceiptClaim,AssessmentClaim,ProviderCount,VerifierOutcomeCount} from '../generated/schema';
 import {validMetadata} from './metadata';
+import {recordReceipt,recordAssessment} from './trust-tracker';
 function scope(event:ethereum.Event):string{return dataSource.context().getString('chainId')+':'+event.address.toHexString();}
 function count(event:ethereum.Event,provider:Bytes):ProviderCount{
  let id=scope(event)+':'+provider.toHexString(),p=ProviderCount.load(id);
@@ -17,6 +18,8 @@ export function handleReceipt(event:ReceiptPublished):void{
  row.chainId=dataSource.context().getString('chainId');row.contractAddress=event.address;row.publisher=publisher.reverted?Bytes.fromHexString('0x'+'00'.repeat(20)):publisher.value;
  row.transactionHash=event.transaction.hash;row.blockNumber=event.block.number;row.blockHash=event.block.hash;row.logIndex=event.logIndex;row.save();
  let c=count(event,p.providerKey);c.receiptCount=c.receiptCount.plus(BigInt.fromI32(1));c.save();
+ // W6 trust v1: receipt drives volume + recency only; no outcome buckets.
+ recordReceipt(event, p.providerKey, p.mode);
 }
 export function handleAssessment(event:AssessmentPublished):void{
  let p=event.params,id=scope(event)+':assessment:'+p.assessmentDigest.toHexString();if(AssessmentClaim.load(id)!==null)return;
@@ -32,4 +35,7 @@ export function handleAssessment(event:AssessmentPublished):void{
  // Attribution only. No trusted flag or inferred trust score exists.
  let countId=scope(event)+':'+p.providerKey.toHexString()+':'+p.verifierKey.toHexString()+':'+row.outcome.toString();let vc=VerifierOutcomeCount.load(countId);
  if(vc===null){vc=new VerifierOutcomeCount(countId);vc.providerKey=p.providerKey;vc.verifierKey=p.verifierKey;vc.outcome=row.outcome;vc.count=BigInt.zero();}vc.count=vc.count.plus(BigInt.fromI32(1));vc.save();
+ // W6 trust v1: linked assessment updates ProviderMetrics outcome buckets
+ // with ProviderTrustAssessmentSeen dedupe by assessment objectDigest.
+ recordAssessment(event, p.providerKey, p.mode, row.outcome, row.valid, true, p.assessmentDigest);
 }

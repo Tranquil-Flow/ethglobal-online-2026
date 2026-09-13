@@ -29,6 +29,9 @@ dataSources:
         - AssessmentClaim
         - ProviderCount
         - VerifierOutcomeCount
+        - ProviderMetrics
+        - ProviderTrustDay
+        - ProviderTrustAssessmentSeen
       abis:
         - name: Registry
           file: ./abis/Registry.json
@@ -60,6 +63,9 @@ dataSources:
         - OpenAssessmentClaim
         - ProviderCount
         - VerifierOutcomeCount
+        - ProviderMetrics
+        - ProviderTrustDay
+        - ProviderTrustAssessmentSeen
       abis:
         - name: RegistryV2
           file: ./abis/RegistryV2.json

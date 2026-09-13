@@ -7,6 +7,7 @@ import {
 } from "../generated/schema";
 import { validMetadata } from "./metadata";
 import { sha256 } from "./sha256";
+import { recordAssessment } from "./trust-tracker";
 
 function scope(event: ethereum.Event): string {
   return dataSource.context().getString("chainId") + ":" + event.address.toHexString();
@@ -83,4 +84,9 @@ export function handleOpenAssessment(event: OpenAssessmentPublished): void {
   }
   vc.count = vc.count.plus(BigInt.fromI32(1));
   vc.save();
+  // W6 trust v1: open assessment updates ProviderMetrics outcome buckets with
+  // ProviderTrustAssessmentSeen dedupe by assessment objectDigest. The dedupe
+  // key is the same for linked + open paths, so both write a single canonical
+  // ProviderMetrics count even if the same payload is replayed.
+  recordAssessment(event, p.providerKey, p.mode, row.outcome, row.valid, true, objectDigest);
 }
