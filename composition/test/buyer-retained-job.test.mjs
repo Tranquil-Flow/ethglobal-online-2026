@@ -191,6 +191,7 @@ async function fixture(t, { held = false } = {}) {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(origin);
+  await page.locator("#advanced-details > summary").click();
   await page.click("#connect");
   await page
     .locator("[role=status]")
@@ -262,7 +263,14 @@ test(
       .filter({ hasText: "Retained job refreshed" })
       .waitFor();
     assert.equal(await f.page.textContent("#answer"), "é🌙");
-    assert.equal(await f.page.textContent("#receipt-state"), "Not checked");
+    assert.match(
+      await f.page.textContent("#receipt-state"),
+      /^Receipt available — integrity unchecked · sha256:[a-f0-9]{64}$/,
+    );
+    assert.equal(
+      await f.page.locator("#receipt-claim").getAttribute("data-state"),
+      "unchecked",
+    );
     assert.match(
       await f.page.textContent("#output-state"),
       /Complete.*not computation-checked/,
@@ -293,7 +301,14 @@ test(
     assert.equal(context.pins.publicKeyJwk.d, undefined);
     await f.page.click("#download");
     await f.page.locator("#error").filter({ hasText: "NOT_FOUND" }).waitFor();
-    assert.equal(await f.page.textContent("#receipt-state"), "Not checked");
+    assert.match(
+      await f.page.textContent("#receipt-state"),
+      /^Receipt available — integrity unchecked · sha256:[a-f0-9]{64}$/,
+    );
+    assert.equal(
+      await f.page.locator("#receipt-claim").getAttribute("data-state"),
+      "unchecked",
+    );
     assert.equal(
       await f.page.evaluate(() => localStorage.length + sessionStorage.length),
       0,
@@ -404,12 +419,23 @@ test(
       /unknown.*do not authorize again/i,
     );
     const before = f.requests.length;
+    // U3 gating: an uncertain submission disables fresh work at the control
+    // layer (button disabled with reason) instead of failing on click. The
+    // server-side SUBMISSION_UNCERTAIN guard remains authoritative.
     for (const button of ["#quote-button", "#connect", "#find"]) {
-      await f.page.click(button);
-      await f.page
-        .locator("#error")
-        .filter({ hasText: "SUBMISSION_UNCERTAIN" })
-        .waitFor();
+      if (button === "#quote-button") {
+        assert.equal(await f.page.getAttribute("#quote-button", "disabled"), "");
+        assert.match(
+          await f.page.textContent("#quote-reason"),
+          /submission outcome unknown/i,
+        );
+      } else {
+        await f.page.click(button);
+        await f.page
+          .locator("#error")
+          .filter({ hasText: "SUBMISSION_UNCERTAIN" })
+          .waitFor();
+      }
     }
     assert.equal(
       f.requests.slice(before).some((r) => r.method === "POST"),
@@ -530,7 +556,14 @@ test(
       .filter({ hasText: "JOB_MISMATCH" })
       .waitFor();
     assert.equal(await f.page.textContent("#answer"), "é🌙");
-    assert.equal(await f.page.textContent("#receipt-state"), "Not checked");
+    assert.match(
+      await f.page.textContent("#receipt-state"),
+      /^Receipt available — integrity unchecked · sha256:[a-f0-9]{64}$/,
+    );
+    assert.equal(
+      await f.page.locator("#receipt-claim").getAttribute("data-state"),
+      "unchecked",
+    );
     assert.equal(f.executions(), 1);
   },
 );

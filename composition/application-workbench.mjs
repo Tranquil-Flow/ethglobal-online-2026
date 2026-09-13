@@ -12,6 +12,7 @@ import { digestOf, validate } from "../packages/contracts/index.mjs";
 import { createProviderPayments } from "./provider-payments.mjs";
 import { acquirePrivateStateLock } from "./private-state.mjs";
 import { startLiveViewer } from "./live-viewer.mjs";
+import { evaluateReceiptHistorySelection, rankReceiptHistoryEligible } from "./receipt-history-selection.mjs";
 
 const fail = (code) => {
   throw Error(code);
@@ -322,12 +323,32 @@ export function preflightApplication({ config: input, bindings }) {
       bindings.eventSink !== undefined)
   )
     fail("INVALID_EVENT_SINK_BINDING");
+  if (
+    bindings.createDemoSponsor !== undefined &&
+    typeof bindings.createDemoSponsor !== "function"
+  )
+    fail("INVALID_DEMO_SPONSOR_BINDING");
+  if (
+    bindings.wrapExecutor !== undefined &&
+    typeof bindings.wrapExecutor !== "function"
+  )
+    fail("INVALID_VERIFIED_EXECUTOR_BINDING");
   return { config, entries };
 }
 
 export async function startApplicationWorkbench({ config: input, bindings }) {
   const { config, entries } = preflightApplication({ config: input, bindings });
   const historyPolicy = validateHistoryPolicy(config.history);
+  const historyComparison = async (signal) => {
+    if (typeof bindings.history?.getReport !== "function")
+      return { version: "2", providers: [], conflicts: [] };
+    const result = await evaluateReceiptHistorySelection({
+      providerIds: config.providers.map(p => p.providerId), history: bindings.history,
+      mode: config.mode, source: bindings.history.source,
+      maxAgeMs: historyPolicy.maxAgeMs, signal,
+    });
+    return { ...result, version: "2" };
+  };
   const recordIdentity = (p) => {
     const { resolvedAt, expiresAt, ...source } = p.source;
     return digestOf({ ...p, source });
@@ -339,6 +360,7 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
     viewer,
     payments,
     eventSink = bindings.eventSink,
+    demoSponsor,
     closed = false;
   const stores = [],
     ownedPaymentPorts = [],
@@ -535,7 +557,7 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
     }
     for (const e of entries) {
       const child = runtimeStores.get(e.config.providerId);
-      const r = await e.binding.runtime.create({
+      let r = await e.binding.runtime.create({
         store: child,
         async loadExecutionArtifact({ jobId, kind }) {
           if (
@@ -637,6 +659,16 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
           });
         },
       });
+      if (bindings.wrapExecutor) {
+        const wrapped = bindings.wrapExecutor({
+          executor: r?.executor,
+          providerId: e.config.providerId,
+          profileIds: e.config.profileIds,
+        });
+        if (!wrapped || typeof wrapped.execute !== "function")
+          fail("INVALID_VERIFIED_EXECUTOR_BINDING");
+        r = { ...r, executor: wrapped };
+      }
       if (
         r?.executor?.mode !== config.mode ||
         typeof r.executor.execute !== "function"
@@ -772,6 +804,22 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
               signal,
             })
           : undefined;
+        // One report per provider supplies both independent assessment gating
+        // and receipt-publication liveness ranking; no prompt fan-out here.
+        const reports = new Map();
+        const fetchReport = (providerId) => {
+          if (!reports.has(providerId)) reports.set(providerId,
+            bindings.history.getReport({ providerId, signal }));
+          return reports.get(providerId);
+        };
+        const receiptEvaluation = providers.length && typeof bindings.history?.getReport === "function"
+          ? await evaluateReceiptHistorySelection({
+              providerIds: providers.map(p => p.providerId),
+              history: { getReport: ({ providerId }) => fetchReport(providerId) },
+              mode: config.mode, source: bindings.history.source,
+              maxAgeMs: historyPolicy.maxAgeMs, signal,
+            }) : null;
+        const receiptDecisions = new Map((receiptEvaluation?.providers ?? []).map(row => [row.providerId,row]));
         const reasons = [],
           eligible = [];
         for (const p of providers) {
@@ -834,10 +882,7 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
               try {
                 const report =
                   typeof bindings.history.getReport === "function"
-                    ? await bindings.history.getReport({
-                        providerId: p.providerId,
-                        signal,
-                      })
+                    ? await fetchReport(p.providerId)
                     : null;
                 const h =
                   report?.history ??
@@ -882,6 +927,13 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
                 historyCode = "HISTORY_UNKNOWN";
               }
             }
+            const receiptDecision = receiptDecisions.get(p.providerId);
+            if (receiptDecision) {
+              codes.push(...receiptDecision.codes);
+              if (!receiptDecision.automaticEligible) reject.push(...receiptDecision.codes);
+              if (receiptDecision.rank.liveness > 0 && historyCode === "HISTORY_UNKNOWN")
+                historyCode = "ASSESSMENT_UNAVAILABLE";
+            }
             if (signal?.aborted) fail("SELECTION_ABORTED");
             if (Date.parse(p.source.expiresAt) <= Date.now())
               reject.push("PROVIDER_EXPIRED");
@@ -905,12 +957,43 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
             codes: [...new Set(codes.filter(code))],
           });
         }
-        eligible.sort((a, b) =>
-          a.provider.providerId.localeCompare(b.provider.providerId),
-        );
+        const ranking = rankReceiptHistoryEligible({ eligibleProviderIds: eligible.map(x => x.provider.providerId), evaluation: receiptEvaluation });
+        eligible.sort((a,b) => ranking.indexOf(a.provider.providerId)-ranking.indexOf(b.provider.providerId));
         return { selected: eligible[0]?.provider ?? null, reasons };
       },
     };
+    if (
+      config.accessPolicy === "ordinary-paid-x402" &&
+      bindings.createDemoSponsor
+    ) {
+      demoSponsor = bindings.createDemoSponsor({
+        getOutstandingQuote({ quoteId, sessionId, jobId, request }) {
+          const retained = store.get("quotes", quoteId);
+          const attempt = store.get(
+            "attempts",
+            digestOf({ principalId: sessionId, key: jobId }),
+          );
+          if (
+            !retained ||
+            retained.principalId !== sessionId ||
+            attempt?.state !== "required" ||
+            attempt.bodyHash !== digestOf({ request, quoteId })
+          )
+            return null;
+          return {
+            sessionId,
+            jobId,
+            quote: structuredClone(retained.quote),
+            request: structuredClone(request),
+          };
+        },
+      });
+      if (
+        typeof demoSponsor?.authorizeForQuote !== "function" ||
+        typeof demoSponsor?.status !== "function"
+      )
+        fail("INVALID_DEMO_SPONSOR_BINDING");
+    }
     app = createApp({
       config: {
         ...config.core,
@@ -933,6 +1016,21 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       signer,
       executor,
       payments,
+      ...(demoSponsor
+        ? {
+            demoSponsor: {
+              status: () => demoSponsor.status(),
+              authorize({ context, principalId, idempotencyKey, ip }) {
+                return demoSponsor.authorizeForQuote(context, {
+                  sessionId: principalId,
+                  jobId: idempotencyKey,
+                  ip,
+                  paymentContext: context,
+                });
+              },
+            },
+          }
+        : {}),
       discovery: directDiscovery,
       history: bindings.history,
       eventSink,
@@ -1026,11 +1124,13 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       providers: entries.map((e) => ({ ...e.config, pins: e.pins })),
       providerId: entries[0].config.providerId,
       profileId: entries[0].config.profileIds[0],
+      ...(demoSponsor ? { demoSponsor: demoSponsor.status() } : {}),
     };
     viewer = await startLiveViewer({
       coreUrl,
       port: config.port,
       config: publicConfig,
+      historyComparison,
     });
     return {
       url: viewer.url,

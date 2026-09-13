@@ -1,13 +1,11 @@
-import { createRequire } from "node:module";
 import {
   createHistory,
+  createHistoryRpcProvider,
   createGraphClient,
   validateDeployment,
 } from "../packages/indexing/src/index.mjs";
+import { rpcClient } from "../packages/discovery/src/rpc.mjs";
 import { validateRpc } from "./application-publication-config.mjs";
-const { FetchRequest, JsonRpcProvider } = createRequire(
-  new URL("../packages/indexing/package.json", import.meta.url),
-)("ethers");
 const fail = (c) => {
   const e = Error(c);
   e.code = c;
@@ -27,6 +25,7 @@ export function createManagedHistory({ spec: input, mode }) {
         "deploymentId",
         ...(spec.rpcUrl === undefined ? [] : ["rpcUrl"]),
         ...(spec.publicEndpoint === undefined ? [] : ["publicEndpoint"]),
+        ...(spec.subgraph === undefined ? [] : ["subgraph"]),
       ]
         .sort()
         .join()
@@ -68,6 +67,7 @@ export function createManagedHistory({ spec: input, mode }) {
     chainId: String(deployment.chainId),
     deployment,
     deploymentId: spec.deploymentId,
+    ...(spec.subgraph === undefined ? {} : { subgraph: spec.subgraph }),
   };
   let provider,
     history,
@@ -75,13 +75,10 @@ export function createManagedHistory({ spec: input, mode }) {
   function port() {
     if (closed) fail("HISTORY_CLOSED");
     if (!history) {
-      if (rpcUrl) {
-        const request = new FetchRequest(rpcUrl);
-        request.timeout = 15000;
-        provider = new JsonRpcProvider(request, undefined, {
-          cacheTimeout: -1,
-        });
-      }
+      if (rpcUrl)
+        provider = createHistoryRpcProvider(
+          rpcClient(rpcUrl, { mode, timeoutMs: 15000 }),
+        );
       try {
         history = createHistory({ config, client, provider });
       } catch (e) {
@@ -92,6 +89,8 @@ export function createManagedHistory({ spec: input, mode }) {
     return history;
   }
   return {
+    source: { deploymentId: spec.deploymentId, chainId: String(deployment.chainId), registryAddress: deployment.address,
+      ...(spec.subgraph === undefined ? {} : { subgraph: spec.subgraph }) },
     ...(spec.publicEndpoint === undefined
       ? {}
       : { publicEndpoint: spec.publicEndpoint }),

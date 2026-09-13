@@ -99,9 +99,12 @@ test(
       page.on("pageerror", (e) => errors.push(e.message));
       let jobId;
       await page.goto(app.url);
-      const sessionBody = page.waitForResponse(
-        (r) => r.url() === app.url + "/v1/sessions" && r.status() === 201,
-      ).then((r) => r.json());
+      await page.locator("#advanced-details > summary").click();
+      const sessionBody = page
+        .waitForResponse(
+          (r) => r.url() === app.url + "/v1/sessions" && r.status() === 201,
+        )
+        .then((r) => r.json());
       const [session] = await Promise.all([
         sessionBody,
         page.locator("#connect").click(),
@@ -134,9 +137,11 @@ test(
       await page.locator("#consent").check();
       // Consume the body immediately on the response event, concurrently with
       // click completion. A stored Response handle is not retained body evidence.
-      const jobBody = page.waitForResponse(
-        (r) => r.url() === app.url + "/v1/jobs" && r.status() === 202,
-      ).then((r) => r.json());
+      const jobBody = page
+        .waitForResponse(
+          (r) => r.url() === app.url + "/v1/jobs" && r.status() === 202,
+        )
+        .then((r) => r.json());
       const [submission] = await Promise.all([
         jobBody,
         page.locator("#submit").click(),
@@ -272,12 +277,20 @@ test(
         { ...process.env, HOME: home },
       );
       assert.equal(cliSubmit.job.executionStatus, "succeeded");
-      assert.equal(await page.locator('#delete-evidence').count(), 1);
-      await page.locator('#delete-evidence').click();
-      await page.waitForFunction(() => document.querySelector('[role=status]').textContent.includes('Private evidence deleted'));
+      assert.equal(await page.locator("#delete-evidence").count(), 1);
+      await page.locator("#delete-evidence").click();
+      await page.waitForFunction(() =>
+        document
+          .querySelector("[role=status]")
+          .textContent.includes("Private evidence deleted"),
+      );
       await assert.rejects(client.getEvidence(jobId));
-      await page.locator('#assess').click();
-      await page.waitForFunction(() => document.querySelector('#assessment-state').textContent.includes('unavailable'));
+      await page.locator("#assess").click();
+      await page.waitForFunction(() =>
+        document
+          .querySelector("#assessment-state")
+          .textContent.includes("unavailable"),
+      );
       await writeFile(
         "artifacts/integration/browser-result.json",
         JSON.stringify(

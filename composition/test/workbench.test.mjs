@@ -328,6 +328,7 @@ for (const runtimeMode of ["simulation", "conformance"])
         try {
           const page = await browser.newPage();
           await page.goto(app.url);
+          await page.locator("#advanced-details > summary").click();
           const sessionResponse = page
             .waitForResponse(
               (r) => r.url().endsWith("/v1/sessions") && r.status() === 201,

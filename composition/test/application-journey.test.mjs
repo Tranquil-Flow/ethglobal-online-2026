@@ -90,6 +90,7 @@ test(
           submissions++;
       });
       await page.goto(app.url);
+      await page.locator("#advanced-details > summary").click();
       await page.locator("#provider-choice").waitFor();
       await page.selectOption("#provider-choice", "beta.local");
       await page.click("#connect");
@@ -131,6 +132,7 @@ test(
       app = await startManagedApplication({ configFile });
       assert.equal(app.url, originalUrl);
       await page.reload();
+      await page.locator("#advanced-details > summary").click();
       assert.equal(
         await page.evaluate(() => localStorage.length + sessionStorage.length),
         0,

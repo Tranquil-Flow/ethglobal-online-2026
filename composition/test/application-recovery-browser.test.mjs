@@ -29,6 +29,7 @@ test(
           jobPosts.push(request.url());
       });
       await page.goto(app.url);
+      await page.locator("#advanced-details > summary").click();
       await page.locator("#provider-choice").waitFor({ state: "visible" });
       await page.selectOption("#provider-choice", "beta.example.eth");
       await page.click("#connect");
@@ -89,6 +90,7 @@ test(
       assert.equal(jobPosts.length, 1);
 
       await page.reload();
+      await page.locator("#advanced-details > summary").click();
       assert.equal(
         await page.evaluate(() => localStorage.length + sessionStorage.length),
         0,
@@ -145,6 +147,7 @@ test(
       browser = await chromium.launch({ headless: true });
       const page = await browser.newPage({ acceptDownloads: true });
       await page.goto(app.url);
+      await page.locator("#advanced-details > summary").click();
       await page.locator("#provider-choice").waitFor();
       await page.click("#connect");
       await page.waitForFunction(() =>

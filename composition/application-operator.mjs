@@ -174,6 +174,7 @@ import { inspectStdioRuntime } from "./application-stdio.mjs";
 import { inspectManagedPublication } from "./application-publication-config.mjs";
 import { inspectOwnedNativeRuntime } from "./application-owned-native.mjs";
 import { inspectOllamaRuntime } from "./application-ollama.mjs";
+import { inspectMyceliumHttpRuntime } from "./application-mycelium-http.mjs";
 import { inspectManagedAssessor } from "./application-assessor.mjs";
 import { inspectManagedPayments } from "./application-payments.mjs";
 
@@ -260,6 +261,11 @@ export function loadManagedApplication({ configFile, nativeHostBindings }) {
           };
         },
       };
+    } else if (spec.runtime.kind === "mycelium" && spec.runtime.protocol === "mycelium.request_gateway.v2") {
+      runtime = inspectMyceliumHttpRuntime({
+        spec: spec.runtime, mode: config.mode, providerId: p.providerId,
+        resolvePath: (path) => managedPath(root, path),
+      });
     } else if (spec.runtime.kind === "mycelium") {
       exact(spec.runtime, [
         "kind",
@@ -484,6 +490,12 @@ async function prepare(options, { start = false } = {}) {
   if (x.publication && options.eventSink !== undefined)
     fail("PUBLICATION_BINDING_CONFLICT");
   const bindings = {
+    ...(options.createDemoSponsor !== undefined
+      ? { createDemoSponsor: options.createDemoSponsor }
+      : {}),
+    ...(options.wrapExecutor !== undefined
+      ? { wrapExecutor: options.wrapExecutor }
+      : {}),
     ...(x.publication ? { createEventSink: x.publication.create } : {}),
     ...(x.history ? { history: x.history } : {}),
     ...(x.history?.publicEndpoint
