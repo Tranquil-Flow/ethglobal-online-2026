@@ -699,6 +699,25 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       ports.get(request.providerId).executor.validateRequest?.(request);
       return ports.get(request.providerId);
     };
+    // Single-slot receipt-completion listener registry. L-FANOUT
+    // (composition/w6-fanout-wiring.mjs) registers exactly one listener;
+    // a second registration replaces the slot, and any extras after
+    // that are ignored so test wiring and live wiring don't compound.
+    let receiptCompletionListener = null;
+    const dispatchReceiptCompletion = (event) => {
+      const listener = receiptCompletionListener;
+      if (!listener) return;
+      // Fire-and-forget; a listener error must not bring the app down.
+      Promise.resolve()
+        .then(() => listener(event))
+        .catch((error) => {
+          // Surface but never throw — the application stays up.
+          // The workbench does not own this failure surface.
+          try {
+            console.error("receipt_completion_listener_failed", error);
+          } catch {}
+        });
+    };
     const executor = {
       mode: config.mode,
       deleteEvidence({ jobId, providerId }) {
@@ -716,7 +735,75 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
         return check(request).executor.preflightRequest?.(request, options);
       },
       execute(args) {
-        return check(args.request).executor.execute(args);
+        const inner = check(args.request).executor.execute(args);
+        // The runtime executor is an async generator yielding delta /
+        // completed events. Core consumes it via the async-iterator
+        // protocol. Wrap the iterator so we can observe the natural
+        // completion (done === true) and fire the listener exactly once
+        // after the underlying core call has had a chance to write the
+        // receipt (which happens synchronously after the iterator
+        // returns done).
+        const jobId = args?.jobId;
+        let consumed = false;
+        const wrapped = {
+          [Symbol.asyncIterator]() {
+            return this;
+          },
+          next() {
+            const p = Promise.resolve(inner[Symbol.asyncIterator]().next());
+            return p.then(async (result) => {
+              if (!result.done || consumed) return result;
+              consumed = true;
+              if (typeof jobId !== "string") return result;
+              // Defer one tick so core's run() can write the receipt
+              // digest before we read the job back out of the store.
+              setImmediate(() => {
+                let rec;
+                try {
+                  rec = store.get("jobs", jobId);
+                } catch {
+                  return;
+                }
+                if (!rec || !rec.job) return;
+                if (rec.job.executionStatus !== "succeeded") return;
+                const receiptDigest = rec.job.receiptDigest;
+                if (typeof receiptDigest !== "string") return;
+                const payment = rec.job.payment ?? null;
+                dispatchReceiptCompletion({
+                  jobId,
+                  request: bundleFor(jobId),
+                  payment,
+                  receiptDigest,
+                  mode: rec.job.mode ?? config.mode,
+                  publishConsent: rec.publishConsent ?? false,
+                  providerId: rec.providerId ?? null,
+                });
+              });
+              return result;
+            });
+          },
+          return(value) {
+            consumed = true;
+            if (typeof inner[Symbol.asyncIterator]().return === "function")
+              return inner[Symbol.asyncIterator]().return(value);
+            return { value, done: true };
+          },
+          throw(reason) {
+            consumed = true;
+            if (typeof inner[Symbol.asyncIterator]().throw === "function")
+              return inner[Symbol.asyncIterator]().throw(reason);
+            return Promise.reject(reason);
+          },
+        };
+        function bundleFor(id) {
+          try {
+            const bundle = store.get("private", id);
+            return bundle?.request ?? null;
+          } catch {
+            return null;
+          }
+        }
+        return wrapped;
       },
     };
     payments = createProviderPayments({ providers: paymentPorts, store });
@@ -1194,6 +1281,47 @@ export async function startApplicationWorkbench({ config: input, bindings }) {
       profileIds: profiles.map(digestOf),
       accessPolicy: config.accessPolicy,
       pins: providerPins,
+      // Receipt-completion hook surface used by L-FANOUT
+      // (composition/w6-fanout-wiring.mjs). A single listener slot:
+      // the second registration replaces the first; further
+      // registrations are ignored. offReceiptCompletion is a no-op
+      // for callers that did not register.
+      onReceiptCompletion(listener) {
+        if (typeof listener !== "function") return;
+        // Single-slot registry with replace-on-second semantics:
+        //   * the first distinct listener takes the empty slot
+        //   * a second distinct listener replaces the slot
+        //   * a third distinct listener is ignored so live wiring
+        //     and stray test wiring cannot compound into duplicate
+        //     fanouts
+        if (receiptCompletionListener === null) {
+          receiptCompletionListener = listener;
+          return;
+        }
+        if (receiptCompletionListener === listener) return;
+        if (receiptCompletionListener.__slotOrigin === listener) return;
+        if (receiptCompletionListener.__slotOrigin === undefined) {
+          // Currently holding the original first listener; replace
+          // it with the second listener and remember the new origin
+          // so a third registration is a no-op.
+          receiptCompletionListener = listener;
+          receiptCompletionListener.__slotOrigin = listener;
+        }
+        // else: third+ distinct registration — ignore.
+      },
+      offReceiptCompletion(listener) {
+        if (
+          receiptCompletionListener !== null &&
+          (listener === undefined || receiptCompletionListener === listener)
+        )
+          receiptCompletionListener = null;
+      },
+      // Test seam: lets wiring tests push a synthetic completion
+      // through the registered listener without driving execute().
+      emitReceiptCompletion(event) {
+        dispatchReceiptCompletion(event);
+        return Promise.resolve();
+      },
       close,
     };
   } catch (error) {
